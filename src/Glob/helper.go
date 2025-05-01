@@ -47,6 +47,7 @@ import (
 )
 
 var ocoq = false
+var octableauxrocq = false
 var olambdapi = false
 var otptp = false
 var Assisted = false
@@ -197,6 +198,10 @@ func IsCoqOutput() bool {
 	return ocoq
 }
 
+func IsTableauxRocqOutput() bool {
+	return octableauxrocq
+}
+
 func IsLambdapiOutput() bool {
 	return olambdapi
 }
@@ -304,6 +309,10 @@ func DisplayPretty() {
 
 func OutputCoq() {
 	ocoq = true
+}
+
+func OutputTableauxRocq() {
+	octableauxrocq = true
 }
 
 func OutputLambdapi() {

@@ -17,6 +17,7 @@ import (
 	"github.com/GoelandProver/Goeland/Mods/tptp"
 	"github.com/GoelandProver/Goeland/Search"
 	"github.com/GoelandProver/Goeland/Search/incremental"
+	tableauxrocq "github.com/GoelandProver/Goeland/proof_output/tableaux-rocq"
 )
 
 type optionable interface {
@@ -247,6 +248,16 @@ func buildOptions() {
 			Glob.OutputCoq()
 			Glob.SetProof(true)
 			Search.AddPrintProofAlgorithm(coq.CoqOutputProofStruct)
+		},
+		func(bool) {})
+	(&option[bool]{}).init(
+		"otableauxrocq",
+		false,
+		"Enables the TableauxRocq format for proofs instead of text",
+		func(bool) {
+			global.OutputTableauxRocq()
+			global.SetProof(true)
+			search.AddPrintProofAlgorithm(tableauxrocq.TableauxRocqOutputProofStruct)
 		},
 		func(bool) {})
 	(&option[bool]{}).init(
