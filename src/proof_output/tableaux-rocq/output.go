@@ -142,13 +142,29 @@ func formToTableauxRocq(f Form) string {
 	case Not:
 		return "Form.Neg (" + formToTableauxRocq(nf.GetForm()) + ")"
 	case And:
-		return "Form.And " + formListToTableauxRocq(nf.GetChildFormulas())
+		forms_aux := ""
+		for _, element := range nf.GetChildFormulas().Slice() {
+			forms_aux += "(" + formToTableauxRocq(element) + ") "
+		}
+		return "Form.And " + forms_aux[:len(forms_aux)-1]
 	case Or:
-		return "Form.Or " + formListToTableauxRocq(nf.GetChildFormulas())
+		forms_aux := ""
+		for _, element := range nf.GetChildFormulas().Slice() {
+			forms_aux += "(" + formToTableauxRocq(element) + ") "
+		}
+		return "Form.Or " + forms_aux[:len(forms_aux)-1]
 	case Imp:
-		return "Form.Imp " + formListToTableauxRocq(nf.GetChildFormulas())
+		forms_aux := ""
+		for _, element := range nf.GetChildFormulas().Slice() {
+			forms_aux += "(" + formToTableauxRocq(element) + ") "
+		}
+		return "Form.Imp " + forms_aux[:len(forms_aux)-1]
 	case Equ:
-		return "Form.Equ " + formListToTableauxRocq(nf.GetChildFormulas())
+		forms_aux := ""
+		for _, element := range nf.GetChildFormulas().Slice() {
+			forms_aux += "(" + formToTableauxRocq(element) + ") "
+		}
+		return "Form.Equ " + forms_aux[:len(forms_aux)-1]
 	case Ex:
 		// if len(nf.GetVarList()) != 1 {
 		// 	global.PrintError("TableauxRocq", "formToTableauxRocq error EXISTS")
@@ -179,16 +195,13 @@ func formToTableauxRocq(f Form) string {
 
 func formListToTableauxRocq(fl *FormList) string {
 
-	// println(fl.ToString())
-	// println("---------------------")
-
-	str := "["
+	str := ""
 	for _, element := range fl.Slice() {
 		str += formToTableauxRocq(element) + ", "
 	}
 
 	if fl.Len() > 0 {
-		return str[:len(str)-2] + "]"
+		return str[:len(str)-2]
 	} else {
 		return "[]"
 	}

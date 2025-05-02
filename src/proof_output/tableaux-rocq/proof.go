@@ -62,17 +62,23 @@ func makeTableauxRocqProofFromTableaux(proof []vp.ProofStruct) string {
 
 func makeTableaux(proof []vp.ProofStruct, forms *bt.FormList) string {
 	res := ""
+	forms.Append(proof[0].GetFormula().GetForm())
 	for _, ps := range proof {
 		res += makeStep(ps, forms)
 		if proofStructRuleToTableauxRocqRules(ps.GetRuleName()) != AX {
-			forms.Append(ps.GetFormula().GetForm())
+			for _, child := range ps.GetResultFormulas() {
+				for _, child_form := range child.GetForms().Slice() {
+					forms.Append(child_form)
+				}
+			}
 		}
 	}
+
 	// children
 	if len(proof[len(proof)-1].GetChildren()) > 1 {
-		// for _, c := range proof[len(proof)-1].GetChildren() {
-		res += makeTableaux(proof[len(proof)-1].GetChildren()[0], forms.Copy())
-		// }
+		for _, c := range proof[len(proof)-1].GetChildren() {
+			res += makeTableaux(c, forms.Copy())
+		}
 	}
 
 	closing_par := ""
@@ -87,15 +93,14 @@ func makeStep(s vp.ProofStruct, forms *bt.FormList) string {
 	rule := proofStructRuleToTableauxRocqRules(s.GetRuleName())
 	res := ""
 	shift := ""
-	for i := 0; i < forms.Len(); i++ {
+	for i := 0; i < forms.Len()-1; i++ {
 		shift += "  "
 	}
 
 	if rule == AX {
-		println("Axiom Found")
 		res = shift + "(" + TableauxRocqRulesToString(rule) + "\n"
 		forms.Remove(forms.Len() - 1)
-		res += formListToTableauxRocq(forms.Copy()) + ") \n"
+		res += "[" + formListToTableauxRocq(forms.Copy()) + "]) \n"
 	} else {
 		res = shift + "(" + TableauxRocqRulesToString(rule) + "\n"
 	}
