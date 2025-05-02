@@ -41,6 +41,7 @@ import (
 
 	"github.com/GoelandProver/Goeland/global"
 	"github.com/GoelandProver/Goeland/search"
+	. "github.com/GoelandProver/Goeland/types/basic-types"
 	basictypes "github.com/GoelandProver/Goeland/types/basic-types"
 	proof "github.com/GoelandProver/Goeland/visualization_proof"
 )
@@ -48,6 +49,30 @@ import (
 var contextEnabled bool = false
 
 var TableauxRocqOutputProofStruct = &search.OutputProofStruct{ProofOutput: MakeTableauxRocqOutput, Name: "TableauxRocq", Extension: ".v"}
+
+type Rule int
+
+// Rules
+const (
+	AX Rule = iota
+	W
+	NOT
+	IMP
+	AND
+	OR
+	EQU
+	EX
+	ALL
+	NNOT
+	NIMP
+	NAND
+	NOR
+	NEQU
+	NEX
+	NALL
+	R
+	REWRITE
+)
 
 // ----------------------------------------------------------------------------
 // Plugin initialisation and main function to call.
@@ -78,25 +103,141 @@ var MakeTableauxRocqProof = func(proof []proof.ProofStruct, meta *basictypes.Met
 func mapDefault(str string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(str, "$i", "goeland_U"), "$o", "Prop")
 }
-func tableauxRocqMapConnectors() map[basictypes.FormulaType]string {
-	return map[basictypes.FormulaType]string{
-		basictypes.AndConn:        "/\\",
-		basictypes.OrConn:         "\\/",
-		basictypes.ImpConn:        "->",
-		basictypes.EquConn:        "<->",
-		basictypes.NotConn:        "~",
-		basictypes.TopType:        "True",
-		basictypes.BotType:        "False",
-		basictypes.AllQuant:       "forall",
-		basictypes.ExQuant:        "exists",
-		basictypes.AllTypeQuant:   "forall",
-		basictypes.QuantVarOpen:   "(",
-		basictypes.QuantVarClose:  ")",
-		basictypes.QuantVarSep:    ",",
-		basictypes.PredEmpty:      "",
-		basictypes.PredTypeVarSep: ",",
-		basictypes.TypeVarType:    "Type",
+
+func termToTableauxRocq(t Term) string {
+	switch t.(type) {
+	case basictypes.Var:
+		return "Term.Var \"" + t.GetName() + "\""
+	case basictypes.Meta:
+		return "Term.Free \"" + t.GetName() + "\""
+	case basictypes.Fun:
+		return "Term.const \"" + t.GetName() + "\""
+	default:
+		global.PrintError("TableauxRocq", "termToTableauRocq error TERM")
+		return "TableauxRocqError"
 	}
+}
+
+func termListToTableauxRocq(tl *TermList) string {
+	str := "["
+	for _, element := range tl.Slice() {
+		str += termToTableauxRocq(element) + ", "
+	}
+
+	if tl.Len() > 0 {
+		return str[:len(str)-2] + "]"
+	} else {
+		return "[]"
+	}
+}
+
+func formToTableauxRocq(f Form) string {
+	switch nf := f.(type) {
+	case Pred:
+		return "Form.Pred \"" + nf.GetID().GetName() + "\" (" + termListToTableauxRocq(nf.GetArgs()) + ")"
+	case Top:
+		return "Form.Top"
+	case Bot:
+		return "Form.Bot"
+	case Not:
+		return "Form.Neg (" + formToTableauxRocq(nf.GetForm()) + ")"
+	case And:
+		return "Form.And " + formListToTableauxRocq(nf.GetChildFormulas())
+	case Or:
+		return "Form.Or " + formListToTableauxRocq(nf.GetChildFormulas())
+	case Imp:
+		return "Form.Imp " + formListToTableauxRocq(nf.GetChildFormulas())
+	case Equ:
+		return "Form.Equ " + formListToTableauxRocq(nf.GetChildFormulas())
+	case Ex:
+		// if len(nf.GetVarList()) != 1 {
+		// 	global.PrintError("TableauxRocq", "formToTableauxRocq error EXISTS")
+		// 	return "TableauxRocqError"
+		// }
+		// return "Form.Exists " + "\"" + nf.GetVarList()[0].GetName() + "\" " + "(" + formToTableauxRocq(nf.GetForm()) + ")"
+		variables := ""
+		for _, v := range nf.GetVarList() {
+			variables += "Form.Exists " + "\"" + v.GetName() + "\" "
+		}
+		return variables + "(" + formToTableauxRocq(nf.GetForm()) + ")"
+	case All:
+		// if len(nf.GetVarList()) != 1 {
+		// 	global.PrintError("TableauxRocq", "formToTableauxRocq error ALL")
+		// 	return "TableauxRocqError"
+		// }
+		// return "Form.All " + "\"" + nf.GetVarList()[0].GetName() + "\" " + "(" + formToTableauxRocq(nf.GetForm()) + ")"
+		variables := ""
+		for _, v := range nf.GetVarList() {
+			variables += "Form.All " + "\"" + v.GetName() + "\" "
+		}
+		return variables + "(" + formToTableauxRocq(nf.GetForm()) + ")"
+	default:
+		global.PrintError("TableauxRocq", "formToTableauxRocq error DEFAULT")
+		return "TableauxRocqError"
+	}
+}
+
+func formListToTableauxRocq(fl *FormList) string {
+
+	// println(fl.ToString())
+	// println("---------------------")
+
+	str := "["
+	for _, element := range fl.Slice() {
+		str += formToTableauxRocq(element) + ", "
+	}
+
+	if fl.Len() > 0 {
+		return str[:len(str)-2] + "]"
+	} else {
+		return "[]"
+	}
+}
+
+func proofStructRuleToTableauxRocqRules(rule string) Rule {
+	mapping := map[string]Rule{
+		"ALPHA_NOT_NOT":    NNOT,
+		"ALPHA_NOT_OR":     NOR,
+		"ALPHA_NOT_IMPLY":  NIMP,
+		"ALPHA_AND":        AND,
+		"BETA_NOT_AND":     NAND,
+		"BETA_NOT_EQUIV":   NEQU,
+		"BETA_OR":          OR,
+		"BETA_IMPLY":       IMP,
+		"BETA_EQUIV":       EQU,
+		"GAMMA_NOT_EXISTS": NEX,
+		"GAMMA_FORALL":     ALL,
+		"DELTA_NOT_FORALL": NALL,
+		"DELTA_EXISTS":     EX,
+		"CLOSURE":          AX,
+		"WEAKEN":           W,
+		"Reintroduction":   R,
+		"Rewrite":          REWRITE,
+	}
+	return mapping[rule]
+}
+
+func TableauxRocqRulesToString(rule Rule) string {
+	mapping := map[Rule]string{
+		NNOT:    "FOLTreeBuilder.neg_neg",
+		NOR:     "FOLTreeBuilder.neg_or",
+		NIMP:    "FOLTreeBuilder.neg_imp",
+		AND:     "FOLTreeBuilder.and",
+		NAND:    "FOLTreeBuilder.neg_and",
+		NEQU:    "FOLTreeBuilder.neg_equ",
+		OR:      "FOLTreeBuilder.or",
+		IMP:     "FOLTreeBuilder.imp",
+		EQU:     "FOLTreeBuilder.equ",
+		NEX:     "FOLTreeBuilder.neg_ex",
+		ALL:     "FOLTreeBuilder.all",
+		NALL:    "FOLTreeBuilder.neg_all",
+		EX:      "FOLTreeBuilder.ex",
+		AX:      "FOLTreeBuilder.contra",
+		W:       "FOLTreeBuilder.Error — Weakening",
+		R:       "FOLTreeBuilder.Error — Reintroduction",
+		REWRITE: "FOLTreeBuilder.Error – Rewrite",
+	}
+	return mapping[rule]
 }
 
 // Context flag utility function

@@ -37,13 +37,17 @@
 package tableauxrocq
 
 import (
-	proof "github.com/GoelandProver/Goeland/visualization_proof"
+	"strings"
+
+	bt "github.com/GoelandProver/Goeland/types/basic-types"
+	vp "github.com/GoelandProver/Goeland/visualization_proof"
 )
 
 /** TODO
 * Step 1 : proof tree
 	* Tableaux
 	* Follow the tree
+	* Keep formulas
 	* Add intermediate formulas in case of non-native steps
 	* Retrieve all relevant formulas
 * Step 2 : proof
@@ -51,13 +55,81 @@ import (
 	* Replay rules
 **/
 
-func makeTableauxRocqProofFromTableaux(proof []proof.ProofStruct) string {
+func makeTableauxRocqProofFromTableaux(proof []vp.ProofStruct) string {
+	print(strings.TrimSuffix(makeTableaux(proof, bt.NewFormList()), "\n") + ").\n")
 	return ""
 }
 
-func makeTableaux() string {
-	return ""
+func makeTableaux(proof []vp.ProofStruct, forms *bt.FormList) string {
+	res := ""
+	for _, ps := range proof {
+		res += makeStep(ps, forms)
+		if proofStructRuleToTableauxRocqRules(ps.GetRuleName()) != AX {
+			forms.Append(ps.GetFormula().GetForm())
+		}
+	}
+	// children
+	if len(proof[len(proof)-1].GetChildren()) > 1 {
+		// for _, c := range proof[len(proof)-1].GetChildren() {
+		res += makeTableaux(proof[len(proof)-1].GetChildren()[0], forms.Copy())
+		// }
+	}
+
+	closing_par := ""
+	for i := 0; i < len(proof)-1; i++ {
+		closing_par += ")"
+	}
+
+	return strings.TrimSuffix(res, " \n") + closing_par + "\n"
 }
+
+func makeStep(s vp.ProofStruct, forms *bt.FormList) string {
+	rule := proofStructRuleToTableauxRocqRules(s.GetRuleName())
+	res := ""
+	shift := ""
+	for i := 0; i < forms.Len(); i++ {
+		shift += "  "
+	}
+
+	if rule == AX {
+		println("Axiom Found")
+		res = shift + "(" + TableauxRocqRulesToString(rule) + "\n"
+		forms.Remove(forms.Len() - 1)
+		res += formListToTableauxRocq(forms.Copy()) + ") \n"
+	} else {
+		res = shift + "(" + TableauxRocqRulesToString(rule) + "\n"
+	}
+	return res
+}
+
+// add more than once if non native steps --> switch
+// Pas de forall ou exists multiples -> faire une fonction de split
+// func unfoldProofSteps(proof []vp.ProofStruct) []vp.ProofStruct {
+// 	res := make([]vp.ProofStruct, 0)
+// 	for _, ps := range proof {
+// 		switch proofStructRuleToTableauxRocqRules(ps.Rule_name) {
+// 		case ALL:
+// 			if ps.GetFormula().GetTerms().Len() > 1 {
+// 				for i, v := range ps.GetFormula().GetTerms().Slice() {
+// 					tmp_struct := ps.Copy()
+// 					tmp_form := bt.MakerAll([]bt.Var{v}, ps.Formula.GetForm())
+// 					tmp_children := nil
+// 					if i == ps.GetFormula().GetTerms().Len()-1 {
+// 						tmp_children = ps.GetChildren()
+// 					} else {
+// 						tmp_children =
+// 					}
+// 					tmp_child := bt.MakerAll([]bt.Var{v}, ps.Formula.GetForm())
+// 					tmp_struct.SetFormulaProof()
+// 					res = append(res, vp.MakeProofStruct())
+// 				}
+// 			} else {
+// 				res = append(res, ps)
+// 			}
+// 		}
+// 	}
+// 	return res
+// }
 
 func makeLemma() string {
 	return ""

@@ -41,5 +41,9 @@ func makeContextIfNeeded() string {
 		return ""
 	}
 	resultingString := "From Tableaux Require Import FOL.Everything."
+	resultingString += "From Tableaux Require Import FOL.Everything."
+	resultingString += "From Stdlib Require Import Strings.String."
+	resultingString += "Open Scope string_scope."
+
 	return resultingString
 }
