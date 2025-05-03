@@ -145,9 +145,13 @@ func IntFormAndTermsListListToString(fll []IntFormAndTermsList) string {
 }
 
 func (p ProofStruct) ToString() string {
-	res := "(" + strconv.Itoa(p.GetNodeId()) + ")" + p.GetFormula().ToString() + " - " + p.GetRule() + " - " + IntFormAndTermsListListToString(p.GetResultFormulas())
+	res := "(" + strconv.Itoa(p.GetNodeId()) + ")\n" +
+		p.GetFormula().ToString() + "\n- " +
+		p.GetRule() + "\n - " +
+		IntFormAndTermsListListToString(p.GetResultFormulas())
+
 	if len(p.GetChildren()) > 0 {
-		res += " - " + ProofChildrenToString(p.GetChildren())
+		res += " - Children: " + ProofChildrenToString(p.GetChildren())
 	}
 	return res
 }

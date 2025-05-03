@@ -172,10 +172,20 @@ func formToTableauxRocq(f Form) string {
 		// }
 		// return "Form.Exists " + "\"" + nf.GetVarList()[0].GetName() + "\" " + "(" + formToTableauxRocq(nf.GetForm()) + ")"
 		variables := ""
-		for _, v := range nf.GetVarList() {
+		cpt := 0
+		for i, v := range nf.GetVarList() {
 			variables += "Form.Exists " + "\"" + v.GetName() + "\" "
+			if i < len(nf.GetVarList())-1 {
+				variables += "("
+				cpt++
+			}
 		}
-		return variables + "(" + formToTableauxRocq(nf.GetForm()) + ")"
+		end_parenthesis := ""
+		for i := 0; i < cpt; i++ {
+			end_parenthesis += ")"
+		}
+
+		return variables + "(" + formToTableauxRocq(nf.GetForm()) + ")" + end_parenthesis
 	case All:
 		// if len(nf.GetVarList()) != 1 {
 		// 	global.PrintError("TableauxRocq", "formToTableauxRocq error ALL")
@@ -183,10 +193,20 @@ func formToTableauxRocq(f Form) string {
 		// }
 		// return "Form.All " + "\"" + nf.GetVarList()[0].GetName() + "\" " + "(" + formToTableauxRocq(nf.GetForm()) + ")"
 		variables := ""
-		for _, v := range nf.GetVarList() {
+		cpt := 0
+		for i, v := range nf.GetVarList() {
 			variables += "Form.All " + "\"" + v.GetName() + "\" "
+			if i < len(nf.GetVarList())-1 {
+				variables += "("
+				cpt++
+			}
 		}
-		return variables + "(" + formToTableauxRocq(nf.GetForm()) + ")"
+		end_parenthesis := ""
+		for i := 0; i < cpt; i++ {
+			end_parenthesis += ")"
+		}
+
+		return variables + "(" + formToTableauxRocq(nf.GetForm()) + ")" + end_parenthesis
 	default:
 		global.PrintError("TableauxRocq", "formToTableauxRocq error DEFAULT")
 		return "TableauxRocqError"

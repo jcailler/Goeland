@@ -52,6 +52,11 @@ func NewTermList(slice ...Term) *TermList {
 	return &TermList{Glob.NewList[Term](slice...)}
 }
 
+/* Make empty term_list */
+func MakeEmptyTermList() *TermList {
+	return NewTermList(nil)
+}
+
 func (tl *TermList) Less(i, j int) bool {
 	return (tl.Get(i).GetIndex() < tl.Get(j).GetIndex())
 }

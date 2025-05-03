@@ -37,6 +37,7 @@
 package tableauxrocq
 
 import (
+	"slices"
 	"strings"
 
 	bt "github.com/GoelandProver/Goeland/types/basic-types"
@@ -56,7 +57,7 @@ import (
 **/
 
 func makeTableauxRocqProofFromTableaux(proof []vp.ProofStruct) string {
-	print(strings.TrimSuffix(makeTableaux(proof, bt.NewFormList()), "\n") + ").\n")
+	print(strings.TrimSuffix(makeTableaux(unfoldProofSteps(proof), bt.NewFormList()), "\n") + ").\n")
 	return ""
 }
 
@@ -74,7 +75,6 @@ func makeTableaux(proof []vp.ProofStruct, forms *bt.FormList) string {
 		}
 	}
 
-	// children
 	if len(proof[len(proof)-1].GetChildren()) > 1 {
 		for _, c := range proof[len(proof)-1].GetChildren() {
 			res += makeTableaux(c, forms.Copy())
@@ -107,34 +107,36 @@ func makeStep(s vp.ProofStruct, forms *bt.FormList) string {
 	return res
 }
 
-// add more than once if non native steps --> switch
-// Pas de forall ou exists multiples -> faire une fonction de split
-// func unfoldProofSteps(proof []vp.ProofStruct) []vp.ProofStruct {
-// 	res := make([]vp.ProofStruct, 0)
-// 	for _, ps := range proof {
-// 		switch proofStructRuleToTableauxRocqRules(ps.Rule_name) {
-// 		case ALL:
-// 			if ps.GetFormula().GetTerms().Len() > 1 {
-// 				for i, v := range ps.GetFormula().GetTerms().Slice() {
-// 					tmp_struct := ps.Copy()
-// 					tmp_form := bt.MakerAll([]bt.Var{v}, ps.Formula.GetForm())
-// 					tmp_children := nil
-// 					if i == ps.GetFormula().GetTerms().Len()-1 {
-// 						tmp_children = ps.GetChildren()
-// 					} else {
-// 						tmp_children =
-// 					}
-// 					tmp_child := bt.MakerAll([]bt.Var{v}, ps.Formula.GetForm())
-// 					tmp_struct.SetFormulaProof()
-// 					res = append(res, vp.MakeProofStruct())
-// 				}
-// 			} else {
-// 				res = append(res, ps)
-// 			}
-// 		}
-// 	}
-// 	return res
-// }
+func unfoldProofSteps(proof []vp.ProofStruct) []vp.ProofStruct {
+	res := make([]vp.ProofStruct, 0)
+	for _, ps := range proof {
+		switch proofStructRuleToTableauxRocqRules(ps.Rule_name) {
+		case ALL:
+			if f, ok := ps.GetFormula().GetForm().(bt.All); ok {
+				var_list_param := f.GetVarList()
+				if len(var_list_param) > 1 {
+					tmp_step := ps.Copy()
+					child := f.GetForm()
+					slices.Reverse(var_list_param)
+					for _, v := range var_list_param {
+						f_tmp := bt.MakerAll([]bt.Var{v}, child)
+						fnt_tmp := bt.MakeFormAndTerm(f_tmp, bt.MakeEmptyTermList())
+						child_fnt := bt.MakeFormAndTerm(child, bt.MakeEmptyTermList())
+						tmp_step.SetResultFormulasProof([]vp.IntFormAndTermsList{vp.MakeIntFormAndTermsList(-1, bt.MakeSingleElementFormAndTermList(child_fnt))})
+						tmp_step.SetFormulaProof(fnt_tmp)
+						child = f_tmp
+					}
+					res = append(res, tmp_step)
+				} else {
+					res = append(res, ps)
+				}
+			}
+		default:
+			res = append(res, ps)
+		}
+	}
+	return res
+}
 
 func makeLemma() string {
 	return ""
