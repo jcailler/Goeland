@@ -102,6 +102,10 @@ func (ifl *IntFormAndTermsList) GetFL() Core.FormAndTermsList {
 	return ifl.fl.Copy()
 }
 
+func (ifl *IntFormAndTermsList) Add(f basictypes.FormAndTerms) {
+	ifl.setFl(ifl.GetFL().Append(f))
+}
+
 func (ifl *IntFormAndTermsList) ToString() string {
 	return strconv.Itoa(ifl.i) + " - " + ifl.fl.ToString()
 }

@@ -166,47 +166,17 @@ func formToTableauxRocq(f Form) string {
 		}
 		return "Form.Equ " + forms_aux[:len(forms_aux)-1]
 	case Ex:
-		// if len(nf.GetVarList()) != 1 {
-		// 	global.PrintError("TableauxRocq", "formToTableauxRocq error EXISTS")
-		// 	return "TableauxRocqError"
-		// }
-		// return "Form.Exists " + "\"" + nf.GetVarList()[0].GetName() + "\" " + "(" + formToTableauxRocq(nf.GetForm()) + ")"
-		variables := ""
-		cpt := 0
-		for i, v := range nf.GetVarList() {
-			variables += "Form.Exists " + "\"" + v.GetName() + "\" "
-			if i < len(nf.GetVarList())-1 {
-				variables += "("
-				cpt++
-			}
+		if len(nf.GetVarList()) != 1 {
+			global.PrintError("TableauxRocq", "formToTableauxRocq error EXISTS")
+			return "TableauxRocqError"
 		}
-		end_parenthesis := ""
-		for i := 0; i < cpt; i++ {
-			end_parenthesis += ")"
-		}
-
-		return variables + "(" + formToTableauxRocq(nf.GetForm()) + ")" + end_parenthesis
+		return "Form.Exists " + "\"" + nf.GetVarList()[0].GetName() + "\" " + "(" + formToTableauxRocq(nf.GetForm()) + ")"
 	case All:
-		// if len(nf.GetVarList()) != 1 {
-		// 	global.PrintError("TableauxRocq", "formToTableauxRocq error ALL")
-		// 	return "TableauxRocqError"
-		// }
-		// return "Form.All " + "\"" + nf.GetVarList()[0].GetName() + "\" " + "(" + formToTableauxRocq(nf.GetForm()) + ")"
-		variables := ""
-		cpt := 0
-		for i, v := range nf.GetVarList() {
-			variables += "Form.All " + "\"" + v.GetName() + "\" "
-			if i < len(nf.GetVarList())-1 {
-				variables += "("
-				cpt++
-			}
+		if len(nf.GetVarList()) != 1 {
+			global.PrintError("TableauxRocq", "formToTableauxRocq error ALL")
+			return "TableauxRocqError"
 		}
-		end_parenthesis := ""
-		for i := 0; i < cpt; i++ {
-			end_parenthesis += ")"
-		}
-
-		return variables + "(" + formToTableauxRocq(nf.GetForm()) + ")" + end_parenthesis
+		return "Form.All " + "\"" + nf.GetVarList()[0].GetName() + "\" " + "(" + formToTableauxRocq(nf.GetForm()) + ")"
 	default:
 		global.PrintError("TableauxRocq", "formToTableauxRocq error DEFAULT")
 		return "TableauxRocqError"

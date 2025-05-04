@@ -37,11 +37,13 @@
 package tableauxrocq
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 
 	bt "github.com/GoelandProver/Goeland/types/basic-types"
 	vp "github.com/GoelandProver/Goeland/visualization_proof"
+	//	search "github.com/GoelandProver/Goeland/search"
 )
 
 /** TODO
@@ -57,7 +59,9 @@ import (
 **/
 
 func makeTableauxRocqProofFromTableaux(proof []vp.ProofStruct) string {
-	print(strings.TrimSuffix(makeTableaux(unfoldProofSteps(proof), bt.NewFormList()), "\n") + ").\n")
+	// print(strings.TrimSuffix(makeTableaux(unfoldProofSteps(proof), bt.NewFormList()), "\n") + ").\n")
+
+	print(vp.ProofStructListToText(unfoldProofSteps(proof), bt.MakeEmptyMeta().GetMetas()))
 	return ""
 }
 
@@ -107,35 +111,179 @@ func makeStep(s vp.ProofStruct, forms *bt.FormList) string {
 	return res
 }
 
-func unfoldProofSteps(proof []vp.ProofStruct) []vp.ProofStruct {
-	res := make([]vp.ProofStruct, 0)
-	for _, ps := range proof {
-		switch proofStructRuleToTableauxRocqRules(ps.Rule_name) {
-		case ALL:
-			if f, ok := ps.GetFormula().GetForm().(bt.All); ok {
-				var_list_param := f.GetVarList()
-				if len(var_list_param) > 1 {
-					tmp_step := ps.Copy()
-					child := f.GetForm()
-					slices.Reverse(var_list_param)
-					for _, v := range var_list_param {
-						f_tmp := bt.MakerAll([]bt.Var{v}, child)
-						fnt_tmp := bt.MakeFormAndTerm(f_tmp, bt.MakeEmptyTermList())
-						child_fnt := bt.MakeFormAndTerm(child, bt.MakeEmptyTermList())
-						tmp_step.SetResultFormulasProof([]vp.IntFormAndTermsList{vp.MakeIntFormAndTermsList(-1, bt.MakeSingleElementFormAndTermList(child_fnt))})
-						tmp_step.SetFormulaProof(fnt_tmp)
-						child = f_tmp
-					}
-					res = append(res, tmp_step)
-				} else {
-					res = append(res, ps)
-				}
+// Update formulas ALL and EX in a form
+func updateAllInForm(f bt.Form) bt.Form {
+	switch nf := f.(type) {
+	case bt.Not:
+		return bt.MakerNot(updateAllInForm(nf.GetForm()))
+	case bt.And:
+		res_list := make([]bt.Form, 0)
+		for _, f2 := range nf.GetChildFormulas().Slice() {
+			res_list = append(res_list, updateAllInForm(f2))
+		}
+		return bt.MakerAnd(bt.NewFormList(res_list...))
+	case bt.Or:
+		res_list := make([]bt.Form, 0)
+		for _, f2 := range nf.GetChildFormulas().Slice() {
+			res_list = append(res_list, updateAllInForm(f2))
+		}
+		return bt.MakerOr(bt.NewFormList(res_list...))
+	case bt.Imp:
+		f1 := updateAllInForm(nf.GetF1())
+		f2 := updateAllInForm(nf.GetF2())
+		return bt.MakerImp(f1, f2)
+	case bt.Equ:
+		f1 := updateAllInForm(nf.GetF1())
+		f2 := updateAllInForm(nf.GetF2())
+		return bt.MakerEqu(f1, f2)
+	case bt.Ex:
+		f_tmp := nf.Copy()
+		var_list_param := nf.GetVarList()
+		if len(var_list_param) > 1 {
+			child := updateAllInForm(nf.GetForm())
+			slices.Reverse(var_list_param)
+			for _, v := range var_list_param {
+				f_tmp = bt.MakerEx([]bt.Var{v}, child)
+				child = f_tmp
 			}
-		default:
-			res = append(res, ps)
+		}
+		return f_tmp
+	case bt.All:
+		f_tmp := nf.Copy()
+		var_list_param := nf.GetVarList()
+		if len(var_list_param) > 1 {
+			child := updateAllInForm(nf.GetForm())
+			slices.Reverse(var_list_param)
+			for _, v := range var_list_param {
+				f_tmp = bt.MakerAll([]bt.Var{v}, child)
+				child = f_tmp
+			}
+		}
+		return f_tmp
+	default:
+		return f.Copy()
+	}
+}
+
+// Update formulas ALL and EX in  a list of list of forms
+func updateAllInResultingForm(rfl []vp.IntFormAndTermsList) []vp.IntFormAndTermsList {
+	tmp_resulting_forms := make([]vp.IntFormAndTermsList, 0)
+	for _, rf := range rfl {
+		tmp_resulting_forms_aux := vp.MakeIntFormAndTermsList(-1, nil)
+		for _, rf2 := range rf.GetFL() {
+			tmp_resulting_forms_aux.Add(bt.MakeFormAndTerm(updateAllInForm(rf2.GetForm()), rf2.GetTerms()))
+		}
+		tmp_resulting_forms = append(tmp_resulting_forms, tmp_resulting_forms_aux)
+	}
+	return tmp_resulting_forms
+}
+
+// Add formulas in the branch for non-trivial steps management
+func unfoldProofStep(ps vp.ProofStruct) vp.ProofStruct {
+	tmp_form := bt.MakeFormAndTerm(updateAllInForm(ps.GetFormula().GetForm().Copy()), bt.MakeEmptyTermList())
+	tmp_resulting_forms := updateAllInResultingForm(ps.GetResultFormulas())
+	tmp_step := ps.Copy()
+	tmp_step.SetFormulaProof(tmp_form)
+	tmp_step.SetResultFormulasProof(tmp_resulting_forms)
+
+	switch t := ps.GetFormula().GetForm().(type) {
+	case bt.And: // A, B -> A, B, ~A, ~B
+		println("---- DEBUG AND ----")
+		println(fmt.Sprintf("Formule : %v", tmp_form.ToString()))
+		println(fmt.Sprintf("Original resulting : %v", len(tmp_step.GetResultFormulas()[0].GetFL())))
+
+		new_resulting_forms := vp.MakeIntFormAndTermsList(-1, nil)
+		a := tmp_step.GetResultFormulas()[0].GetFL()[0]
+		b := tmp_step.GetResultFormulas()[0].GetFL()[1]
+		new_resulting_forms.Add(bt.MakeFormAndTerm(bt.MakerNot(b.GetForm()), b.GetTerms()))
+		new_resulting_forms.Add(bt.MakeFormAndTerm(bt.MakerNot(a.GetForm()), a.GetTerms()))
+		new_resulting_forms.Add(b)
+		new_resulting_forms.Add(a)
+		tmp_step.SetResultFormulasProof([]vp.IntFormAndTermsList{new_resulting_forms})
+		println(fmt.Sprintf("New resulting : %v", len(tmp_step.GetResultFormulas()[0].GetFL())))
+		for _, elem := range tmp_step.GetResultFormulas()[0].GetFL() {
+			println(elem.ToString())
+		}
+		println("----------------------------------")
+	case bt.Equ: // ~B ~A, A B ==>  ~B ~A A -> B B -> A ~~(A -> B) ~~(B -> A) , A B A -> B B -> A ~~(A -> B)
+		neg_b := tmp_step.GetResultFormulas()[0].GetFL()[0]
+		neg_a := tmp_step.GetResultFormulas()[0].GetFL()[1]
+		a := tmp_step.GetResultFormulas()[1].GetFL()[0]
+		b := tmp_step.GetResultFormulas()[1].GetFL()[1]
+		b_imp_a := bt.MakerImp(b.GetForm(), a.GetForm())
+		a_imp_b := bt.MakerImp(a.GetForm(), b.GetForm())
+		b_imp_a_fnt := bt.MakeFormAndTerm(b_imp_a, bt.MakeEmptyTermList())
+		a_imp_b_fnt := bt.MakeFormAndTerm(a_imp_b, bt.MakeEmptyTermList())
+		neg_neg_b_imp_a := bt.MakeFormAndTerm(bt.MakerNot(bt.MakerNot(b_imp_a)), bt.MakeEmptyTermList())
+		neg_neg_a_imp_b := bt.MakeFormAndTerm(bt.MakerNot(bt.MakerNot(a_imp_b)), bt.MakeEmptyTermList())
+		c1 := vp.MakeIntFormAndTermsList(-1, bt.FormAndTermsList{neg_b, neg_a, a_imp_b_fnt, b_imp_a_fnt, neg_neg_a_imp_b, neg_neg_b_imp_a})
+		c2 := vp.MakeIntFormAndTermsList(-1, bt.FormAndTermsList{a, b, a_imp_b_fnt, b_imp_a_fnt, neg_neg_a_imp_b, neg_neg_b_imp_a})
+		tmp_step.SetResultFormulasProof([]vp.IntFormAndTermsList{c2, c1})
+	// case bt.Ex:
+
+	case bt.Not:
+		switch t.GetForm().(type) {
+		case bt.Top: // ~T -> ~~B
+			new_resulting_forms := vp.MakeIntFormAndTermsList(-1, nil)
+			new_resulting_forms.Add(bt.MakeFormAndTerm(bt.MakerNot(bt.MakerNot(bt.MakerBot())), bt.MakeEmptyTermList()))
+			new_resulting_forms.Add(bt.MakeFormAndTerm(bt.MakerNot(bt.MakerTop()), bt.MakeEmptyTermList()))
+			tmp_step.SetResultFormulasProof([]vp.IntFormAndTermsList{new_resulting_forms})
+		case bt.And: // ~A, ~B -> ~A ~A \/ ~B, ~B ~A \/ ~B
+			neg_a := tmp_step.GetResultFormulas()[0].GetForms().Get(0)
+			neg_b := tmp_step.GetResultFormulas()[1].GetForms().Get(0)
+			neg_a_or_b := bt.MakerOr(bt.NewFormList(neg_a, neg_b))
+			c1 := vp.MakeIntFormAndTermsList(-1, bt.FormAndTermsList{bt.MakeFormAndTerm(neg_a, bt.MakeEmptyTermList()), bt.MakeFormAndTerm(neg_a_or_b, bt.MakeEmptyTermList())})
+			c2 := vp.MakeIntFormAndTermsList(-1, bt.FormAndTermsList{bt.MakeFormAndTerm(neg_b, bt.MakeEmptyTermList()), bt.MakeFormAndTerm(neg_a_or_b, bt.MakeEmptyTermList())})
+			tmp_step.SetResultFormulasProof([]vp.IntFormAndTermsList{c2, c1})
+		case bt.Imp: // A, ~B -> A ~~A, ~B
+			new_resulting_forms := vp.MakeIntFormAndTermsList(-1, nil)
+			a := tmp_step.GetResultFormulas()[0].GetFL()[0]
+			neg_neg_a := (bt.MakeFormAndTerm(bt.MakerNot(bt.MakerNot(a.GetForm())), a.GetTerms()))
+			neg_b := tmp_step.GetResultFormulas()[0].GetFL()[1]
+			new_resulting_forms.Add(neg_b)
+			new_resulting_forms.Add(neg_neg_a)
+			new_resulting_forms.Add(a)
+			tmp_step.SetResultFormulasProof([]vp.IntFormAndTermsList{new_resulting_forms})
+		case bt.Equ: // A ~B, B ~A ==> A ~~A ~B ~(A -> B) OR(~(A -> B) ~(B -> A)), B ~~B ~A ~(B -> A) OR(~(A -> B) ~(B -> A))
+			a := tmp_step.GetResultFormulas()[0].GetFL()[0]
+			neg_b := tmp_step.GetResultFormulas()[0].GetFL()[1]
+			b := tmp_step.GetResultFormulas()[1].GetFL()[0]
+			neg_a := tmp_step.GetResultFormulas()[1].GetFL()[1]
+
+			neg_neg_a := bt.MakeFormAndTerm(bt.MakerNot(bt.MakerNot(a.GetForm())), bt.MakeEmptyTermList())
+			neg_neg_b := bt.MakeFormAndTerm(bt.MakerNot(bt.MakerNot(b.GetForm())), bt.MakeEmptyTermList())
+
+			b_imp_a := bt.MakerImp(b.GetForm(), a.GetForm())
+			a_imp_b := bt.MakerImp(a.GetForm(), b.GetForm())
+			neg_b_imp_a := bt.MakerNot(b_imp_a)
+			neg_a_imp_b := bt.MakerNot(a_imp_b)
+			neg_b_imp_a_fnt := bt.MakeFormAndTerm(neg_b_imp_a, bt.MakeEmptyTermList())
+			neg_a_imp_b_fnt := bt.MakeFormAndTerm(neg_a_imp_b, bt.MakeEmptyTermList())
+			or_neg_imp := bt.MakeFormAndTerm(bt.MakerOr(bt.NewFormList(neg_a_imp_b, neg_b_imp_a)), bt.MakeEmptyTermList())
+
+			c1 := vp.MakeIntFormAndTermsList(-1, bt.FormAndTermsList{a, neg_neg_a, neg_b, neg_a_imp_b_fnt, or_neg_imp})
+			c2 := vp.MakeIntFormAndTermsList(-1, bt.FormAndTermsList{b, neg_neg_b, neg_a, neg_b_imp_a_fnt, or_neg_imp})
+			tmp_step.SetResultFormulasProof([]vp.IntFormAndTermsList{c2, c1})
+			// case bt.Ex:
 		}
 	}
-	return res
+	return tmp_step
+}
+
+// Iterate on all proof steps
+func unfoldProofSteps(ps []vp.ProofStruct) []vp.ProofStruct {
+	new_proof := make([]vp.ProofStruct, 0)
+	for _, ps := range ps {
+		new_proof = append(new_proof, unfoldProofStep(ps))
+	}
+
+	if len(ps[len(ps)-1].GetChildren()) > 1 {
+		for _, c := range ps[len(ps)-1].GetChildren() {
+			new_proof = append(new_proof, unfoldProofSteps(c)...)
+		}
+	}
+
+	return new_proof
 }
 
 func makeLemma() string {
