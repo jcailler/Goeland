@@ -41,9 +41,9 @@ import (
 	"slices"
 	"strings"
 
+	treetypes "github.com/GoelandProver/Goeland/code-trees/tree-types"
 	bt "github.com/GoelandProver/Goeland/types/basic-types"
 	vp "github.com/GoelandProver/Goeland/visualization_proof"
-	//	search "github.com/GoelandProver/Goeland/search"
 )
 
 /** TODO
@@ -58,18 +58,17 @@ import (
 	* Replay rules
 **/
 
-func makeTableauxRocqProofFromTableaux(proof []vp.ProofStruct) string {
-	// print(strings.TrimSuffix(makeTableaux(unfoldProofSteps(proof), bt.NewFormList()), "\n") + ").\n")
+/************ Tableau ************/
 
-	print(vp.ProofStructListToText(unfoldProofSteps(proof), bt.MakeEmptyMeta().GetMetas()))
-	return ""
+func makeTableauxRocqProofFromTableaux(proof []vp.ProofStruct) string {
+	return strings.TrimSuffix(makeTableaux(unfoldProofSteps(proof), bt.NewFormList()), "\n")
 }
 
 func makeTableaux(proof []vp.ProofStruct, forms *bt.FormList) string {
 	res := ""
 	forms.Append(proof[0].GetFormula().GetForm())
 	for _, ps := range proof {
-		res += makeStep(ps, forms)
+		res += makeStepTableau(ps, forms)
 		if proofStructRuleToTableauxRocqRules(ps.GetRuleName()) != AX {
 			for _, child := range ps.GetResultFormulas() {
 				for _, child_form := range child.GetForms().Slice() {
@@ -93,7 +92,7 @@ func makeTableaux(proof []vp.ProofStruct, forms *bt.FormList) string {
 	return strings.TrimSuffix(res, " \n") + closing_par + "\n"
 }
 
-func makeStep(s vp.ProofStruct, forms *bt.FormList) string {
+func makeStepTableau(s vp.ProofStruct, forms *bt.FormList) string {
 	rule := proofStructRuleToTableauxRocqRules(s.GetRuleName())
 	res := ""
 	shift := ""
@@ -104,7 +103,7 @@ func makeStep(s vp.ProofStruct, forms *bt.FormList) string {
 	if rule == AX {
 		res = shift + "(" + TableauxRocqRulesToString(rule) + "\n"
 		forms.Remove(forms.Len() - 1)
-		res += "[" + formListToTableauxRocq(forms.Copy()) + "]) \n"
+		res += "([" + formListToTableauxRocq(forms.Copy()) + "])) \n"
 	} else {
 		res = shift + "(" + TableauxRocqRulesToString(rule) + "\n"
 	}
@@ -169,7 +168,7 @@ func updateAllInForm(f bt.Form) bt.Form {
 func updateAllInResultingForm(rfl []vp.IntFormAndTermsList) []vp.IntFormAndTermsList {
 	tmp_resulting_forms := make([]vp.IntFormAndTermsList, 0)
 	for _, rf := range rfl {
-		tmp_resulting_forms_aux := vp.MakeIntFormAndTermsList(-1, nil)
+		tmp_resulting_forms_aux := vp.MakeIntFormAndTermsList(rf.GetI(), nil)
 		for _, rf2 := range rf.GetFL() {
 			tmp_resulting_forms_aux.Add(bt.MakeFormAndTerm(updateAllInForm(rf2.GetForm()), rf2.GetTerms()))
 		}
@@ -185,14 +184,11 @@ func unfoldProofStep(ps vp.ProofStruct) vp.ProofStruct {
 	tmp_step := ps.Copy()
 	tmp_step.SetFormulaProof(tmp_form)
 	tmp_step.SetResultFormulasProof(tmp_resulting_forms)
+	tmp_step.SetChildrenProof(nil)
 
 	switch t := ps.GetFormula().GetForm().(type) {
 	case bt.And: // A, B -> A, B, ~A, ~B
-		println("---- DEBUG AND ----")
-		println(fmt.Sprintf("Formule : %v", tmp_form.ToString()))
-		println(fmt.Sprintf("Original resulting : %v", len(tmp_step.GetResultFormulas()[0].GetFL())))
-
-		new_resulting_forms := vp.MakeIntFormAndTermsList(-1, nil)
+		new_resulting_forms := vp.MakeIntFormAndTermsList(ps.GetResultFormulas()[0].GetI(), nil)
 		a := tmp_step.GetResultFormulas()[0].GetFL()[0]
 		b := tmp_step.GetResultFormulas()[0].GetFL()[1]
 		new_resulting_forms.Add(bt.MakeFormAndTerm(bt.MakerNot(b.GetForm()), b.GetTerms()))
@@ -200,11 +196,6 @@ func unfoldProofStep(ps vp.ProofStruct) vp.ProofStruct {
 		new_resulting_forms.Add(b)
 		new_resulting_forms.Add(a)
 		tmp_step.SetResultFormulasProof([]vp.IntFormAndTermsList{new_resulting_forms})
-		println(fmt.Sprintf("New resulting : %v", len(tmp_step.GetResultFormulas()[0].GetFL())))
-		for _, elem := range tmp_step.GetResultFormulas()[0].GetFL() {
-			println(elem.ToString())
-		}
-		println("----------------------------------")
 	case bt.Equ: // ~B ~A, A B ==>  ~B ~A A -> B B -> A ~~(A -> B) ~~(B -> A) , A B A -> B B -> A ~~(A -> B)
 		neg_b := tmp_step.GetResultFormulas()[0].GetFL()[0]
 		neg_a := tmp_step.GetResultFormulas()[0].GetFL()[1]
@@ -216,15 +207,20 @@ func unfoldProofStep(ps vp.ProofStruct) vp.ProofStruct {
 		a_imp_b_fnt := bt.MakeFormAndTerm(a_imp_b, bt.MakeEmptyTermList())
 		neg_neg_b_imp_a := bt.MakeFormAndTerm(bt.MakerNot(bt.MakerNot(b_imp_a)), bt.MakeEmptyTermList())
 		neg_neg_a_imp_b := bt.MakeFormAndTerm(bt.MakerNot(bt.MakerNot(a_imp_b)), bt.MakeEmptyTermList())
-		c1 := vp.MakeIntFormAndTermsList(-1, bt.FormAndTermsList{neg_b, neg_a, a_imp_b_fnt, b_imp_a_fnt, neg_neg_a_imp_b, neg_neg_b_imp_a})
-		c2 := vp.MakeIntFormAndTermsList(-1, bt.FormAndTermsList{a, b, a_imp_b_fnt, b_imp_a_fnt, neg_neg_a_imp_b, neg_neg_b_imp_a})
+		c1 := vp.MakeIntFormAndTermsList(ps.GetResultFormulas()[0].GetI(), bt.FormAndTermsList{neg_b, neg_a, a_imp_b_fnt, b_imp_a_fnt, neg_neg_a_imp_b, neg_neg_b_imp_a})
+		c2 := vp.MakeIntFormAndTermsList(ps.GetResultFormulas()[1].GetI(), bt.FormAndTermsList{a, b, a_imp_b_fnt, b_imp_a_fnt, neg_neg_a_imp_b, neg_neg_b_imp_a})
 		tmp_step.SetResultFormulasProof([]vp.IntFormAndTermsList{c2, c1})
-	// case bt.Ex:
-
+	case bt.Ex: // A -> A, ~~A
+		a := tmp_step.GetResultFormulas()[0].GetFL()[0]
+		neg_neg_a := (bt.MakeFormAndTerm(bt.MakerNot(bt.MakerNot(a.GetForm())), a.GetTerms()))
+		new_resulting_forms := vp.MakeIntFormAndTermsList(ps.GetResultFormulas()[0].GetI(), nil)
+		new_resulting_forms.Add(a)
+		new_resulting_forms.Add(neg_neg_a)
+		tmp_step.SetResultFormulasProof([]vp.IntFormAndTermsList{new_resulting_forms})
 	case bt.Not:
-		switch t.GetForm().(type) {
+		switch tt := t.GetForm().(type) {
 		case bt.Top: // ~T -> ~~B
-			new_resulting_forms := vp.MakeIntFormAndTermsList(-1, nil)
+			new_resulting_forms := vp.MakeIntFormAndTermsList(ps.GetResultFormulas()[0].GetI(), nil)
 			new_resulting_forms.Add(bt.MakeFormAndTerm(bt.MakerNot(bt.MakerNot(bt.MakerBot())), bt.MakeEmptyTermList()))
 			new_resulting_forms.Add(bt.MakeFormAndTerm(bt.MakerNot(bt.MakerTop()), bt.MakeEmptyTermList()))
 			tmp_step.SetResultFormulasProof([]vp.IntFormAndTermsList{new_resulting_forms})
@@ -232,11 +228,11 @@ func unfoldProofStep(ps vp.ProofStruct) vp.ProofStruct {
 			neg_a := tmp_step.GetResultFormulas()[0].GetForms().Get(0)
 			neg_b := tmp_step.GetResultFormulas()[1].GetForms().Get(0)
 			neg_a_or_b := bt.MakerOr(bt.NewFormList(neg_a, neg_b))
-			c1 := vp.MakeIntFormAndTermsList(-1, bt.FormAndTermsList{bt.MakeFormAndTerm(neg_a, bt.MakeEmptyTermList()), bt.MakeFormAndTerm(neg_a_or_b, bt.MakeEmptyTermList())})
-			c2 := vp.MakeIntFormAndTermsList(-1, bt.FormAndTermsList{bt.MakeFormAndTerm(neg_b, bt.MakeEmptyTermList()), bt.MakeFormAndTerm(neg_a_or_b, bt.MakeEmptyTermList())})
+			c1 := vp.MakeIntFormAndTermsList(ps.GetResultFormulas()[0].GetI(), bt.FormAndTermsList{bt.MakeFormAndTerm(neg_a, bt.MakeEmptyTermList()), bt.MakeFormAndTerm(neg_a_or_b, bt.MakeEmptyTermList())})
+			c2 := vp.MakeIntFormAndTermsList(ps.GetResultFormulas()[1].GetI(), bt.FormAndTermsList{bt.MakeFormAndTerm(neg_b, bt.MakeEmptyTermList()), bt.MakeFormAndTerm(neg_a_or_b, bt.MakeEmptyTermList())})
 			tmp_step.SetResultFormulasProof([]vp.IntFormAndTermsList{c2, c1})
 		case bt.Imp: // A, ~B -> A ~~A, ~B
-			new_resulting_forms := vp.MakeIntFormAndTermsList(-1, nil)
+			new_resulting_forms := vp.MakeIntFormAndTermsList(ps.GetResultFormulas()[0].GetI(), nil)
 			a := tmp_step.GetResultFormulas()[0].GetFL()[0]
 			neg_neg_a := (bt.MakeFormAndTerm(bt.MakerNot(bt.MakerNot(a.GetForm())), a.GetTerms()))
 			neg_b := tmp_step.GetResultFormulas()[0].GetFL()[1]
@@ -261,10 +257,16 @@ func unfoldProofStep(ps vp.ProofStruct) vp.ProofStruct {
 			neg_a_imp_b_fnt := bt.MakeFormAndTerm(neg_a_imp_b, bt.MakeEmptyTermList())
 			or_neg_imp := bt.MakeFormAndTerm(bt.MakerOr(bt.NewFormList(neg_a_imp_b, neg_b_imp_a)), bt.MakeEmptyTermList())
 
-			c1 := vp.MakeIntFormAndTermsList(-1, bt.FormAndTermsList{a, neg_neg_a, neg_b, neg_a_imp_b_fnt, or_neg_imp})
-			c2 := vp.MakeIntFormAndTermsList(-1, bt.FormAndTermsList{b, neg_neg_b, neg_a, neg_b_imp_a_fnt, or_neg_imp})
+			c1 := vp.MakeIntFormAndTermsList(ps.GetResultFormulas()[0].GetI(), bt.FormAndTermsList{a, neg_neg_a, neg_b, neg_a_imp_b_fnt, or_neg_imp})
+			c2 := vp.MakeIntFormAndTermsList(ps.GetResultFormulas()[1].GetI(), bt.FormAndTermsList{b, neg_neg_b, neg_a, neg_b_imp_a_fnt, or_neg_imp})
 			tmp_step.SetResultFormulasProof([]vp.IntFormAndTermsList{c2, c1})
-			// case bt.Ex:
+		case bt.Ex: // ~A -> ~A, Vx ~A
+			neg_a := tmp_step.GetResultFormulas()[0].GetFL()[0]
+			forall_neg_a := bt.MakeFormAndTerm(bt.MakerAll(tt.GetVarList(), tt.GetForm()), neg_a.GetTerms())
+			new_resulting_forms := vp.MakeIntFormAndTermsList(ps.GetResultFormulas()[0].GetI(), nil)
+			new_resulting_forms.Add(neg_a)
+			new_resulting_forms.Add(forall_neg_a)
+			tmp_step.SetResultFormulasProof([]vp.IntFormAndTermsList{new_resulting_forms})
 		}
 	}
 	return tmp_step
@@ -274,22 +276,58 @@ func unfoldProofStep(ps vp.ProofStruct) vp.ProofStruct {
 func unfoldProofSteps(ps []vp.ProofStruct) []vp.ProofStruct {
 	new_proof := make([]vp.ProofStruct, 0)
 	for _, ps := range ps {
-		new_proof = append(new_proof, unfoldProofStep(ps))
-	}
-
-	if len(ps[len(ps)-1].GetChildren()) > 1 {
-		for _, c := range ps[len(ps)-1].GetChildren() {
-			new_proof = append(new_proof, unfoldProofSteps(c)...)
+		new_step := unfoldProofStep(ps)
+		new_child := make([][]vp.ProofStruct, 0)
+		for _, c := range ps.GetChildren() {
+			new_child = append(new_child, unfoldProofSteps(c))
 		}
+		new_step.SetChildrenProof(new_child)
+
+		new_proof = append(new_proof, new_step)
 	}
 
 	return new_proof
 }
 
-func makeLemma() string {
-	return ""
+
+/************ Substitution ************/
+func makeSubst(m bt.Meta, t bt.Term) string {
+	return fmt.Sprintf("(\"%v\" , Term.const \" %v\")", m.GetName(), t.ToString())
 }
 
-func makeProof() string {
-	return ""
+func makeGlobalSubst(sub treetypes.Substitutions) string {
+	res := "Substitution.from_list (["
+	
+	for i, s := range sub {
+		res += makeSubst(s.Get())
+		if i < len(sub)-1 {
+			res += "; "
+		}
+	}
+
+	res += "]) _ .\n"
+	return res
 }
+
+/************ Lemma ************/
+
+func makeStepInLemma(s vp.ProofStruct) string {
+	switch s.GetFormula().GetForm().(type) {
+	case bt.All:
+		return "All"
+	default:
+		return "Admit."
+	}
+}
+
+func makeLemma(proof []vp.ProofStruct) string {
+	res := ""
+	res += "econstructor; eauto.\n" 
+
+	for _, s := range proof {
+		res += makeStepInLemma(s) + "\n"
+	}
+
+	return res
+}
+

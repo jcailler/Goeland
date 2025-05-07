@@ -43,6 +43,7 @@ import (
 	"github.com/GoelandProver/Goeland/Glob"
 	"github.com/GoelandProver/Goeland/Mods/gs3"
 	"github.com/GoelandProver/Goeland/Search"
+	"github.com/GoelandProver/Goeland/Unif"
 )
 
 var TptpOutputProofStruct = &Search.OutputProofStruct{ProofOutput: MakeTptpOutput, Name: "TPTP", Extension: ".p"}
@@ -54,7 +55,7 @@ var TptpOutputProofStruct = &Search.OutputProofStruct{ProofOutput: MakeTptpOutpu
 // Functions: MakeTptpOutput
 // Main functions of the TPTP module.
 
-func MakeTptpOutput(prf []Search.ProofStruct, meta *AST.MetaList) string {
+func MakeTptpOutput(prf []proof.ProofStruct, meta *AST.MetaList, sub Unif.Substitutions) string {
 	if len(prf) == 0 {
 		Glob.PrintError("Tptp", "Nothing to output")
 		return ""

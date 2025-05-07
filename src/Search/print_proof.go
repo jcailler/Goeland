@@ -38,12 +38,13 @@ import (
 
 	"github.com/GoelandProver/Goeland/AST"
 	"github.com/GoelandProver/Goeland/Glob"
+	"github.com/GoelandProver/Goeland/Unif"
 )
 
 var BasicOutputProofStruct = &OutputProofStruct{ProofOutput: ProofStructListToText, Name: "Basic", Extension: ".proof"}
 
 type OutputProofStruct struct {
-	ProofOutput func(finalProof []ProofStruct, metaList *AST.MetaList) string
+	ProofOutput func(finalProof []proof.ProofStruct, metaList *basictypes.MetaList, sub Unif.Substitutions) string
 	Name        string
 	Extension   string
 }
@@ -54,20 +55,20 @@ func AddPrintProofAlgorithm(ps *OutputProofStruct) {
 	outputProofStructs = append(outputProofStructs, ps)
 }
 
-func PrintProof(final_proof []ProofStruct, metaList *AST.MetaList) {
-	if Glob.GetProof() {
-		Glob.PrintInfo("MAIN", fmt.Sprintf("%s SZS output start Proof for %v", "%", Glob.GetProblemName()))
+func PrintProof(final_proof []proof.ProofStruct, metaList *basictypes.MetaList, sub Unif.Substitutions) {
+	if global.GetProof() {
+		global.PrintInfo("MAIN", fmt.Sprintf("%s SZS output start Proof for %v", "%", global.GetProblemName()))
 
 		for _, ps := range outputProofStructs {
-			ps.printProofWithProofStruct(final_proof, metaList)
+			ps.printProofWithProofStruct(final_proof, metaList, sub)
 		}
 
 		Glob.PrintInfo("MAIN", fmt.Sprintf("%s SZS output end Proof for %v", "%", Glob.GetProblemName()))
 	}
 }
 
-func (ps *OutputProofStruct) printProofWithProofStruct(finalProof []ProofStruct, metaList *AST.MetaList) {
-	output := ps.ProofOutput(finalProof, metaList)
+func (ps *OutputProofStruct) printProofWithProofStruct(finalProof []proof.ProofStruct, metaList *basictypes.MetaList, sub Unif.Substitutions) {
+	output := ps.ProofOutput(finalProof, metaList, sub)
 
 	if Glob.GetWriteLogs() {
 		f, err := os.OpenFile(Glob.ProofFile+ps.Extension, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)

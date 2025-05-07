@@ -80,7 +80,7 @@ func initDefaultMap() {
 		DefaultMapString[AllQuant] = "∀"
 		DefaultMapString[ExQuant] = "∃"
 		DefaultMapString[AllTypeQuant] = "∀"
-		DefaultMapString[PredEmpty] = "∅"
+		DefaultMapString[PredEmpty] = ""
 	} else {
 		DefaultMapString[AndConn] = "&"
 		DefaultMapString[OrConn] = "|"

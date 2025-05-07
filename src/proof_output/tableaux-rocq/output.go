@@ -44,9 +44,10 @@ import (
 	. "github.com/GoelandProver/Goeland/types/basic-types"
 	basictypes "github.com/GoelandProver/Goeland/types/basic-types"
 	proof "github.com/GoelandProver/Goeland/visualization_proof"
+	treetypes "github.com/GoelandProver/Goeland/code-trees/tree-types"
 )
 
-var contextEnabled bool = false
+
 
 var TableauxRocqOutputProofStruct = &search.OutputProofStruct{ProofOutput: MakeTableauxRocqOutput, Name: "TableauxRocq", Extension: ".v"}
 
@@ -83,26 +84,89 @@ const (
 // TODO:
 //	* Write the context for TFF problems
 
-func MakeTableauxRocqOutput(prf []proof.ProofStruct, meta *basictypes.MetaList) string {
+func MakeTableauxRocqOutput(prf []proof.ProofStruct, meta *basictypes.MetaList, sub treetypes.Substitutions) string {
 	if len(prf) == 0 {
 		global.PrintError("TableauxRocq", "Nothing to output")
 		return ""
 	}
 
 	// Transform tableaux's proof in GS3 proof
-	return MakeTableauxRocqProof(prf, meta)
+	return MakeTableauxRocqProof(prf, meta, sub)
 }
 
-var MakeTableauxRocqProof = func(proof []proof.ProofStruct, meta *basictypes.MetaList) string {
-	contextString := makeContextIfNeeded()
-	proofString := makeTableauxRocqProofFromTableaux(proof)
-	return contextString + "\n" + proofString
+var MakeTableauxRocqProof = func(proof []proof.ProofStruct, meta *basictypes.MetaList, sub treetypes.Substitutions) string {
+	res := ""
+	res += makeContext()
+
+	res += makeContextTableauBegin()
+	res += makeTableauxRocqProofFromTableaux(proof)
+	res += makeContextTableauEnd()
+
+	res += makeContextSubstBegin()
+	res += makeGlobalSubst(sub)
+	res += makeContextSubstEnd()
+
+	res += makeContextLemmaBegin()
+	res += makeLemma(proof)
+	res += makeContextLemmaEnd()
+
+	return res
 }
+
+/************ Rules ************/
 
 // Replace defined symbols by TableauxRocq's defined symbols.
 func mapDefault(str string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(str, "$i", "goeland_U"), "$o", "Prop")
 }
+
+func proofStructRuleToTableauxRocqRules(rule string) Rule {
+	mapping := map[string]Rule{
+		"ALPHA_NOT_NOT":    NNOT,
+		"ALPHA_NOT_OR":     NOR,
+		"ALPHA_NOT_IMPLY":  NIMP,
+		"ALPHA_AND":        AND,
+		"BETA_NOT_AND":     NAND,
+		"BETA_NOT_EQUIV":   NEQU,
+		"BETA_OR":          OR,
+		"BETA_IMPLY":       IMP,
+		"BETA_EQUIV":       EQU,
+		"GAMMA_NOT_EXISTS": NEX,
+		"GAMMA_FORALL":     ALL,
+		"DELTA_NOT_FORALL": NALL,
+		"DELTA_EXISTS":     EX,
+		"CLOSURE":          AX,
+		"WEAKEN":           W,
+		"Reintroduction":   R,
+		"Rewrite":          REWRITE,
+	}
+	return mapping[rule]
+}
+
+func TableauxRocqRulesToString(rule Rule) string {
+	mapping := map[Rule]string{
+		NNOT:    "FOLTreeBuilder.neg_neg",
+		NOR:     "FOLTreeBuilder.neg_or",
+		NIMP:    "FOLTreeBuilder.neg_imp",
+		AND:     "FOLTreeBuilder.and",
+		NAND:    "FOLTreeBuilder.neg_and",
+		NEQU:    "FOLTreeBuilder.neg_equ",
+		OR:      "FOLTreeBuilder.or",
+		IMP:     "FOLTreeBuilder.imp",
+		EQU:     "FOLTreeBuilder.equ",
+		NEX:     "FOLTreeBuilder.neg_ex",
+		ALL:     "FOLTreeBuilder.all",
+		NALL:    "FOLTreeBuilder.neg_all",
+		EX:      "FOLTreeBuilder.ex",
+		AX:      "FOLTreeBuilder.contra",
+		W:       "FOLTreeBuilder.Error — Weakening",
+		R:       "FOLTreeBuilder.Error — Reintroduction",
+		REWRITE: "FOLTreeBuilder.Error – Rewrite",
+	}
+	return mapping[rule]
+}
+
+/************ Terms and Forms ************/
 
 func termToTableauxRocq(t Term) string {
 	switch t.(type) {
@@ -134,7 +198,7 @@ func termListToTableauxRocq(tl *TermList) string {
 func formToTableauxRocq(f Form) string {
 	switch nf := f.(type) {
 	case Pred:
-		return "Form.Pred \"" + nf.GetID().GetName() + "\" (" + termListToTableauxRocq(nf.GetArgs()) + ")"
+		return "Form.Predicate \"" + nf.GetID().GetName() + "\" (" + termListToTableauxRocq(nf.GetArgs()) + ")"
 	case Top:
 		return "Form.Top"
 	case Bot:
@@ -187,7 +251,7 @@ func formListToTableauxRocq(fl *FormList) string {
 
 	str := ""
 	for _, element := range fl.Slice() {
-		str += formToTableauxRocq(element) + ", "
+		str += formToTableauxRocq(element) + "; "
 	}
 
 	if fl.Len() > 0 {
@@ -197,58 +261,4 @@ func formListToTableauxRocq(fl *FormList) string {
 	}
 }
 
-func proofStructRuleToTableauxRocqRules(rule string) Rule {
-	mapping := map[string]Rule{
-		"ALPHA_NOT_NOT":    NNOT,
-		"ALPHA_NOT_OR":     NOR,
-		"ALPHA_NOT_IMPLY":  NIMP,
-		"ALPHA_AND":        AND,
-		"BETA_NOT_AND":     NAND,
-		"BETA_NOT_EQUIV":   NEQU,
-		"BETA_OR":          OR,
-		"BETA_IMPLY":       IMP,
-		"BETA_EQUIV":       EQU,
-		"GAMMA_NOT_EXISTS": NEX,
-		"GAMMA_FORALL":     ALL,
-		"DELTA_NOT_FORALL": NALL,
-		"DELTA_EXISTS":     EX,
-		"CLOSURE":          AX,
-		"WEAKEN":           W,
-		"Reintroduction":   R,
-		"Rewrite":          REWRITE,
-	}
-	return mapping[rule]
-}
 
-func TableauxRocqRulesToString(rule Rule) string {
-	mapping := map[Rule]string{
-		NNOT:    "FOLTreeBuilder.neg_neg",
-		NOR:     "FOLTreeBuilder.neg_or",
-		NIMP:    "FOLTreeBuilder.neg_imp",
-		AND:     "FOLTreeBuilder.and",
-		NAND:    "FOLTreeBuilder.neg_and",
-		NEQU:    "FOLTreeBuilder.neg_equ",
-		OR:      "FOLTreeBuilder.or",
-		IMP:     "FOLTreeBuilder.imp",
-		EQU:     "FOLTreeBuilder.equ",
-		NEX:     "FOLTreeBuilder.neg_ex",
-		ALL:     "FOLTreeBuilder.all",
-		NALL:    "FOLTreeBuilder.neg_all",
-		EX:      "FOLTreeBuilder.ex",
-		AX:      "FOLTreeBuilder.contra",
-		W:       "FOLTreeBuilder.Error — Weakening",
-		R:       "FOLTreeBuilder.Error — Reintroduction",
-		REWRITE: "FOLTreeBuilder.Error – Rewrite",
-	}
-	return mapping[rule]
-}
-
-// Context flag utility function
-func GetContextEnabled() bool {
-	return contextEnabled
-}
-
-// Context flag utility function
-func SetContextEnabled(ce bool) {
-	contextEnabled = true
-}

@@ -43,6 +43,7 @@ import (
 	"github.com/GoelandProver/Goeland/Glob"
 	"github.com/GoelandProver/Goeland/Mods/gs3"
 	"github.com/GoelandProver/Goeland/Search"
+	"github.com/GoelandProver/Goeland/Unif"
 )
 
 var contextEnabled bool = false
@@ -58,7 +59,7 @@ var CoqOutputProofStruct = &Search.OutputProofStruct{ProofOutput: MakeCoqOutput,
 // TODO:
 //	* Write the context for TFF problems
 
-func MakeCoqOutput(prf []Search.ProofStruct, meta *AST.MetaList) string {
+func MakeCoqOutput(prf []proof.ProofStruct, meta *AST.MetaList, sub Unif.Substitutions) string {
 	if len(prf) == 0 {
 		Glob.PrintError("Coq", "Nothing to output")
 		return ""

@@ -38,6 +38,7 @@ import (
 	"github.com/GoelandProver/Goeland/Glob"
 	"github.com/GoelandProver/Goeland/Mods/gs3"
 	"github.com/GoelandProver/Goeland/Search"
+	"github.com/GoelandProver/Goeland/Unif"
 )
 
 var contextEnabled bool = false
@@ -72,7 +73,7 @@ var LambdapiOutputProofStruct = &Search.OutputProofStruct{ProofOutput: MakeLambd
 // TODO:
 //	* Write the context for TFF problems
 
-func MakeLambdapiOutput(prf []Search.ProofStruct, meta *AST.MetaList) string {
+func MakeLambdapiOutput(prf []proof.ProofStruct, meta *AST.MetaList, sub Unif.Substitutions) string {
 	if len(prf) == 0 {
 		Glob.PrintError("LambdaPi", "Nothing to output")
 		return ""

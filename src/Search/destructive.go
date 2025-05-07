@@ -129,7 +129,7 @@ func (ds *destructiveSearch) doOneStep(limit int, formula AST.Form) (bool, int) 
 			finalProof = ApplySubstitutionOnProofList(unif, finalProof)
 		}
 		uninstanciatedMeta := RetrieveUninstantiatedMetaFromProof(finalProof)
-		PrintProof(finalProof, uninstanciatedMeta)
+		PrintProof(finalProof, uninstanciatedMeta, unifier.GetUnifier())
 	}
 
 	Glob.SetNbStep(Glob.GetNbStep() + 1)
@@ -228,7 +228,7 @@ func (ds *destructiveSearch) ProofSearch(father_id uint64, st State, cha Communi
 		if len(st.GetSubstsFound()) > 0 {
 			Glob.PrintDebug("PS", fmt.Sprintf("Current substitutions list: %v", Unif.SubstListToString(Core.GetSubstListFromSubstAndFormList(st.GetSubstsFound()))))
 		}
-		Glob.PrintDebug("PS", fmt.Sprintf("Formulae to be added: %v", st.GetLF().ToString()))
+		Glob.PrintDebug("PS", fmt.Sprintf("Formulas to be added: %v", st.GetLF().ToString()))
 		Glob.PrintDebug("PS", "Insert tree, searching contradiction, then dispatch")
 
 		// Applying substitutions before inserting in the code tree.

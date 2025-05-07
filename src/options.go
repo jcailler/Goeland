@@ -284,8 +284,11 @@ func buildOptions() {
 	(&option[bool]{}).init(
 		"context",
 		false,
-		"Should only be used with the -ocoq or the -olp parameters. Enables the context for a standalone execution",
-		func(bool) { coq.SetContextEnabled(true) },
+		"Should only be used with the -ocoq, -otableauxrocq or the -olp parameters. Enables the context for a standalone execution",
+		func(bool) { 
+			coq.SetContextEnabled(true) 
+			tableauxrocq.SetContextEnabled(true)
+		},
 		func(bool) {})
 	(&option[bool]{}).init(
 		"inner",

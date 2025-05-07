@@ -36,14 +36,52 @@
 
 package tableauxrocq
 
-func makeContextIfNeeded() string {
+var contextEnabled bool = false
+
+func makeContext() string {
 	if !GetContextEnabled() {
 		return ""
 	}
-	resultingString := "From Tableaux Require Import FOL.Everything."
-	resultingString += "From Tableaux Require Import FOL.Everything."
-	resultingString += "From Stdlib Require Import Strings.String."
-	resultingString += "Open Scope string_scope."
-
+	resultingString := "From Tableaux Require Import FOL.Everything.\n"
+	resultingString += "From Stdlib Require Import Strings.String.\n"
+	resultingString += "Open Scope string_scope.\n"
+	resultingString += "Import FOL.\n\n"
 	return resultingString
+}
+
+func makeContextTableauBegin() string {
+	return "Definition T :=\n"
+}
+
+func makeContextTableauEnd() string {
+	return ").\n\n"
+}
+
+func makeContextSubstBegin() string {
+	return "#[program] Definition σ : Substitution.t :=\n"
+}
+
+func makeContextSubstEnd() string {
+	return "Next Obligation. fol_decide. Defined.\n\n"
+}
+
+func makeContextLemmaBegin() string {
+	resultingString := "Lemma T_is_fol_tableau :\n"
+	resultingString += "	is_fol_tableau T σ.\n"
+	resultingString += "Proof.\n"
+	return resultingString
+}
+
+func makeContextLemmaEnd() string {
+	return "Qed."
+}
+
+// Context flag utility function
+func GetContextEnabled() bool {
+	return contextEnabled
+}
+
+// Context flag utility function
+func SetContextEnabled(ce bool) {
+	contextEnabled = true
 }

@@ -378,7 +378,7 @@ func JsonProofStructListToText(jps []JsonProofStruct) string {
 	return res
 }
 
-func ProofStructListToText(ps []ProofStruct, metaList *AST.MetaList) string {
+func ProofStructListToText(ps []ProofStruct, metaList *AST.MetaList, sub Unif.Substitutions) string {
 	json_content := ProofStructListToJsonProofStructList(ps)
 	return JsonProofStructListToText(json_content)
 }
