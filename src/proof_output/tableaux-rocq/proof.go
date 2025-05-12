@@ -130,7 +130,6 @@ func makeStepTableau(s vp.ProofStruct, forms *bt.FormList, previous_instantiatio
 			previous_instantiations = append(previous_instantiations, "(" + new_ss.GetName() + ", " + formToTableauxRocq(form_as_ex) + ")")
 			res_form = shift + "(" + TableauxRocqRulesToString(rule) + "\n"
 		}
-
 	default:
 		{
 			res_form = shift + "(" + TableauxRocqRulesToString(rule) + "\n"
