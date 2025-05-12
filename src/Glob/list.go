@@ -277,6 +277,18 @@ func (list *List[T]) append(elements ...T) {
 }
 
 /*
+Marge two lists
+*/
+func (list *List[T]) Merge(l2 *List[T]) {
+	list.doAtStart()
+	defer list.doAtEnd()
+
+	for _, element := range l2.Slice() {
+		list.Append(element)
+	}
+}
+
+/*
 Adds all the elements not already contained in the list at the end of the list.
 */
 func (list *List[T]) AppendIfNotContains(elements ...T) {

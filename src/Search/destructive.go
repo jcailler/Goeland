@@ -125,7 +125,7 @@ func (ds *destructiveSearch) doOneStep(limit int, formula AST.Form) (bool, int) 
 	unifier, finalProof, result := ds.manageResult(c)
 
 	if result {
-		if unif := unifier.GetUnifier(); !unif.IsEmpty() {
+		if unif := unifier.GetUnifier(); (!unif.IsEmpty() && !Glob.IsTableauxRocqOutput()) {
 			finalProof = ApplySubstitutionOnProofList(unif, finalProof)
 		}
 		uninstanciatedMeta := RetrieveUninstantiatedMetaFromProof(finalProof)

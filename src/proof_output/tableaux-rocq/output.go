@@ -185,7 +185,7 @@ func termToTableauxRocq(t Term) string {
 func termListToTableauxRocq(tl *TermList) string {
 	str := "["
 	for _, element := range tl.Slice() {
-		str += termToTableauxRocq(element) + ", "
+		str += termToTableauxRocq(element) + "; "
 	}
 
 	if tl.Len() > 0 {
@@ -261,4 +261,18 @@ func formListToTableauxRocq(fl *FormList) string {
 	}
 }
 
+
+func substListToTableauxRocq(s []string) string {
+
+	str := ""
+	for _, element := range s {
+		str += element + "; "
+	}
+
+	if len(s) > 0 {
+		return str[:len(str)-2]
+	} else {
+		return "[]"
+	}
+}
 

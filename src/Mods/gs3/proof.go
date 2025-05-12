@@ -282,7 +282,7 @@ func getDepFromTerm(term AST.Term) *AST.TermList {
 func (gs *GS3Proof) manageDeltaStep(proofStep Search.ProofStruct, rule Rule, parent *GS3Sequent) AST.Form {
 	originForm := proofStep.GetFormula().GetForm()
 	resultForm := proofStep.GetResultFormulas()[0].GetForms().Get(0)
-	termGenerated := manageDeltasSkolemisations(proofStep.GetFormula().GetForm(), resultForm)
+	termGenerated := ManageDeltasSkolemisations(proofStep.GetFormula().GetForm(), resultForm)
 
 	if Glob.IsPreInnerSko() && !gs.termHasBeenIntroducedByBranch(termGenerated, proofStep.Node_id) {
 		return resultForm

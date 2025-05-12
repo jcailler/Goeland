@@ -42,10 +42,15 @@ func makeContext() string {
 	if !GetContextEnabled() {
 		return ""
 	}
-	resultingString := "From Tableaux Require Import FOL.Everything.\n"
+	resultingString := "From Tableaux Require Import FOL.Everything.\n\n"
 	resultingString += "From Stdlib Require Import Strings.String.\n"
-	resultingString += "Open Scope string_scope.\n"
+	resultingString += "Open Scope string_scope.\n\n"
 	resultingString += "Import FOL.\n\n"
+	resultingString += "Module FOLTreeBuilder := FOLTreeBuilder OuterSkolemization.\n"
+	resultingString += "Import FOLTreeBuilder.Rules.\n"
+	resultingString += "Import FOLTreeBuilder.FOLTableau.\n"
+	resultingString += "Import FOLTreeBuilder.FOLExtended.\n\n"
+
 	return resultingString
 }
 
