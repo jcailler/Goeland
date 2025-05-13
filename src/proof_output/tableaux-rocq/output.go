@@ -261,6 +261,7 @@ func formListToTableauxRocq(fl *FormList) string {
 	}
 }
 
+/************ Substitutions ************/
 
 func substListToTableauxRocq(s []string) string {
 
@@ -276,3 +277,24 @@ func substListToTableauxRocq(s []string) string {
 	}
 }
 
+func contains(s string, l []string) bool {
+	for _, element := range l {
+		if element == s {
+			return true
+		}
+	}
+	return false 
+}
+
+func mergeIfNotContains(l1, l2 []string) []string {
+	res := make([]string, 0)
+
+	res = append(res, l1...)
+	for _, element := range l2 {
+		if !contains(element, res) {
+			res = append(res, element)
+		}
+	}
+
+	return res
+}

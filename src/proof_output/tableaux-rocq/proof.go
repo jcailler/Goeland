@@ -44,7 +44,6 @@ import (
 	treetypes "github.com/GoelandProver/Goeland/code-trees/tree-types"
 	bt "github.com/GoelandProver/Goeland/types/basic-types"
 	vp "github.com/GoelandProver/Goeland/visualization_proof"
-	// gs3"github.com/GoelandProver/Goeland/proof_output/gs3"
 	gs3 "github.com/GoelandProver/Goeland/proof_output/gs3"
 )
 
@@ -72,7 +71,7 @@ func makeTableaux(proof []vp.ProofStruct, forms *bt.FormList, previous_instantia
 	forms.Append(proof[0].GetFormula().GetForm())
 	for _, ps := range proof {
 		res_form, res_subst := makeStepTableau(ps, forms, previous_instantiations)
-		previous_instantiations = append(previous_instantiations, res_subst...)
+		previous_instantiations = mergeIfNotContains(previous_instantiations, res_subst)
 		res += res_form
 		if proofStructRuleToTableauxRocqRules(ps.GetRuleName()) != AX {
 			for _, child := range ps.GetResultFormulas() {
@@ -86,7 +85,7 @@ func makeTableaux(proof []vp.ProofStruct, forms *bt.FormList, previous_instantia
 	if len(proof[len(proof)-1].GetChildren()) > 1 {
 		for _, c := range proof[len(proof)-1].GetChildren() {
 			res_form, res_subst := makeTableaux(c, forms.Copy(), previous_instantiations)
-			previous_instantiations = append(previous_instantiations, res_subst...)
+			previous_instantiations = mergeIfNotContains(previous_instantiations, res_subst)
 			res += res_form
 		}
 	}
@@ -118,16 +117,14 @@ func makeStepTableau(s vp.ProofStruct, forms *bt.FormList, previous_instantiatio
 			res_form = shift + "(" + TableauxRocqRulesToString(rule) + "\n"
 			res_form += shift + "  " + "(" + "Context.make" + "\n"
 			forms.Remove(forms.Len() - 1)
-			res_form += "([" + formListToTableauxRocq(form_reverse) + "]))) \n"
-			res_form += "([" + substListToTableauxRocq(previous_instantiations) + "])\n"
+			res_form += "([" + formListToTableauxRocq(form_reverse) + "]) \n"
+			res_form += "([" + substListToTableauxRocq(previous_instantiations) + "])))\n"
 		}
 	case EX:
 		{
 			form_as_ex := s.GetFormula().GetForm()
-			println(form_as_ex.ToString())
-			println(s.GetResultFormulas()[0].GetForms().Get(0).ToString())
-			new_ss := gs3.ManageDeltasSkolemisations(form_as_ex, s.GetResultFormulas()[0].GetForms().Get(0))
-			previous_instantiations = append(previous_instantiations, "(" + new_ss.GetName() + ", " + formToTableauxRocq(form_as_ex) + ")")
+			new_ss := gs3.ManageDeltasSkolemisations(form_as_ex, s.GetResultFormulas()[0].GetForms().Get(1))
+			previous_instantiations = append(previous_instantiations, "(\"" + new_ss.GetName() + "\", " + formToTableauxRocq(form_as_ex) + ")")
 			res_form = shift + "(" + TableauxRocqRulesToString(rule) + "\n"
 		}
 	default:
@@ -337,7 +334,7 @@ func unfoldProofSteps(ps []vp.ProofStruct) []vp.ProofStruct {
 
 /************ Substitution ************/
 func makeSubst(m bt.Meta, t bt.Term) string {
-	return fmt.Sprintf("(\"%v\" , Term.const \" %v\")", m.GetName(), t.ToString())
+	return fmt.Sprintf("(\"%v\" , Term.const \"%v\")", m.GetName(), t.ToString())
 }
 
 func makeGlobalSubst(sub treetypes.Substitutions) string {
