@@ -74,6 +74,7 @@ func InitLogs() {
 
 /* Sets the function to be called when PrintDebug is called. This way, we avoid an if test when not in debug mode. */
 func EnableDebug() {
+	InitLogs()
 	PrintDebug = func(function, message string) {
 		printToLogger(logDebug, function, message)
 	}

@@ -129,7 +129,7 @@ func addUnifToAtomics(atomics []Core.IntSubstAndForm, candidate AST.Form, unif U
 	if isBotOrTop(candidate) {
 		atomics = Core.InsertFirstIntSubstAndFormList(atomics, Core.MakeIntSubstAndForm(unif.GetForm().GetIndex(), substAndForm))
 	} else {
-		atomics = append(atomics, Core.MakeIntSubstAndForm(unif.GetForm().GetIndex(), substAndForm))
+		atomics = Core.AppendIfNotContainsIntSubstAndFormList(atomics, Core.MakeIntSubstAndForm(unif.GetForm().GetIndex(), substAndForm))
 	}
 	return atomics
 }

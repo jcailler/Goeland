@@ -117,6 +117,20 @@ func InsertFirstIntSubstAndFormList(safL []IntSubstAndForm, saf IntSubstAndForm)
 	return safL
 }
 
+func AppendIfNotContainsIntSubstAndFormList(safL []IntSubstAndForm, saf IntSubstAndForm) []IntSubstAndForm {
+	if len(safL) == 0 {
+		return []IntSubstAndForm{saf}
+	} else {
+		for _, s := range safL {
+			if s.GetSaf().GetForm().Equals(saf.GetSaf().GetForm()) {
+				return safL
+			}
+		}
+
+		return append(safL, saf)
+	}
+}
+
 /* Copy a list of subst and form */
 func CopyIntSubstAndFormList(sl []IntSubstAndForm) []IntSubstAndForm {
 	res := make([]IntSubstAndForm, len(sl))

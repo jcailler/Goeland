@@ -40,10 +40,9 @@ package dmt_test
 
 import (
 	"testing"
-
-	dmt "github.com/GoelandProver/Goeland/modules/dmt"
-	typing "github.com/GoelandProver/Goeland/polymorphism/typing"
-	basictypes "github.com/GoelandProver/Goeland/types/basic-types"
+	
+	"github.com/GoelandProver/Goeland/AST"
+	"github.com/GoelandProver/Goeland/Mods/dmt"
 )
 
 /**
@@ -53,14 +52,14 @@ func TestAxiomRewriting(t *testing.T) {
 	initDMT()
 
 	// forall x.P(x)
-	axiom := basictypes.MakerAll([]basictypes.Var{x}, basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{}))
+	axiom := AST.MakerAll([]AST.Var{x}, AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{}))
 
 	if dmt.RegisterAxiom(axiom) {
 		t.Fatalf("Error: %s has been registered as a rewrite rule when it shouldn't.", axiom.ToString())
 	}
 
 	// Top
-	// form := basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{})
+	// form := AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{})
 	// substs, err := dmt.Rewrite(form)
 
 	// if err != nil {
@@ -70,12 +69,12 @@ func TestAxiomRewriting(t *testing.T) {
 	// if len(substs) > 1 ||
 	// 	!substs[0].GetSubst().Equals(treetypes.MakeEmptySubstitution()) ||
 	// 	len(substs[0].GetForm()) > 1 ||
-	// 	!substs[0].GetForm()[0].Equals(basictypes.MakerTop()) {
-	// 	t.Fatalf("Error: %s has not been rewritten as expected. Expected: %s, actual: %s.", form.ToString(), basictypes.MakerTop().ToString(), substs[0].GetForm()[0].ToString())
+	// 	!substs[0].GetForm()[0].Equals(AST.MakerTop()) {
+	// 	t.Fatalf("Error: %s has not been rewritten as expected. Expected: %s, actual: %s.", form.ToString(), AST.MakerTop().ToString(), substs[0].GetForm()[0].ToString())
 	// }
 
 	// // ¬Top
-	// form2 := basictypes.MakerNot(basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{}))
+	// form2 := AST.MakerNot(AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{}))
 	// substs, err = dmt.Rewrite(form2)
 
 	// if err != nil {
@@ -85,8 +84,8 @@ func TestAxiomRewriting(t *testing.T) {
 	// if len(substs) > 1 ||
 	// 	!substs[0].GetSubst().Equals(treetypes.MakeEmptySubstitution()) ||
 	// 	len(substs[0].GetForm()) > 1 ||
-	// 	!substs[0].GetForm()[0].Equals(basictypes.MakerNot(basictypes.MakerTop())) {
-	// 	t.Fatalf("Error: %s has not been rewritten as expected. Expected: %s, actual: %s.", form2.ToString(), basictypes.MakerNot(basictypes.MakerTop()).ToString(), substs[0].GetForm()[0].ToString())
+	// 	!substs[0].GetForm()[0].Equals(AST.MakerNot(AST.MakerTop())) {
+	// 	t.Fatalf("Error: %s has not been rewritten as expected. Expected: %s, actual: %s.", form2.ToString(), AST.MakerNot(AST.MakerTop()).ToString(), substs[0].GetForm()[0].ToString())
 	// }
 }
 
@@ -97,14 +96,14 @@ func TestAxiomRewriting2(t *testing.T) {
 	initDMT()
 
 	// forall x.¬P(x)
-	axiom := basictypes.MakerAll([]basictypes.Var{x}, basictypes.MakerNot(basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{})))
+	axiom := AST.MakerAll([]AST.Var{x}, AST.MakerNot(AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{})))
 
 	if dmt.RegisterAxiom(axiom) {
 		t.Fatalf("Error: %s has been registered as a rewrite rule when it shouldn't.", axiom.ToString())
 	}
 
 	// Bot
-	// form := basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{})
+	// form := AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{})
 	// substs, err := dmt.Rewrite(form)
 
 	// if err != nil {
@@ -114,12 +113,12 @@ func TestAxiomRewriting2(t *testing.T) {
 	// if len(substs) > 1 ||
 	// 	!substs[0].GetSubst().Equals(treetypes.MakeEmptySubstitution()) ||
 	// 	len(substs[0].GetForm()) > 1 ||
-	// 	!substs[0].GetForm()[0].Equals(basictypes.MakerBot()) {
-	// 	t.Fatalf("Error: %s has not been rewritten as expected. Expected: %s, actual: %s.", form.ToString(), basictypes.MakerBot().ToString(), substs[0].GetForm()[0].ToString())
+	// 	!substs[0].GetForm()[0].Equals(AST.MakerBot()) {
+	// 	t.Fatalf("Error: %s has not been rewritten as expected. Expected: %s, actual: %s.", form.ToString(), AST.MakerBot().ToString(), substs[0].GetForm()[0].ToString())
 	// }
 
 	// // ¬Bot
-	// form2 := basictypes.MakerNot(basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{}))
+	// form2 := AST.MakerNot(AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{}))
 	// substs, err = dmt.Rewrite(form2)
 
 	// if err != nil {
@@ -129,8 +128,8 @@ func TestAxiomRewriting2(t *testing.T) {
 	// if len(substs) > 1 ||
 	// 	!substs[0].GetSubst().Equals(treetypes.MakeEmptySubstitution()) ||
 	// 	len(substs[0].GetForm()) > 1 ||
-	// 	!substs[0].GetForm()[0].Equals(basictypes.MakerNot(basictypes.MakerBot())) {
-	// 	t.Fatalf("Error: %s has not been rewritten as expected. Expected: %s, actual: %s.", form2.ToString(), basictypes.MakerNot(basictypes.MakerBot()).ToString(), substs[0].GetForm()[0].ToString())
+	// 	!substs[0].GetForm()[0].Equals(AST.MakerNot(AST.MakerBot())) {
+	// 	t.Fatalf("Error: %s has not been rewritten as expected. Expected: %s, actual: %s.", form2.ToString(), AST.MakerNot(AST.MakerBot()).ToString(), substs[0].GetForm()[0].ToString())
 	// }
 }
 
@@ -141,16 +140,16 @@ func TestAxiomRewriting3(t *testing.T) {
 	initDMT()
 
 	// forall x.P(x)
-	axiom := basictypes.MakerAll([]basictypes.Var{x}, basictypes.MakerPred(P, basictypes.NewTermList(x, x), []typing.TypeApp{}))
+	axiom := AST.MakerAll([]AST.Var{x}, AST.MakerPred(P, AST.NewTermList(x, x), []AST.TypeApp{}))
 
 	if dmt.RegisterAxiom(axiom) {
 		t.Fatalf("Error: %s has been registered as a rewrite rule when it shouldn't.", axiom.ToString())
 	}
 
-	// X := basictypes.MakerMeta("X", 1)
-	// Y := basictypes.MakerMeta("Y", 1)
+	// X := AST.MakerMeta("X", 1)
+	// Y := AST.MakerMeta("Y", 1)
 	// // Top
-	// form := basictypes.MakerPred(P, basictypes.NewTermList(X, Y), []typing.TypeApp{})
+	// form := AST.MakerPred(P, AST.NewTermList(X, Y), []AST.TypeApp{})
 	// substs, err := dmt.Rewrite(form)
 
 	// if err != nil {
@@ -163,12 +162,12 @@ func TestAxiomRewriting3(t *testing.T) {
 	// if len(substs) > 1 ||
 	// 	!(Z1.Equals(Y) || Z2.Equals(X)) ||
 	// 	len(substs[0].GetForm()) > 1 ||
-	// 	!substs[0].GetForm()[0].Equals(basictypes.MakerTop()) {
-	// 	t.Fatalf("Error: %s has not been rewritten as expected. Expected: %s, actual: %s.", form.ToString(), basictypes.MakerTop().ToString(), substs[0].GetForm()[0].ToString())
+	// 	!substs[0].GetForm()[0].Equals(AST.MakerTop()) {
+	// 	t.Fatalf("Error: %s has not been rewritten as expected. Expected: %s, actual: %s.", form.ToString(), AST.MakerTop().ToString(), substs[0].GetForm()[0].ToString())
 	// }
 
 	// // ¬Top
-	// form2 := basictypes.MakerNot(basictypes.MakerPred(P, basictypes.NewTermList(X, Y), []typing.TypeApp{}))
+	// form2 := AST.MakerNot(AST.MakerPred(P, AST.NewTermList(X, Y), []AST.TypeApp{}))
 	// substs, err = dmt.Rewrite(form2)
 
 	// if err != nil {
@@ -181,12 +180,12 @@ func TestAxiomRewriting3(t *testing.T) {
 	// if len(substs) > 1 ||
 	// 	!(Z1.Equals(Y) || Z2.Equals(X)) ||
 	// 	len(substs[0].GetForm()) > 1 ||
-	// 	!substs[0].GetForm()[0].Equals(basictypes.MakerNot(basictypes.MakerTop())) {
-	// 	t.Fatalf("Error: %s has not been rewritten as expected. Expected: %s, actual: %s.", form2.ToString(), basictypes.MakerNot(basictypes.MakerTop()).ToString(), substs[0].GetForm()[0].ToString())
+	// 	!substs[0].GetForm()[0].Equals(AST.MakerNot(AST.MakerTop())) {
+	// 	t.Fatalf("Error: %s has not been rewritten as expected. Expected: %s, actual: %s.", form2.ToString(), AST.MakerNot(AST.MakerTop()).ToString(), substs[0].GetForm()[0].ToString())
 	// }
 
 	// // Top with subst
-	// form3 := basictypes.MakerPred(P, basictypes.NewTermList(a, Y), []typing.TypeApp{})
+	// form3 := AST.MakerPred(P, AST.NewTermList(a, Y), []AST.TypeApp{})
 	// substs, err = dmt.Rewrite(form3)
 
 	// if err != nil {
@@ -198,12 +197,12 @@ func TestAxiomRewriting3(t *testing.T) {
 	// if len(substs) > 1 ||
 	// 	!Z2.Equals(a) ||
 	// 	len(substs[0].GetForm()) > 1 ||
-	// 	!substs[0].GetForm()[0].Equals(basictypes.MakerTop()) {
-	// 	t.Fatalf("Error: %s has not been rewritten as expected. Expected: %s, actual: %s.", form3.ToString(), basictypes.MakerTop().ToString(), substs[0].GetForm()[0].ToString())
+	// 	!substs[0].GetForm()[0].Equals(AST.MakerTop()) {
+	// 	t.Fatalf("Error: %s has not been rewritten as expected. Expected: %s, actual: %s.", form3.ToString(), AST.MakerTop().ToString(), substs[0].GetForm()[0].ToString())
 	// }
 
 	// // Should fail
-	// form4 := basictypes.MakerPred(P, basictypes.NewTermList(a, basictypes.MakerConst(basictypes.MakerId("b"))), []typing.TypeApp{})
+	// form4 := AST.MakerPred(P, AST.NewTermList(a, AST.MakerConst(AST.MakerId("b"))), []AST.TypeApp{})
 	// substs, err = dmt.Rewrite(form4)
 
 	// if err != nil {
@@ -222,28 +221,28 @@ func TestAxiomRewriting4(t *testing.T) {
 	initDMT()
 
 	// forall x.x = x
-	axiom := basictypes.MakerAll([]basictypes.Var{x}, basictypes.MakerPred(basictypes.Id_eq, basictypes.NewTermList(x, x), []typing.TypeApp{}))
+	axiom := AST.MakerAll([]AST.Var{x}, AST.MakerPred(AST.Id_eq, AST.NewTermList(x, x), []AST.TypeApp{}))
 
 	if dmt.RegisterAxiom(axiom) {
 		t.Fatalf("Error: %s has been registered as a rewrite rule when it's an equality.", axiom.ToString())
 	}
 
 	// forall x.x != x
-	axiom = basictypes.MakerAll([]basictypes.Var{x}, basictypes.MakerPred(basictypes.Id_eq, basictypes.NewTermList(x, x), []typing.TypeApp{}))
+	axiom = AST.MakerAll([]AST.Var{x}, AST.MakerPred(AST.Id_eq, AST.NewTermList(x, x), []AST.TypeApp{}))
 
 	if dmt.RegisterAxiom(axiom) {
 		t.Fatalf("Error: %s has been registered as a rewrite rule when it's an equality.", axiom.ToString())
 	}
 
 	// forall x.¬(x = x)
-	axiom = basictypes.MakerAll([]basictypes.Var{x}, basictypes.MakerNot(basictypes.MakerPred(basictypes.Id_eq, basictypes.NewTermList(x, x), []typing.TypeApp{})))
+	axiom = AST.MakerAll([]AST.Var{x}, AST.MakerNot(AST.MakerPred(AST.Id_eq, AST.NewTermList(x, x), []AST.TypeApp{})))
 
 	if dmt.RegisterAxiom(axiom) {
 		t.Fatalf("Error: %s has been registered as a rewrite rule when it's an equality.", axiom.ToString())
 	}
 
 	// forall x.¬(x != x)
-	axiom = basictypes.MakerAll([]basictypes.Var{x}, basictypes.MakerNot(basictypes.MakerPred(basictypes.Id_eq, basictypes.NewTermList(x, x), []typing.TypeApp{})))
+	axiom = AST.MakerAll([]AST.Var{x}, AST.MakerNot(AST.MakerPred(AST.Id_eq, AST.NewTermList(x, x), []AST.TypeApp{})))
 
 	if dmt.RegisterAxiom(axiom) {
 		t.Fatalf("Error: %s has been registered as a rewrite rule when it's an equality.", axiom.ToString())

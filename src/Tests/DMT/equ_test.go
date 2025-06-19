@@ -31,7 +31,7 @@
 **/
 
 /**
- * This file tests the base functionnalities of DMT plugin :
+ * This file tests the base functionalities of DMT plugin :
  *	- equivalence-only initialisation
  *	- feeding of equivalence axioms in the code-tree and rewrite test
  *	- feeding of non-equivalence axioms in the code-tree
@@ -46,38 +46,37 @@ import (
 	"os"
 	"testing"
 
-	treetypes "github.com/GoelandProver/Goeland/code-trees/tree-types"
-	"github.com/GoelandProver/Goeland/global"
-	dmt "github.com/GoelandProver/Goeland/modules/dmt"
-	typing "github.com/GoelandProver/Goeland/polymorphism/typing"
-	basictypes "github.com/GoelandProver/Goeland/types/basic-types"
+	"github.com/GoelandProver/Goeland/AST"
+	"github.com/GoelandProver/Goeland/Core"
+	"github.com/GoelandProver/Goeland/Glob"
+	"github.com/GoelandProver/Goeland/Mods/dmt"
+	"github.com/GoelandProver/Goeland/Unif"
 )
 
-var a basictypes.Fun
-var x basictypes.Var
-var y basictypes.Var
-var z basictypes.Var
-var P basictypes.Id
-var Q basictypes.Id
-var f basictypes.Id
+var a AST.Fun
+var x AST.Var
+var y AST.Var
+var z AST.Var
+var P AST.Id
+var Q AST.Id
+var f AST.Id
 
 // Init variables for test
 func TestMain(m *testing.M) {
-	typing.Init()
-	basictypes.Init()
-	a = basictypes.MakerConst(basictypes.MakerId("a"))
-	x = basictypes.MakerVar("x")
-	y = basictypes.MakerVar("y")
-	z = basictypes.MakerVar("z")
-	P = basictypes.MakerId("P")
-	Q = basictypes.MakerId("Q")
-	f = basictypes.MakerId("f")
+	AST.Init()
+	a = AST.MakerConst(AST.MakerId("a"))
+	x = AST.MakerVar("x")
+	y = AST.MakerVar("y")
+	z = AST.MakerVar("z")
+	P = AST.MakerId("P")
+	Q = AST.MakerId("Q")
+	f = AST.MakerId("f")
 	os.Exit(m.Run())
 }
 
 // Makers a plugin manager and inits the DMT for equivalences tests
 func initDMT() {
-	dmt.InitPlugin()
+	dmt.InitPluginTests(false, false)
 }
 
 /******************************************************************************
@@ -89,12 +88,13 @@ func initDMT() {
  **/
 func TestEquRegistration(t *testing.T) {
 	initDMT()
+
 	// forall x.P(x) <=> forall y.Q(x, y)
-	equPred := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerEqu(
-			basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{}),
-			basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(x, y), []typing.TypeApp{})),
+	equPred := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{}),
+			AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{})),
 		),
 	)
 
@@ -105,9 +105,9 @@ func TestEquRegistration(t *testing.T) {
 	// Something without forall should also be registered.
 
 	// P(a) <=> forall y.Q(a, y)
-	equPred2 := basictypes.MakerEqu(
-		basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{}),
-		basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(a, y), []typing.TypeApp{})),
+	equPred2 := AST.MakerEqu(
+		AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{}),
+		AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(a, y), []AST.TypeApp{})),
 	)
 
 	if !dmt.RegisterAxiom(equPred2) {
@@ -117,11 +117,11 @@ func TestEquRegistration(t *testing.T) {
 	// If the two formulas are atomic, it shouldn't be registered
 
 	// forall x.P(x) <=> Q(x, a)
-	equPred3 := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerEqu(
-			basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{}),
-			basictypes.MakerPred(Q, basictypes.NewTermList(x, a), []typing.TypeApp{}),
+	equPred3 := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{}),
+			AST.MakerPred(Q, AST.NewTermList(x, a), []AST.TypeApp{}),
 		),
 	)
 
@@ -132,11 +132,11 @@ func TestEquRegistration(t *testing.T) {
 	// The right-side is atomic, and not the left !
 
 	// forall x.(P(x) => Q(x, a)) <=> Q(a, x)
-	equPred4 := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerEqu(
-			basictypes.MakerImp(basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{}), basictypes.MakerPred(Q, basictypes.NewTermList(x, a), []typing.TypeApp{})),
-			basictypes.MakerPred(Q, basictypes.NewTermList(a, x), []typing.TypeApp{}),
+	equPred4 := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.MakerImp(AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{}), AST.MakerPred(Q, AST.NewTermList(x, a), []AST.TypeApp{})),
+			AST.MakerPred(Q, AST.NewTermList(a, x), []AST.TypeApp{}),
 		),
 	)
 
@@ -147,11 +147,11 @@ func TestEquRegistration(t *testing.T) {
 	// Inside forall
 
 	// forall x.(forall y.Q(x, y)) <=> P(x)
-	equPred5 := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerEqu(
-			basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(x, y), []typing.TypeApp{})),
-			basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{}),
+	equPred5 := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{})),
+			AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{}),
 		),
 	)
 
@@ -162,13 +162,13 @@ func TestEquRegistration(t *testing.T) {
 	// Outside forall
 
 	// forall x.forall y.Q(x, y) <=> P(x)
-	equPred6 := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerAll(
-			[]basictypes.Var{y},
-			basictypes.MakerEqu(
-				basictypes.MakerPred(Q, basictypes.NewTermList(x, y), []typing.TypeApp{}),
-				basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{}),
+	equPred6 := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerAll(
+			[]AST.Var{y},
+			AST.MakerEqu(
+				AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{}),
+				AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{}),
 			),
 		),
 	)
@@ -180,11 +180,11 @@ func TestEquRegistration(t *testing.T) {
 	// Negative atom
 
 	// forall x.¬P(x) <=> forall y.Q(x, y)
-	equPred7 := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerEqu(
-			basictypes.RefuteForm(basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{})),
-			basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(x, y), []typing.TypeApp{})),
+	equPred7 := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.RefuteForm(AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{})),
+			AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{})),
 		),
 	)
 
@@ -195,11 +195,11 @@ func TestEquRegistration(t *testing.T) {
 	// Negative atom & negative equivalence
 
 	// forall x.¬P(x) <=> ¬forall y.Q(x, y)
-	equPred8 := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerEqu(
-			basictypes.RefuteForm(basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{})),
-			basictypes.RefuteForm(basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(x, y), []typing.TypeApp{}))),
+	equPred8 := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.RefuteForm(AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{})),
+			AST.RefuteForm(AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{}))),
 		),
 	)
 
@@ -208,31 +208,31 @@ func TestEquRegistration(t *testing.T) {
 	}
 
 	// (x = x) => forall x. P(x) shouldn't be registered (because equality and dmt are managed separately)
-	neqPred := basictypes.MakerPred(basictypes.Id_eq, basictypes.NewTermList(x, x), []typing.TypeApp{})
-	eqPred9 := basictypes.MakerEqu(
+	neqPred := AST.MakerPred(AST.Id_eq, AST.NewTermList(x, x), []AST.TypeApp{})
+	eqPred9 := AST.MakerEqu(
 		neqPred,
-		basictypes.MakerAll([]basictypes.Var{x}, basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{})),
+		AST.MakerAll([]AST.Var{x}, AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{})),
 	)
 	if dmt.RegisterAxiom(eqPred9) {
 		t.Fatalf("Error: %s has been registered as a rewrite rule when it shouldn't (equalities are not registered).", eqPred9.ToString())
 	}
 
 	// (Vx (x = x)) => forall x. P(x) shouldn't be registered
-	neqPred2 := basictypes.MakerAll([]basictypes.Var{x}, basictypes.MakerPred(basictypes.Id_eq, basictypes.NewTermList(x, x), []typing.TypeApp{}))
-	eqPred10 := basictypes.MakerEqu(
+	neqPred2 := AST.MakerAll([]AST.Var{x}, AST.MakerPred(AST.Id_eq, AST.NewTermList(x, x), []AST.TypeApp{}))
+	eqPred10 := AST.MakerEqu(
 		neqPred2,
-		basictypes.MakerAll([]basictypes.Var{x}, basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{})),
+		AST.MakerAll([]AST.Var{x}, AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{})),
 	)
 	if dmt.RegisterAxiom(eqPred10) {
 		t.Fatalf("Error: %s has been registered as a rewrite rule when it shouldn't (equalities are not registered).", eqPred10.ToString())
 	}
 
 	// forall x.¬(x = x) <=> forall y. Q(x, y) shouldn't be registered
-	eqPred11 := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerEqu(
-			basictypes.MakerNot(basictypes.MakerPred(basictypes.Id_eq, basictypes.NewTermList(x, x), []typing.TypeApp{})),
-			basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(x, y), []typing.TypeApp{})),
+	eqPred11 := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.MakerNot(AST.MakerPred(AST.Id_eq, AST.NewTermList(x, x), []AST.TypeApp{})),
+			AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{})),
 		),
 	)
 	if dmt.RegisterAxiom(eqPred11) {
@@ -247,7 +247,7 @@ func TestEquRegistration(t *testing.T) {
 func TestSimpleAxiomRegistration(t *testing.T) {
 	initDMT()
 	// forall x.P(x)
-	simplePred := basictypes.MakerAll([]basictypes.Var{x}, basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{}))
+	simplePred := AST.MakerAll([]AST.Var{x}, AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{}))
 
 	if dmt.RegisterAxiom(simplePred) {
 		t.Fatalf("Error: %s has been registered as a rewrite rule when it shouldn't.", simplePred.ToString())
@@ -256,28 +256,28 @@ func TestSimpleAxiomRegistration(t *testing.T) {
 	// If it's a fact, it shouldn't be registered
 
 	// P(a)
-	simplePred2 := basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{})
+	simplePred2 := AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{})
 
 	if dmt.RegisterAxiom(simplePred2) {
 		t.Fatalf("Error: %s has been registered as a rewrite rule when it shouldn't (a fact has to be kept).", simplePred2.ToString())
 	}
 
 	// forall x.¬P(x)
-	simplePred3 := basictypes.MakerAll([]basictypes.Var{x}, basictypes.RefuteForm(basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{})))
+	simplePred3 := AST.MakerAll([]AST.Var{x}, AST.RefuteForm(AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{})))
 
 	if dmt.RegisterAxiom(simplePred3) {
 		t.Fatalf("Error: %s has been registered as a rewrite rule when it shouldn't.", simplePred3.ToString())
 	}
 
 	// a = b shouldn't be registered (because equality and dmt are managed separately)
-	eqPred := basictypes.MakerAll([]basictypes.Var{x}, basictypes.MakerPred(basictypes.Id_eq, basictypes.NewTermList(x, x), []typing.TypeApp{}))
+	eqPred := AST.MakerAll([]AST.Var{x}, AST.MakerPred(AST.Id_eq, AST.NewTermList(x, x), []AST.TypeApp{}))
 
 	if dmt.RegisterAxiom(eqPred) {
 		t.Fatalf("Error: %s has been registered as a rewrite rule when it shouldn't (equalities are not registered).", eqPred.ToString())
 	}
 
 	// a != b shouldn't be registered (because equality and dmt are managed separately)
-	neqPred := basictypes.MakerAll([]basictypes.Var{x}, basictypes.MakerPred(basictypes.Id_eq, basictypes.NewTermList(x, x), []typing.TypeApp{}))
+	neqPred := AST.MakerAll([]AST.Var{x}, AST.MakerPred(AST.Id_eq, AST.NewTermList(x, x), []AST.TypeApp{}))
 
 	if dmt.RegisterAxiom(neqPred) {
 		t.Fatalf("Error: %s has been registered as a rewrite rule when it shouldn't (equalities are not registered).", neqPred.ToString())
@@ -290,11 +290,11 @@ func TestSimpleAxiomRegistration(t *testing.T) {
 func TestImpRegistration(t *testing.T) {
 	initDMT()
 	// forall x.P(x) => forall y.Q(x, y)
-	impPred := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerImp(
-			basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{}),
-			basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(x, y), []typing.TypeApp{})),
+	impPred := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerImp(
+			AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{}),
+			AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{})),
 		),
 	)
 
@@ -313,11 +313,11 @@ func TestImpRegistration(t *testing.T) {
 func TestEquRewrite1(t *testing.T) {
 	initDMT()
 	// forall x.P(x) <=> forall y.Q(x, y)
-	equPred := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerEqu(
-			basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{}),
-			basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(x, y), []typing.TypeApp{})),
+	equPred := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{}),
+			AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{})),
 		),
 	)
 
@@ -325,7 +325,7 @@ func TestEquRewrite1(t *testing.T) {
 		t.Fatalf("Error: %s hasn't been registered as a rewrite rule.", equPred.ToString())
 	}
 
-	form := basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{})
+	form := AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{})
 	substs, err := dmt.Rewrite(form)
 
 	if err != nil {
@@ -343,7 +343,7 @@ func TestEquRewrite1(t *testing.T) {
 		t.Fatalf("Error: %s can be rewritten by more than one formula when it should be rewritten by only one.", form.ToString())
 	}
 
-	if !forms.Get(0).Equals(basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(a, y), []typing.TypeApp{}))) ||
+	if !forms.Get(0).Equals(AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(a, y), []AST.TypeApp{}))) ||
 		subst.GetMeta().Len() > 0 {
 		t.Fatalf("Error: %s has not been rewritten as expected. Actual: %s.", form.ToString(), forms.Get(0).ToString())
 	}
@@ -355,11 +355,11 @@ func TestEquRewrite1(t *testing.T) {
 func TestEquRewrite2(t *testing.T) {
 	initDMT()
 	// forall x.P(x) <=> forall y.Q(x, y)
-	equPred := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerEqu(
-			basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{}),
-			basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(x, y), []typing.TypeApp{})),
+	equPred := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{}),
+			AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{})),
 		),
 	)
 
@@ -367,7 +367,7 @@ func TestEquRewrite2(t *testing.T) {
 		t.Fatalf("Error: %s hasn't been registered as a rewrite rule.", equPred.ToString())
 	}
 
-	form := basictypes.MakerNot(basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{}))
+	form := AST.MakerNot(AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{}))
 	substs, err := dmt.Rewrite(form)
 
 	if err != nil {
@@ -385,7 +385,7 @@ func TestEquRewrite2(t *testing.T) {
 		t.Fatalf("Error: %s can be rewritten by more than one formula when it should be rewritten by only one.", form.ToString())
 	}
 
-	if !forms.Get(0).Equals(basictypes.MakerNot(basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(a, y), []typing.TypeApp{})))) ||
+	if !forms.Get(0).Equals(AST.MakerNot(AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(a, y), []AST.TypeApp{})))) ||
 		subst.GetMeta().Len() > 0 {
 		t.Fatalf("Error: %s has not been rewritten as expected. Actual: %s.", form.ToString(), forms.Get(0).ToString())
 	}
@@ -397,11 +397,11 @@ func TestEquRewrite2(t *testing.T) {
 func TestEquRewrite3(t *testing.T) {
 	initDMT()
 	// forall x.¬P(x) <=> forall y.Q(x, y)
-	equPred := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerEqu(
-			basictypes.MakerNot(basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{})),
-			basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(x, y), []typing.TypeApp{})),
+	equPred := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.MakerNot(AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{})),
+			AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{})),
 		),
 	)
 
@@ -409,7 +409,7 @@ func TestEquRewrite3(t *testing.T) {
 		t.Fatalf("Error: %s hasn't been registered as a rewrite rule.", equPred.ToString())
 	}
 
-	form := basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{})
+	form := AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{})
 	substs, err := dmt.Rewrite(form)
 
 	if err != nil {
@@ -427,7 +427,7 @@ func TestEquRewrite3(t *testing.T) {
 		t.Fatalf("Error: %s can be rewritten by more than one formula when it should be rewritten by only one.", form.ToString())
 	}
 
-	if !forms.Get(0).Equals(basictypes.MakerNot(basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(a, y), []typing.TypeApp{})))) ||
+	if !forms.Get(0).Equals(AST.MakerNot(AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(a, y), []AST.TypeApp{})))) ||
 		subst.GetMeta().Len() > 0 {
 		t.Fatalf("Error: %s has not been rewritten as expected. Actual: %s.", form.ToString(), forms.Get(0).ToString())
 	}
@@ -439,11 +439,11 @@ func TestEquRewrite3(t *testing.T) {
 func TestEquRewrite4(t *testing.T) {
 	initDMT()
 	// forall x.¬P(x) <=> forall y.Q(x, y)
-	equPred := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerEqu(
-			basictypes.MakerNot(basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{})),
-			basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(x, y), []typing.TypeApp{})),
+	equPred := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.MakerNot(AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{})),
+			AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{})),
 		),
 	)
 
@@ -451,7 +451,7 @@ func TestEquRewrite4(t *testing.T) {
 		t.Fatalf("Error: %s hasn't been registered as a rewrite rule.", equPred.ToString())
 	}
 
-	form := basictypes.MakerNot(basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{}))
+	form := AST.MakerNot(AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{}))
 	substs, err := dmt.Rewrite(form)
 
 	if err != nil {
@@ -469,7 +469,7 @@ func TestEquRewrite4(t *testing.T) {
 		t.Fatalf("Error: %s can be rewritten by more than one formula when it should be rewritten by only one.", form.ToString())
 	}
 
-	if !forms.Get(0).Equals(basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(a, y), []typing.TypeApp{}))) ||
+	if !forms.Get(0).Equals(AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(a, y), []AST.TypeApp{}))) ||
 		subst.GetMeta().Len() > 0 {
 		t.Fatalf("Error: %s has not been rewritten as expected. Actual: %s.", form.ToString(), forms.Get(0).ToString())
 	}
@@ -481,11 +481,11 @@ func TestEquRewrite4(t *testing.T) {
 func TestEquRewrite5(t *testing.T) {
 	initDMT()
 	// forall x.¬P(x) <=> ¬forall y.Q(x, y)
-	equPred := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerEqu(
-			basictypes.MakerNot(basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{})),
-			basictypes.MakerNot(basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(x, y), []typing.TypeApp{}))),
+	equPred := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.MakerNot(AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{})),
+			AST.MakerNot(AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{}))),
 		),
 	)
 
@@ -493,7 +493,7 @@ func TestEquRewrite5(t *testing.T) {
 		t.Fatalf("Error: %s hasn't been registered as a rewrite rule.", equPred.ToString())
 	}
 
-	form := basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{})
+	form := AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{})
 	substs, err := dmt.Rewrite(form)
 
 	if err != nil {
@@ -511,9 +511,10 @@ func TestEquRewrite5(t *testing.T) {
 		t.Fatalf("Error: %s can be rewritten by more than one formula when it should be rewritten by only one.", form.ToString())
 	}
 
-	if !forms.Get(0).Equals(basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(a, y), []typing.TypeApp{}))) ||
+	expected_rewrite := AST.MakerNot(AST.MakerNot(AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(a, y), []AST.TypeApp{}))))
+	if !forms.Get(0).Equals(expected_rewrite) ||
 		subst.GetMeta().Len() > 0 {
-		t.Fatalf("Error: %s has not been rewritten as expected. Actual: %s.", form.ToString(), forms.Get(0).ToString())
+		t.Fatalf("Error: %s has not been rewritten as expected. Expected : %v — Actual: %s.", form.ToString(), expected_rewrite.ToString(), forms.Get(0).ToString())
 	}
 }
 
@@ -523,11 +524,11 @@ func TestEquRewrite5(t *testing.T) {
 func TestEquRewrite6(t *testing.T) {
 	initDMT()
 	// forall x.¬P(x) <=> ¬forall y.Q(x, y)
-	equPred := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerEqu(
-			basictypes.MakerNot(basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{})),
-			basictypes.MakerNot(basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(x, y), []typing.TypeApp{}))),
+	equPred := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.MakerNot(AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{})),
+			AST.MakerNot(AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{}))),
 		),
 	)
 
@@ -535,7 +536,7 @@ func TestEquRewrite6(t *testing.T) {
 		t.Fatalf("Error: %s hasn't been registered as a rewrite rule.", equPred.ToString())
 	}
 
-	form := basictypes.MakerNot(basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{}))
+	form := AST.MakerNot(AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{}))
 	substs, err := dmt.Rewrite(form)
 
 	if err != nil {
@@ -553,7 +554,7 @@ func TestEquRewrite6(t *testing.T) {
 		t.Fatalf("Error: %s can be rewritten by more than one formula when it should be rewritten by only one.", form.ToString())
 	}
 
-	if !forms.Get(0).Equals(basictypes.MakerNot(basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(a, y), []typing.TypeApp{})))) ||
+	if !forms.Get(0).Equals(AST.MakerNot(AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(a, y), []AST.TypeApp{})))) ||
 		subst.GetMeta().Len() > 0 {
 		t.Fatalf("Error: %s has not been rewritten as expected. Actual: %s.", form.ToString(), forms.Get(0).ToString())
 	}
@@ -564,26 +565,26 @@ func TestEquRewrite6(t *testing.T) {
  **/
 func TestSubst1(t *testing.T) {
 	initDMT()
-	global.EnableDebug()
+	Glob.EnableDebug()
 	// forall x.P(x, x) <=> P(x, x) ^ Q(x, x)
-	equPred := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerEqu(
-			basictypes.MakerPred(P, basictypes.NewTermList(x, x), []typing.TypeApp{}),
-			basictypes.MakerAnd(basictypes.NewFormList(basictypes.MakerPred(Q, basictypes.NewTermList(x, x), []typing.TypeApp{}), basictypes.MakerPred(P, basictypes.NewTermList(x, x), []typing.TypeApp{}))),
+	equPred := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.MakerPred(P, AST.NewTermList(x, x), []AST.TypeApp{}),
+			AST.MakerAnd(AST.NewFormList(AST.MakerPred(Q, AST.NewTermList(x, x), []AST.TypeApp{}), AST.MakerPred(P, AST.NewTermList(x, x), []AST.TypeApp{}))),
 		),
 	)
-	global.PrintDebug("TS1", fmt.Sprintf("equpred : %v", equPred.ToString()))
+	Glob.PrintDebug("TS1", fmt.Sprintf("equ_pred : %v", equPred.ToString()))
 
 	if !dmt.RegisterAxiom(equPred) {
 		t.Fatalf("Error: %s hasn't been registered as a rewrite rule.", equPred.ToString())
 	}
 
-	Y := basictypes.MakerMeta("Y", 1)
-	Z := basictypes.MakerMeta("Z", 1)
+	Y := AST.MakerMeta("Y", 1)
+	Z := AST.MakerMeta("Z", 1)
 
-	form := basictypes.MakerPred(P, basictypes.NewTermList(Y, Z), []typing.TypeApp{})
-	global.PrintDebug("TS1", fmt.Sprintf("form : %v", form.ToString()))
+	form := AST.MakerPred(P, AST.NewTermList(Y, Z), []AST.TypeApp{})
+	Glob.PrintDebug("TS1", fmt.Sprintf("form : %v", form.ToString()))
 
 	substs, err := dmt.Rewrite(form)
 
@@ -595,7 +596,7 @@ func TestSubst1(t *testing.T) {
 		t.Fatalf("Error: more than one rewrite rule found for %s when it should have only one.", form.ToString())
 	}
 
-	global.PrintDebug("TS1", fmt.Sprintf("after form : %v", form.ToString()))
+	Glob.PrintDebug("TS1", fmt.Sprintf("after form : %v", form.ToString()))
 	forms := substs[0].GetSaf().GetForm()
 	subst := substs[0].GetSaf().GetSubst()
 
@@ -603,8 +604,8 @@ func TestSubst1(t *testing.T) {
 		t.Fatalf("Error: %s can be rewritten by more than one formula when it should be rewritten by only one.", form.ToString())
 	}
 
-	if !(forms.Get(0).Equals(basictypes.MakerAnd(basictypes.NewFormList(basictypes.MakerPred(Q, basictypes.NewTermList(Y, Y), []typing.TypeApp{}), basictypes.MakerPred(P, basictypes.NewTermList(Y, Y), []typing.TypeApp{})))) ||
-		forms.Get(0).Equals(basictypes.MakerAnd(basictypes.NewFormList(basictypes.MakerPred(Q, basictypes.NewTermList(Z, Z), []typing.TypeApp{}), basictypes.MakerPred(P, basictypes.NewTermList(Z, Z), []typing.TypeApp{}))))) ||
+	if !(forms.Get(0).Equals(AST.MakerAnd(AST.NewFormList(AST.MakerPred(Q, AST.NewTermList(Y, Y), []AST.TypeApp{}), AST.MakerPred(P, AST.NewTermList(Y, Y), []AST.TypeApp{})))) ||
+		forms.Get(0).Equals(AST.MakerAnd(AST.NewFormList(AST.MakerPred(Q, AST.NewTermList(Z, Z), []AST.TypeApp{}), AST.MakerPred(P, AST.NewTermList(Z, Z), []AST.TypeApp{}))))) ||
 		len(subst) != 1 {
 		t.Fatalf("Error: %s has not been rewritten as expected. Actual: %s.", form.ToString(), forms.Get(0).ToString())
 	}
@@ -616,18 +617,18 @@ func TestSubst1(t *testing.T) {
 func TestSubst2(t *testing.T) {
 	initDMT()
 	// P(a) <=> forall y.Q(a, y)
-	equPred := basictypes.MakerEqu(
-		basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{}),
-		basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(a, y), []typing.TypeApp{})),
+	equPred := AST.MakerEqu(
+		AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{}),
+		AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(a, y), []AST.TypeApp{})),
 	)
 
 	if !dmt.RegisterAxiom(equPred) {
 		t.Fatalf("Error: %s hasn't been registered as a rewrite rule.", equPred.ToString())
 	}
 
-	X := basictypes.MakerMeta("X", 1)
+	X := AST.MakerMeta("X", 1)
 
-	form := basictypes.MakerPred(P, basictypes.NewTermList(X), []typing.TypeApp{})
+	form := AST.MakerPred(P, AST.NewTermList(X), []AST.TypeApp{})
 	substs, err := dmt.Rewrite(form)
 
 	if err != nil {
@@ -647,7 +648,7 @@ func TestSubst2(t *testing.T) {
 
 	Y, _ := subst.Get(X)
 
-	if !forms.Get(0).Equals(basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(a, y), []typing.TypeApp{}))) ||
+	if !forms.Get(0).Equals(AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(a, y), []AST.TypeApp{}))) ||
 		!(len(subst) == 1 && Y.Equals(a)) {
 		t.Fatalf("Error: %s has not been rewritten as expected. Actual: %s.", form.ToString(), forms.Get(0).ToString())
 	}
@@ -655,11 +656,11 @@ func TestSubst2(t *testing.T) {
 
 func TestSubst3(t *testing.T) {
 	initDMT()
-	axiom := basictypes.MakerAll(
-		[]basictypes.Var{x, y},
-		basictypes.MakerEqu(
-			basictypes.MakerPred(P, basictypes.NewTermList(x, basictypes.MakerFun(f, basictypes.NewTermList(y), []typing.TypeApp{})), []typing.TypeApp{}),
-			basictypes.MakerAnd(basictypes.NewFormList(basictypes.MakerPred(Q, basictypes.NewTermList(x, y), []typing.TypeApp{}), basictypes.MakerPred(Q, basictypes.NewTermList(x, y), []typing.TypeApp{}))),
+	axiom := AST.MakerAll(
+		[]AST.Var{x, y},
+		AST.MakerEqu(
+			AST.MakerPred(P, AST.NewTermList(x, AST.MakerFun(f, AST.NewTermList(y), []AST.TypeApp{})), []AST.TypeApp{}),
+			AST.MakerAnd(AST.NewFormList(AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{}), AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{}))),
 		),
 	)
 
@@ -667,17 +668,17 @@ func TestSubst3(t *testing.T) {
 		t.Fatalf("Error: %s hasn't been registered as a rewrite rule.", axiom.ToString())
 	}
 
-	X := basictypes.MakerMeta("X2", 1)
-	Y := basictypes.MakerMeta("Y2", 1)
+	X := AST.MakerMeta("X2", 1)
+	Y := AST.MakerMeta("Y2", 1)
 
-	form := basictypes.MakerPred(P, basictypes.NewTermList(X, Y), []typing.TypeApp{})
+	form := AST.MakerPred(P, AST.NewTermList(X, Y), []AST.TypeApp{})
 	substs, err := dmt.Rewrite(form)
 
 	if err != nil {
 		t.Fatalf("Error: %s not found in the rewrite tree when it should.", form.ToString())
 	}
 
-	if len(substs) != 1 && !substs[0].GetSaf().GetSubst().Equals(treetypes.Failure()) {
+	if len(substs) != 1 && !substs[0].GetSaf().GetSubst().Equals(Unif.Failure()) {
 		t.Fatalf("Error: %s has not been rewritten as expected. Actual: %s - %v.", form.ToString(), substs[0].GetSaf().GetForm().Get(0).ToString(), substs[0].GetSaf().GetSubst().ToString())
 	}
 }
@@ -688,15 +689,16 @@ func TestSubst3(t *testing.T) {
 
 func TestMultipleAxiomDefinition(t *testing.T) {
 	initDMT()
+	Glob.InitLogs()
 	// P(a) <=> forall y.Q(a, y)
-	equPred := basictypes.MakerEqu(
-		basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{}),
-		basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(a, y), []typing.TypeApp{})),
+	equPred := AST.MakerEqu(
+		AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{}),
+		AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(a, y), []AST.TypeApp{})),
 	)
 	// P(a) <=> forall y.Q(y, a)
-	equPred2 := basictypes.MakerEqu(
-		basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{}),
-		basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(y, a), []typing.TypeApp{})),
+	equPred2 := AST.MakerEqu(
+		AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{}),
+		AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(y, a), []AST.TypeApp{})),
 	)
 
 	if !dmt.RegisterAxiom(equPred) {
@@ -706,12 +708,14 @@ func TestMultipleAxiomDefinition(t *testing.T) {
 		t.Fatalf("Error: %s hasn't been registered as a rewrite rule.", equPred2.ToString())
 	}
 
-	form := basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{})
+	form := AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{})
 	substs, err := dmt.Rewrite(form)
 
 	if err != nil {
 		t.Fatalf("Error: %s not found in the rewrite tree when it should.", form.ToString())
 	}
+
+	fmt.Printf("%v\n", Core.IntSubstAndFormListToString(substs))
 
 	if len(substs) != 2 {
 		t.Fatalf("Error: more than one rewrite rule found for %s when it should have only one.", form.ToString())
@@ -724,28 +728,30 @@ func TestMultipleAxiomDefinition(t *testing.T) {
 		t.Fatalf("Error: %s can be rewritten by more than two formulas when it should be rewritten by only two.", form.ToString())
 	}
 
-	if !forms.Contains(basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(a, y), []typing.TypeApp{}))) ||
-		!forms.Contains(basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(y, a), []typing.TypeApp{}))) {
-		t.Fatalf("Error: %s has not been rewritten as expected. Actual: %s.", form.ToString(), forms.ToString())
+	rewrite1 := AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(a, y), []AST.TypeApp{}))
+	rewrite2 := AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(y, a), []AST.TypeApp{}))
+	if !forms.Contains(rewrite1) || !forms.Contains(rewrite2) {
+		t.Fatalf("Error: %s has not been rewritten as expected. Expected: %v and %v. Actual: %s.", form.ToString(), rewrite1.ToString(), rewrite2.ToString(), forms.ToString())
 	}
 }
 
 func TestMultipleAxiomDefinition2(t *testing.T) {
 	initDMT()
+	Glob.EnableDebug()
 	// forall x.P(x) <=> forall y.Q(x, y)
-	equPred := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerEqu(
-			basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{}),
-			basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(x, y), []typing.TypeApp{})),
+	equPred := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{}),
+			AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{})),
 		),
 	)
-	// P(a) <=> forall y.Q(y, a)
-	equPred2 := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerEqu(
-			basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{}),
-			basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(y, x), []typing.TypeApp{})),
+	// forall x.P(x) <=> forall y.Q(y, a)
+	equPred2 := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{}),
+			AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(y, x), []AST.TypeApp{})),
 		),
 	)
 
@@ -756,7 +762,7 @@ func TestMultipleAxiomDefinition2(t *testing.T) {
 		t.Fatalf("Error: %s hasn't been registered as a rewrite rule.", equPred2.ToString())
 	}
 
-	form := basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{})
+	form := AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{})
 	substs, err := dmt.Rewrite(form)
 
 	if err != nil {
@@ -774,8 +780,55 @@ func TestMultipleAxiomDefinition2(t *testing.T) {
 		t.Fatalf("Error: %s can be rewritten by more than two formulas when it should be rewritten by only two.", form.ToString())
 	}
 
-	if !forms.Contains(basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(a, y), []typing.TypeApp{}))) ||
-		!forms.Contains(basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(y, a), []typing.TypeApp{}))) {
+	if !forms.Contains(AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(a, y), []AST.TypeApp{}))) ||
+		!forms.Contains(AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(y, a), []AST.TypeApp{}))) {
+		t.Fatalf("Error: %s has not been rewritten as expected. Actual: %s.", form.ToString(), forms.ToString())
+	}
+}
+
+func TestMultipleAxiomDefinition3(t *testing.T) {
+	initDMT()
+	// forall x.P(x) <=> forall y.Q(x, y)
+	equPred := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{}),
+			AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{})),
+		),
+	)
+	// P(a) <=> forall y.Q(y, a)
+	equPred2 :=
+		AST.MakerEqu(
+			AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{}),
+			AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(y, a), []AST.TypeApp{})))
+
+	if !dmt.RegisterAxiom(equPred) {
+		t.Fatalf("Error: %s hasn't been registered as a rewrite rule.", equPred.ToString())
+	}
+	if !dmt.RegisterAxiom(equPred2) {
+		t.Fatalf("Error: %s hasn't been registered as a rewrite rule.", equPred2.ToString())
+	}
+
+	form := AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{})
+	substs, err := dmt.Rewrite(form)
+
+	if err != nil {
+		t.Fatalf("Error: %s not found in the rewrite tree when it should.", form.ToString())
+	}
+
+	if len(substs) != 2 {
+		t.Fatalf("Error: more than one rewrite rule found for %s when it should have only one.", form.ToString())
+	}
+
+	forms := substs[0].GetSaf().GetForm()
+	forms.Append(substs[1].GetSaf().GetForm().Slice()...)
+
+	if forms.Len() != 2 {
+		t.Fatalf("Error: %s can be rewritten by more than two formulas when it should be rewritten by only two.", form.ToString())
+	}
+
+	if !forms.Contains(AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(a, y), []AST.TypeApp{}))) ||
+		!forms.Contains(AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(y, a), []AST.TypeApp{}))) {
 		t.Fatalf("Error: %s has not been rewritten as expected. Actual: %s.", form.ToString(), forms.ToString())
 	}
 }
@@ -785,14 +838,14 @@ func TestMultipleAxiomDefinition2(t *testing.T) {
  **/
 func TestError(t *testing.T) {
 	initDMT()
-	form := basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{})
+	form := AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{})
 	substs, err := dmt.Rewrite(form)
 
 	if err != nil {
 		t.Fatalf("Error: %s found in rewrite tree when it's empty.", form.ToString())
 	}
 
-	if len(substs) > 1 || !substs[0].GetSaf().GetSubst().Equals(treetypes.Failure()) {
+	if len(substs) > 1 || !substs[0].GetSaf().GetSubst().Equals(Unif.Failure()) {
 		t.Fatalf("Error: error not triggered when searching for something not in the rewrite tree.")
 	}
 }
@@ -802,11 +855,11 @@ func TestError(t *testing.T) {
  **/
 func TestSort(t *testing.T) {
 	initDMT()
-	equPred := basictypes.MakerAll(
-		[]basictypes.Var{x},
-		basictypes.MakerEqu(
-			basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{}),
-			basictypes.MakerAll([]basictypes.Var{y}, basictypes.MakerPred(Q, basictypes.NewTermList(x, y), []typing.TypeApp{})),
+	equPred := AST.MakerAll(
+		[]AST.Var{x},
+		AST.MakerEqu(
+			AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{}),
+			AST.MakerAll([]AST.Var{y}, AST.MakerPred(Q, AST.NewTermList(x, y), []AST.TypeApp{})),
 		),
 	)
 
@@ -814,7 +867,7 @@ func TestSort(t *testing.T) {
 		t.Fatalf("Error: %s hasn't been registered as a rewrite rule.", equPred.ToString())
 	}
 
-	axiom := basictypes.MakerAll([]basictypes.Var{x}, basictypes.MakerPred(P, basictypes.NewTermList(x), []typing.TypeApp{}))
+	axiom := AST.MakerAll([]AST.Var{x}, AST.MakerPred(P, AST.NewTermList(x), []AST.TypeApp{}))
 
 	if dmt.RegisterAxiom(axiom) {
 		t.Fatalf("Error: %s has been registered as a rewrite rule when it shouldn't.", axiom.ToString())
@@ -822,7 +875,7 @@ func TestSort(t *testing.T) {
 
 	// forall x.P(x) and forall x.P(x) <=> forall y.Q(x, y) are in the rewrite tree.
 
-	form := basictypes.MakerPred(P, basictypes.NewTermList(a), []typing.TypeApp{})
+	form := AST.MakerPred(P, AST.NewTermList(a), []AST.TypeApp{})
 	substs, err := dmt.Rewrite(form)
 
 	if err != nil {

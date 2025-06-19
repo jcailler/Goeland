@@ -37,15 +37,16 @@
 package Search
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
+	"github.com/GoelandProver/Goeland/AST"
 	"github.com/GoelandProver/Goeland/Core"
-	"github.com/GoelandProver/Goeland/Typing"
 )
 
 func TestMain(m *testing.M) {
-	polymorphism.Init()
+	AST.Init()
 	code := m.Run()
 	os.Exit(code)
 }
@@ -56,20 +57,20 @@ func TestMain(m *testing.M) {
 
 func TestSimpleExistSkolemization(t *testing.T) {
 	// exists x. P(x) ==> x should be a new constant expression
-	x := Core.MakerVar("x")
-	form := Core.MakeFormAndTerm(Core.MakerEx([]Core.Var{x}, Core.MakerPred(Core.MakerId("P"), Core.NewTermList(x), []polymorphism.TypeApp{})), Core.NewTermList())
-	f := Core.Skolemize(form, Core.NewMetaList())
+	x := AST.MakerVar("x")
+	form := Core.MakeFormAndTerm(AST.MakerEx([]AST.Var{x}, AST.MakerPred(AST.MakerId("P"), AST.NewTermList(x), []AST.TypeApp{})), AST.NewTermList())
+	f := Core.Skolemize(form, AST.NewMetaList())
 
 	if pred, ok := f.GetForm().(AST.Pred); ok {
 		if pred.GetArgs().Len() > 1 {
 			t.Errorf("Wrong number of predicate arguments on skolemization.")
 		} else {
 			arg := pred.GetArgs().Get(0)
-			if fun, ok := arg.(Core.Fun); ok {
+			if fun, ok := arg.(AST.Fun); ok {
 				if fun.GetArgs().Len() != 0 {
 					t.Errorf("Wrong number of skolemized function arguments.")
 				}
-				if !fun.GetTypeHint().Equals(polymorphism.DefaultType()) {
+				if !fun.GetTypeHint().Equals(AST.DefaultType()) {
 					t.Errorf("Skolemized function is wrongely typed")
 				}
 			} else {
@@ -83,9 +84,9 @@ func TestSimpleExistSkolemization(t *testing.T) {
 
 func TestSimpleNotForallSkolemization(t *testing.T) {
 	// not(forall x. P(x)) ==> x should be a new constant expression
-	x := Core.MakerVar("x")
-	form := Core.MakeFormAndTerm(Core.MakerNot(Core.MakerAll([]Core.Var{x}, Core.MakerPred(Core.MakerId("P"), Core.NewTermList(x), []polymorphism.TypeApp{}))), Core.NewTermList())
-	f := Core.Skolemize(form, Core.NewMetaList())
+	x := AST.MakerVar("x")
+	form := Core.MakeFormAndTerm(AST.MakerNot(AST.MakerAll([]AST.Var{x}, AST.MakerPred(AST.MakerId("P"), AST.NewTermList(x), []AST.TypeApp{}))), AST.NewTermList())
+	f := Core.Skolemize(form, AST.NewMetaList())
 
 	if neg, ok := f.GetForm().(AST.Not); ok {
 		if pred, ok := neg.GetForm().(AST.Pred); ok {
@@ -93,11 +94,11 @@ func TestSimpleNotForallSkolemization(t *testing.T) {
 				t.Errorf("Wrong number of predicate arguments on skolemization.")
 			} else {
 				arg := pred.GetArgs().Get(0)
-				if fun, ok := arg.(Core.Fun); ok {
+				if fun, ok := arg.(AST.Fun); ok {
 					if fun.GetArgs().Len() != 0 {
 						t.Errorf("Wrong number of skolemized function arguments.")
 					}
-					if !fun.GetTypeHint().Equals(polymorphism.DefaultType()) {
+					if !fun.GetTypeHint().Equals(AST.DefaultType()) {
 						t.Errorf("Skolemized function is wrongely typed")
 					}
 				} else {
@@ -114,8 +115,8 @@ func TestSimpleNotForallSkolemization(t *testing.T) {
 
 func TestSimpleForallInstantiation(t *testing.T) {
 	// forall x. P(x) ==> x should be a new meta
-	x := Core.MakerVar("x")
-	form := Core.MakeFormAndTerm(Core.MakerAll([]Core.Var{x}, Core.MakerPred(Core.MakerId("P"), Core.NewTermList(x), []polymorphism.TypeApp{})), Core.NewTermList())
+	x := AST.MakerVar("x")
+	form := Core.MakeFormAndTerm(AST.MakerAll([]AST.Var{x}, AST.MakerPred(AST.MakerId("P"), AST.NewTermList(x), []AST.TypeApp{})), AST.NewTermList())
 	f, metas := Core.Instantiate(form, 0)
 
 	if metas.Len() != 1 {
@@ -126,11 +127,11 @@ func TestSimpleForallInstantiation(t *testing.T) {
 				t.Errorf("Wrong number of predicate arguments on instantiation.")
 			} else {
 				arg := pred.GetArgs().Get(0)
-				if meta, ok := arg.(Core.Meta); ok {
+				if meta, ok := arg.(AST.Meta); ok {
 					if !meta.Equals(metas.Get(0)) {
 						t.Errorf("MetaList and generated meta is not the same on instantiation.")
 					}
-					if !meta.GetTypeHint().Equals(polymorphism.DefaultType()) {
+					if !meta.GetTypeHint().Equals(AST.DefaultType()) {
 						t.Errorf("Instantiated meta is wrongely typed")
 					}
 				} else {
@@ -145,8 +146,8 @@ func TestSimpleForallInstantiation(t *testing.T) {
 
 func TestSimpleNotExistsInstantiation(t *testing.T) {
 	// neg(exists x. P(x)) ==> x should be a new meta
-	x := Core.MakerVar("x")
-	form := Core.MakeFormAndTerm(Core.MakerNot(Core.MakerEx([]Core.Var{x}, Core.MakerPred(Core.MakerId("P"), Core.NewTermList(x), []polymorphism.TypeApp{}))), Core.NewTermList())
+	x := AST.MakerVar("x")
+	form := Core.MakeFormAndTerm(AST.MakerNot(AST.MakerEx([]AST.Var{x}, AST.MakerPred(AST.MakerId("P"), AST.NewTermList(x), []AST.TypeApp{}))), AST.NewTermList())
 	f, metas := Core.Instantiate(form, 0)
 
 	if metas.Len() != 1 {
@@ -158,11 +159,11 @@ func TestSimpleNotExistsInstantiation(t *testing.T) {
 					t.Errorf("Wrong number of predicate arguments on instantiation.")
 				} else {
 					arg := pred.GetArgs().Get(0)
-					if meta, ok := arg.(Core.Meta); ok {
+					if meta, ok := arg.(AST.Meta); ok {
 						if !meta.Equals(metas.Get(0)) {
 							t.Errorf("MetaList and generated meta is not the same on instantiation.")
 						}
-						if !meta.GetTypeHint().Equals(polymorphism.DefaultType()) {
+						if !meta.GetTypeHint().Equals(AST.DefaultType()) {
 							t.Errorf("Instantiated meta is wrongely typed")
 						}
 					} else {
@@ -181,18 +182,18 @@ func TestSimpleNotExistsInstantiation(t *testing.T) {
 /* 1 - Simple (typed) tests */
 
 func TestSimpleTypedExistSkolemization(t *testing.T) {
-	tInt := polymorphism.MkTypeHint("int")
+	tInt := AST.MkTypeHint("int")
 	// exists x. P(x) ==> x should be a new constant expression
-	x := Core.MakerVar("x", tInt)
-	form := Core.MakeFormAndTerm(Core.MakerEx([]Core.Var{x}, Core.MakerPred(Core.MakerId("P"), Core.NewTermList(x), []polymorphism.TypeApp{})), Core.NewTermList())
-	f := Core.Skolemize(form, Core.NewMetaList())
+	x := AST.MakerVar("x", tInt)
+	form := Core.MakeFormAndTerm(AST.MakerEx([]AST.Var{x}, AST.MakerPred(AST.MakerId("P"), AST.NewTermList(x), []AST.TypeApp{})), AST.NewTermList())
+	f := Core.Skolemize(form, AST.NewMetaList())
 
 	if pred, ok := f.GetForm().(AST.Pred); ok {
 		if pred.GetArgs().Len() != 1 {
 			t.Errorf("Wrong number of predicate arguments on skolemization.")
 		} else {
 			arg := pred.GetArgs().Get(0)
-			if fun, ok := arg.(Core.Fun); ok {
+			if fun, ok := arg.(AST.Fun); ok {
 				if fun.GetArgs().Len() != 0 {
 					t.Errorf("Wrong number of skolemized function arguments.")
 				}
@@ -209,11 +210,11 @@ func TestSimpleTypedExistSkolemization(t *testing.T) {
 }
 
 func TestSimpleTypedNotForallSkolemization(t *testing.T) {
-	tInt := polymorphism.MkTypeHint("int")
+	tInt := AST.MkTypeHint("int")
 	// not(forall x. P(x)) ==> x should be a new constant expression
-	x := Core.MakerVar("x", tInt)
-	form := Core.MakeFormAndTerm(Core.MakerNot(Core.MakerAll([]Core.Var{x}, Core.MakerPred(Core.MakerId("P"), Core.NewTermList(x), []polymorphism.TypeApp{}))), Core.NewTermList())
-	f := Core.Skolemize(form, Core.NewMetaList())
+	x := AST.MakerVar("x", tInt)
+	form := Core.MakeFormAndTerm(AST.MakerNot(AST.MakerAll([]AST.Var{x}, AST.MakerPred(AST.MakerId("P"), AST.NewTermList(x), []AST.TypeApp{}))), AST.NewTermList())
+	f := Core.Skolemize(form, AST.NewMetaList())
 
 	if neg, ok := f.GetForm().(AST.Not); ok {
 		if pred, ok := neg.GetForm().(AST.Pred); ok {
@@ -221,7 +222,7 @@ func TestSimpleTypedNotForallSkolemization(t *testing.T) {
 				t.Errorf("Wrong number of predicate arguments on skolemization.")
 			} else {
 				arg := pred.GetArgs().Get(0)
-				if fun, ok := arg.(Core.Fun); ok {
+				if fun, ok := arg.(AST.Fun); ok {
 					if fun.GetArgs().Len() != 0 {
 						t.Errorf("Wrong number of skolemized function arguments.")
 					}
@@ -241,10 +242,10 @@ func TestSimpleTypedNotForallSkolemization(t *testing.T) {
 }
 
 func TestSimpleTypedForallInstantiation(t *testing.T) {
-	tInt := polymorphism.MkTypeHint("int")
+	tInt := AST.MkTypeHint("int")
 	// forall x. P(x) ==> x should be a new meta
-	x := Core.MakerVar("x", tInt)
-	form := Core.MakeFormAndTerm(Core.MakerAll([]Core.Var{x}, Core.MakerPred(Core.MakerId("P"), Core.NewTermList(x), []polymorphism.TypeApp{})), Core.NewTermList())
+	x := AST.MakerVar("x", tInt)
+	form := Core.MakeFormAndTerm(AST.MakerAll([]AST.Var{x}, AST.MakerPred(AST.MakerId("P"), AST.NewTermList(x), []AST.TypeApp{})), AST.NewTermList())
 	f, metas := Core.Instantiate(form, 0)
 
 	if metas.Len() != 1 {
@@ -255,7 +256,7 @@ func TestSimpleTypedForallInstantiation(t *testing.T) {
 				t.Errorf("Wrong number of predicate arguments on instantiation.")
 			} else {
 				arg := pred.GetArgs().Get(0)
-				if meta, ok := arg.(Core.Meta); ok {
+				if meta, ok := arg.(AST.Meta); ok {
 					if !meta.Equals(metas.Get(0)) {
 						t.Errorf("MetaList and generated meta is not the same on instantiation.")
 					}
@@ -273,10 +274,10 @@ func TestSimpleTypedForallInstantiation(t *testing.T) {
 }
 
 func TestSimpleTypedNotExistsInstantiation(t *testing.T) {
-	tInt := polymorphism.MkTypeHint("int")
+	tInt := AST.MkTypeHint("int")
 	// neg(exists x. P(x)) ==> x should be a new meta
-	x := Core.MakerVar("x", tInt)
-	form := Core.MakeFormAndTerm(Core.MakerNot(Core.MakerEx([]Core.Var{x}, Core.MakerPred(Core.MakerId("P"), Core.NewTermList(x), []polymorphism.TypeApp{}))), Core.NewTermList())
+	x := AST.MakerVar("x", tInt)
+	form := Core.MakeFormAndTerm(AST.MakerNot(AST.MakerEx([]AST.Var{x}, AST.MakerPred(AST.MakerId("P"), AST.NewTermList(x), []AST.TypeApp{}))), AST.NewTermList())
 	f, metas := Core.Instantiate(form, 0)
 
 	if metas.Len() != 1 {
@@ -288,12 +289,12 @@ func TestSimpleTypedNotExistsInstantiation(t *testing.T) {
 					t.Errorf("Wrong number of predicate arguments on instantiation.")
 				} else {
 					arg := pred.GetArgs().Get(0)
-					if meta, ok := arg.(Core.Meta); ok {
+					if meta, ok := arg.(AST.Meta); ok {
 						if !meta.Equals(metas.Get(0)) {
 							t.Errorf("MetaList and generated meta is not the same on instantiation.")
 						}
 						if !meta.GetTypeHint().Equals(tInt) {
-							t.Errorf("Instantiated meta is wrongely typed")
+							t.Errorf("Instantiated meta is wrongly typed")
 						}
 					} else {
 						t.Errorf("Instantiation didn't create a meta in the arguments.")
@@ -312,40 +313,41 @@ func TestSimpleTypedNotExistsInstantiation(t *testing.T) {
 
 func TestSyntaxicTransformationOnFormula(t *testing.T) {
 	// Formula definition
-	vars := []Core.Var{Core.MakerVar("x"), Core.MakerVar("y"), Core.MakerVar("z")}
+	vars := []AST.Var{AST.MakerVar("x"), AST.MakerVar("y"), AST.MakerVar("z")}
 	// forall x. P(x) => forall y. exists z.R(z, y)
-	form := Core.MakeFormAndTerm(Core.MakerAll([]Core.Var{vars[0]}, Core.MakerImp(Core.MakerPred(Core.MakerId("P"), Core.NewTermList(vars[0]), []polymorphism.TypeApp{}), Core.MakerAll([]Core.Var{vars[1]}, Core.MakerEx([]Core.Var{vars[2]}, Core.MakerPred(Core.MakerId("R"), Core.NewTermList(vars[2], vars[1]), []polymorphism.TypeApp{}))))), Core.NewTermList())
+	form := Core.MakeFormAndTerm(AST.MakerAll([]AST.Var{vars[0]}, AST.MakerImp(AST.MakerPred(AST.MakerId("P"), AST.NewTermList(vars[0]), []AST.TypeApp{}), AST.MakerAll([]AST.Var{vars[1]}, AST.MakerEx([]AST.Var{vars[2]}, AST.MakerPred(AST.MakerId("R"), AST.NewTermList(vars[2], vars[1]), []AST.TypeApp{}))))), AST.NewTermList())
 
 	// Instantiate x
 	f1_inst, metas := Core.Instantiate(form, 0)
 
 	if pred, ok := f1_inst.GetForm().(AST.Pred); ok {
-		if !pred.GetType().Equals(Typing.DefaultPropType(1)) {
+		if !pred.GetType().Equals(AST.DefaultPropType(1)) {
 			t.Errorf("Wrong default type for 1-arity predicate.")
 		}
 	}
 
 	// Skolemize y & Instantiate z
-	f2_inst, metas_2 := Core.Instantiate(Core.MakeFormAndTerm(form.GetForm().(AST.All).GetForm().(AST.Imp).GetF2(), Core.NewTermList()), 0)
+	f2_inst, metas_2 := Core.Instantiate(Core.MakeFormAndTerm(form.GetForm().(AST.All).GetForm().(AST.Imp).GetF2(), AST.NewTermList()), 0)
 	metas.AppendIfNotContains(metas_2.Slice()...)
-	f2_sko := Core.Skolemize(f2_inst, Core.NewMetaList())
+	f2_sko := Core.Skolemize(f2_inst, AST.NewMetaList())
+	fmt.Printf("F_sko : %v", f2_sko.ToString())
 
 	if metas.Len() != 2 {
 		t.Errorf("Wrong amount of metas have been created")
 	} else {
 		if pred, ok := f2_sko.GetForm().(AST.Pred); ok {
-			if !pred.GetType().Equals(polymorphism.MkTypeArrow(polymorphism.MkTypeCross(polymorphism.DefaultType(), polymorphism.DefaultType()), polymorphism.MkTypeHint("$o"))) {
+			if !pred.GetType().Equals(AST.MkTypeArrow(AST.MkTypeCross(AST.DefaultType(), AST.DefaultType()), AST.MkTypeHint("$o"))) {
 				t.Errorf("Wrong type scheme for default predicate.")
 			}
 			// #0 is a function with 1 argument and #1 a meta
-			if fun, ok := pred.GetArgs().Get(0).(Core.Fun); ok {
+			if fun, ok := pred.GetArgs().Get(0).(AST.Fun); ok {
 				if fun.GetArgs().Len() != 1 {
 					t.Errorf("Skolemized argument should be a 1-arity function.")
 				}
 			} else {
 				t.Errorf("Second argument should be a constant.")
 			}
-			if _, ok := pred.GetArgs().Get(1).(Core.Meta); !ok {
+			if _, ok := pred.GetArgs().Get(1).(AST.Meta); !ok {
 				t.Errorf("First argument should be a meta.")
 			}
 		} else {
@@ -356,46 +358,46 @@ func TestSyntaxicTransformationOnFormula(t *testing.T) {
 
 /* 3 - Full (typed) formula */
 func TestSyntaxicTransformationOnTypedFormula(t *testing.T) {
-	tInt := polymorphism.MkTypeHint("$int")
-	tProp := polymorphism.MkTypeHint("$o")
+	tInt := AST.MkTypeHint("$int")
+	tProp := AST.MkTypeHint("$o")
 	// Formula definition
-	vars := []Core.Var{Core.MakerVar("x", tInt), Core.MakerVar("y", tInt), Core.MakerVar("z", tInt)}
+	vars := []AST.Var{AST.MakerVar("x", tInt), AST.MakerVar("y", tInt), AST.MakerVar("z", tInt)}
 	// forall x. P(x) => forall y. exists z.R(z, y)
-	form := Core.MakeFormAndTerm(Core.MakerAll([]Core.Var{vars[0]}, Core.MakerImp(Core.MakerPred(Core.MakerId("P"), Core.NewTermList(vars[0]), []polymorphism.TypeApp{}), Core.MakerAll([]Core.Var{vars[1]}, Core.MakerEx([]Core.Var{vars[2]}, Core.MakerPred(Core.MakerId("R"), Core.NewTermList(vars[2], vars[1]), []polymorphism.TypeApp{}, polymorphism.MkTypeArrow(polymorphism.MkTypeCross(tInt, tInt), tProp)))))), Core.NewTermList())
+	form := Core.MakeFormAndTerm(AST.MakerAll([]AST.Var{vars[0]}, AST.MakerImp(AST.MakerPred(AST.MakerId("P"), AST.NewTermList(vars[0]), []AST.TypeApp{}), AST.MakerAll([]AST.Var{vars[1]}, AST.MakerEx([]AST.Var{vars[2]}, AST.MakerPred(AST.MakerId("R"), AST.NewTermList(vars[2], vars[1]), []AST.TypeApp{}, AST.MkTypeArrow(AST.MkTypeCross(tInt, tInt), tProp)))))), AST.NewTermList())
 
 	// Instantiate x
 	f1_inst, metas := Core.Instantiate(form, 0)
 
 	if pred, ok := f1_inst.GetForm().(AST.Pred); ok {
-		if !pred.GetType().Equals(polymorphism.DefaultPropType(1)) {
+		if !pred.GetType().Equals(AST.DefaultPropType(1)) {
 			t.Errorf("Wrong default type for 1-arity predicate.")
 		}
 	}
 
 	// Skolemize y & Instantiate z
-	f2_inst, metas_2 := Core.Instantiate(Core.MakeFormAndTerm(form.GetForm().(AST.All).GetForm().(AST.Imp).GetF2(), Core.NewTermList()), 0)
+	f2_inst, metas_2 := Core.Instantiate(Core.MakeFormAndTerm(form.GetForm().(AST.All).GetForm().(AST.Imp).GetF2(), AST.NewTermList()), 0)
 	metas.AppendIfNotContains(metas_2.Slice()...)
-	f2_sko := Core.Skolemize(f2_inst, Core.NewMetaList())
+	f2_sko := Core.Skolemize(f2_inst, AST.NewMetaList())
 
 	if metas.Len() != 2 {
 		t.Errorf("Wrong amount of metas have been created")
 	} else {
 		if pred, ok := f2_sko.GetForm().(AST.Pred); ok {
-			if !pred.GetType().Equals(polymorphism.MkTypeArrow(polymorphism.MkTypeCross(tInt, tInt), tProp)) {
+			if !pred.GetType().Equals(AST.MkTypeArrow(AST.MkTypeCross(tInt, tInt), tProp)) {
 				t.Errorf("Wrong type scheme for default predicate.")
 			}
 			// #0 is a function with 1 argument and #1 a meta
-			if fun, ok := pred.GetArgs().Get(0).(Core.Fun); ok {
+			if fun, ok := pred.GetArgs().Get(0).(AST.Fun); ok {
 				if fun.GetArgs().Len() != 1 {
 					t.Errorf("Skolemized argument should be a 1-arity function.")
 				}
-				if !fun.GetTypeHint().Equals(polymorphism.MkTypeArrow(tInt, tInt)) {
+				if !fun.GetTypeHint().Equals(AST.MkTypeArrow(tInt, tInt)) {
 					t.Errorf("Wrongly inferred type in skolemization.")
 				}
 			} else {
 				t.Errorf("Second argument should be a constant.")
 			}
-			if _, ok := pred.GetArgs().Get(1).(Core.Meta); !ok {
+			if _, ok := pred.GetArgs().Get(1).(AST.Meta); !ok {
 				t.Errorf("First argument should be a meta.")
 			}
 		} else {

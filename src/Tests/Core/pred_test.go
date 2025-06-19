@@ -40,23 +40,22 @@ import (
 	"os"
 	"testing"
 
-	typing "github.com/GoelandProver/Goeland/polymorphism/typing"
-	. "github.com/GoelandProver/Goeland/types/basic-types"
+	"github.com/GoelandProver/Goeland/AST"
 )
 
 func TestMain(m *testing.M) {
-	typing.Init()
+	AST.Init()
 	code := m.Run()
 	os.Exit(code)
 }
 
 func TestConstantsPredicatesEquality(t *testing.T) {
 	// Testing with constants
-	a := MakerConst(MakerId("a"))
-	p := MakerId("P")
+	a := AST.MakerConst(AST.MakerId("a"))
+	p := AST.MakerId("P")
 
-	p1 := MakerPred(p, NewTermList(a), []typing.TypeApp{})
-	p2 := MakerPred(p, NewTermList(a), []typing.TypeApp{})
+	p1 := AST.MakerPred(p, AST.NewTermList(a), []AST.TypeApp{})
+	p2 := AST.MakerPred(p, AST.NewTermList(a), []AST.TypeApp{})
 
 	if !p1.Equals(p2) {
 		t.Errorf("%s != %s when it should be equal.", p1.ToString(), p2.ToString())
@@ -65,11 +64,11 @@ func TestConstantsPredicatesEquality(t *testing.T) {
 
 func TestVariablesPredicatesEquality(t *testing.T) {
 	// Testing with variables
-	x := MakerVar("x")
-	p := MakerId("P")
+	x := AST.MakerVar("x")
+	p := AST.MakerId("P")
 
-	p1 := MakerPred(p, NewTermList(x), []typing.TypeApp{})
-	p2 := MakerPred(p, NewTermList(x), []typing.TypeApp{})
+	p1 := AST.MakerPred(p, AST.NewTermList(x), []AST.TypeApp{})
+	p2 := AST.MakerPred(p, AST.NewTermList(x), []AST.TypeApp{})
 
 	if !p1.Equals(p2) {
 		t.Errorf("%s != %s when it should be equal.", p1.ToString(), p2.ToString())
@@ -78,12 +77,12 @@ func TestVariablesPredicatesEquality(t *testing.T) {
 
 func TestFunctionsPredicatesEquality(t *testing.T) {
 	// Testing with functions
-	x := MakerVar("x")
-	f := MakerFun(MakerId("f"), NewTermList(x), []typing.TypeApp{})
-	p := MakerId("P")
+	x := AST.MakerVar("x")
+	f := AST.MakerFun(AST.MakerId("f"), AST.NewTermList(x), []AST.TypeApp{})
+	p := AST.MakerId("P")
 
-	p1 := MakerPred(p, NewTermList(f), []typing.TypeApp{})
-	p2 := MakerPred(p, NewTermList(f), []typing.TypeApp{})
+	p1 := AST.MakerPred(p, AST.NewTermList(f), []AST.TypeApp{})
+	p2 := AST.MakerPred(p, AST.NewTermList(f), []AST.TypeApp{})
 
 	if !p1.Equals(p2) {
 		t.Errorf("%s != %s when it should be equal.", p1.ToString(), p2.ToString())
@@ -91,11 +90,11 @@ func TestFunctionsPredicatesEquality(t *testing.T) {
 }
 
 func TestTypedPredicatesEquality(t *testing.T) {
-	x := MakerVar("x", typing.MkTypeHint("int"))
-	p := MakerId("P")
+	x := AST.MakerVar("x", AST.MkTypeHint("int"))
+	p := AST.MakerId("P")
 
-	p1 := MakerPred(p, NewTermList(x), []typing.TypeApp{typing.MkTypeHint("int")})
-	p2 := MakerPred(p, NewTermList(x), []typing.TypeApp{typing.MkTypeHint("int")})
+	p1 := AST.MakerPred(p, AST.NewTermList(x), []AST.TypeApp{AST.MkTypeHint("int")})
+	p2 := AST.MakerPred(p, AST.NewTermList(x), []AST.TypeApp{AST.MkTypeHint("int")})
 
 	if !p1.Equals(p2) {
 		t.Errorf("%s != %s when it should be equal.", p1.ToString(), p2.ToString())

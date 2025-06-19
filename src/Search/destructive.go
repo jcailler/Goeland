@@ -752,10 +752,10 @@ func (ds *destructiveSearch) manageRewriteRules(fatherId uint64, state State, c 
 	ds.ProofSearch(fatherId, state, c, Core.MakeEmptySubstAndForm(), currentNodeId, originalNodeId, []int{}, true)
 }
 
-// ILL TODO: check if this function does not make the DMT version lose completeness: is the original formula that's rewritten still in the branch or not?
 func (ds *destructiveSearch) tryRewrite(rewritten []Core.IntSubstAndForm, f Core.FormAndTerms, state *State, remainingAtomics Core.FormAndTermsList, fatherId uint64, c Communication, currentNodeId int, originalNodeId int, metaToReintroduce []int) bool {
 	Glob.PrintDebug("PS", fmt.Sprintf("Try to rewrite into :  %v", Core.IntSubstAndFormListToString(rewritten)))
 
+	// Update the rewriting options with the terms of the original formula f
 	newRewritten := []Core.IntSubstAndFormAndTerms{}
 	for _, isaf := range rewritten {
 		newFNTs := Core.MakeEmptyFormAndTermsList()
@@ -764,19 +764,19 @@ func (ds *destructiveSearch) tryRewrite(rewritten []Core.IntSubstAndForm, f Core
 		}
 		newRewritten = append(newRewritten, Core.MakeIntSubstAndFormAndTerms(isaf.GetId_rewrite(), Core.MakeSubstAndFormAndTerms(isaf.GetSaf().GetSubst(), newFNTs)))
 	}
+	// Add the original formula
+	newRewritten = append(newRewritten, Core.MakeIntSubstAndFormAndTerms(-1, Core.MakeSubstAndFormAndTerms(Unif.MakeEmptySubstitution(), Core.MakeSingleElementFormAndTermList(f))))
 
-	// Keep all the possibility of rewriting and choose the first one
+	// Choose the first rewriting option and remove it from the list
 	choosenRewritten := newRewritten[0]
 	choosenRewrittenForm := choosenRewritten.GetSaf().GetForm()[0].Copy()
-	// Case with multiple formulas: we also have to copy rewritten[0] without the first formulas. This case cannot happen because of the DMT's code
 	newRewritten = Core.CopyIntSubstAndFormAndTermsList(newRewritten[1:])
 
-	// If we didn't rewrite as itself ?
+	// If the rewriting is available
 	if !choosenRewritten.GetSaf().GetSubst().Equals(Unif.Failure()) {
-		// Create a child with the current rewriting rule and make this process to wait for him, with a list of other subst to try
-		// all atomics but not the chosen one
+		// Create a child with the current rewriting rule and make the current process wait for it, with a list of other substitutions to try
 		state.SetLF(append(remainingAtomics.Copy(), choosenRewrittenForm.Copy()))
-		state.SetBTOnFormulas(true) // I need to know that I can bt on form and my child needs to know it to to don't loop
+		state.SetBTOnFormulas(true) // Allows the proof-search to backtrack on this rewriting choice
 
 		// Proof
 		state.SetCurrentProofFormula(f)
@@ -801,10 +801,8 @@ func (ds *destructiveSearch) tryRewrite(rewritten []Core.IntSubstAndForm, f Core
 		return true
 	} else {
 		// No rewriting possible
-		Glob.PrintDebug("PS", fmt.Sprintf("No rewriting possible, dispatch %v", f.ToString()))
-		// Then add f in LF
+		Glob.PrintDebug("PS", fmt.Sprintf("No rewriting possible for %v", f.ToString()))
 		state.SetLF(state.GetLF().AppendIfNotContains(f.Copy()))
-
 		return false
 	}
 }
