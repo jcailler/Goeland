@@ -42,7 +42,7 @@ type TermForm struct {
 	t     AST.Term
 }
 
-func (t TermForm) ToString() string          { return t.ToString() }
+func (t TermForm) ToString() string          { return t.t.ToString() }
 func (t TermForm) GetTerm() AST.Term         { return t.t.Copy() }
 func (t TermForm) Copy() AST.Form            { return makeTermForm(t.GetIndex(), t.GetTerm()) }
 func (t TermForm) RenameVariables() AST.Form { return t }

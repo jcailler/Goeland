@@ -12,7 +12,10 @@ import (
 	"github.com/GoelandProver/Goeland/Lib"
 	"github.com/GoelandProver/Goeland/Mods/assisted"
 	"github.com/GoelandProver/Goeland/Mods/dmt"
+
 	equality "github.com/GoelandProver/Goeland/Mods/equality/bse"
+	// equality "github.com/GoelandProver/Goeland/Mods/equality/cc"
+
 	"github.com/GoelandProver/Goeland/Mods/equality/sateq"
 	"github.com/GoelandProver/Goeland/Mods/gs3"
 	"github.com/GoelandProver/Goeland/Mods/lambdapi"

@@ -353,13 +353,6 @@ func (ds *destructiveSearch) ProofSearch(father_id uint64, st State, cha Communi
 			Lib.MkLazy(func() string { return fmt.Sprintf("Atomics non-dmt : %v", atomics_non_dmt.ToString()) }),
 		)
 
-		// Equality
-		if EagerEq || (len(st.GetAlpha()) == 0 && len(st.GetDelta()) == 0 && len(st.GetBeta()) == 0) {
-			if TryEquality(atomics_dmt, st, step_atomics, father_id, cha, node_id, original_node_id) {
-				return
-			}
-		}
-
 		// Retrieve new formulas to insert into the trees
 		atomicsPlus := atomics_non_dmt.FilterLitPolarity(Core.Pos)
 		atomicsMinus := atomics_non_dmt.FilterLitPolarity(Core.Neg)
@@ -371,6 +364,9 @@ func (ds *destructiveSearch) ProofSearch(father_id uint64, st State, cha Communi
 		)
 		st.SetTreePos(st.GetTreePos().MakeDataStruct(st.GetAtomic().Merge(atomicsPlus).ExtractForms(), true))
 		st.SetTreeNeg(st.GetTreeNeg().MakeDataStruct(st.GetAtomic().Merge(atomicsMinus).ExtractForms(), false))
+		// st.AddToTreePos(atomicsPlus.ExtractForms())
+		// st.AddToTreeNeg(atomicsMinus.ExtractForms())
+
 		for _, f := range atomics_non_dmt {
 			st.DispatchForm(f)
 		}
@@ -383,6 +379,18 @@ func (ds *destructiveSearch) ProofSearch(father_id uint64, st State, cha Communi
 		for _, f := range atomicsMinus {
 			if ds.searchContradiction(f.GetForm().Copy(), father_id, st, cha, node_id, original_node_id) {
 				return
+			}
+		}
+
+		// Equality
+		if Glob.GetPlugin("equality") {
+			if EagerEq || (len(st.GetAlpha()) == 0 && len(st.GetDelta()) == 0 && len(st.GetBeta()) == 0) {
+				debug(
+					Lib.MkLazy(func() string { return "Apply equality reasoning" }),
+				)
+				if TryEquality(atomics_dmt, st, step_atomics, father_id, cha, node_id, original_node_id) {
+					return
+				}
 			}
 		}
 
@@ -1070,6 +1078,9 @@ func (ds *destructiveSearch) ManageClosureRule(
 	original_node_id int,
 ) (bool, []Core.SubstAndForm) {
 
+	debug(
+		Lib.MkLazy(func() string { return fmt.Sprintf("Formula : %v", f.GetForm().ToString()) }),
+	)
 	mm := st.GetMM().Copy()
 	subst := st.GetAppliedSubst().GetSubst()
 	mm = mm.Union(Core.GetMetaFromSubst(subst))
@@ -1167,7 +1178,7 @@ func (ds *destructiveSearch) ManageClosureRule(
 				)
 			}
 			debug(
-				Lib.MkLazy(func() string { return fmt.Sprintf("Formula = : %v", f.ToString()) }),
+				Lib.MkLazy(func() string { return fmt.Sprintf("Formula = : %v", f.GetForm().ToString()) }),
 			)
 
 			// Create substAndForm with the current form and the subst found

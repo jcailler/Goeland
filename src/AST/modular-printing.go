@@ -148,8 +148,8 @@ func (p *PrinterConnective) StrConn(conn Connective) string {
 	}
 
 	if val, ok := p.connectives[conn]; ok {
-		printer_debug(
-			Lib.MkLazy(func() string { return fmt.Sprintf("Found connective %d in %s as %s", conn, p.name, val) }))
+		// printer_debug(
+		// 	Lib.MkLazy(func() string { return fmt.Sprintf("Found connective %d in %s as %s", conn, p.name, val) }))
 		return val
 	} else {
 		if p.name == DefaultPrinterConnectives().name {

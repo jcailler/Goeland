@@ -54,7 +54,9 @@ import (
 	"github.com/GoelandProver/Goeland/Lib"
 	"github.com/GoelandProver/Goeland/Mods/assisted"
 	"github.com/GoelandProver/Goeland/Mods/dmt"
+
 	equality "github.com/GoelandProver/Goeland/Mods/equality/bse"
+	// equality "github.com/GoelandProver/Goeland/Mods/equality/cc"
 	"github.com/GoelandProver/Goeland/Mods/gs3"
 	"github.com/GoelandProver/Goeland/Parser"
 	"github.com/GoelandProver/Goeland/Search"
@@ -155,6 +157,9 @@ func presearchLoader() (AST.Form, int) {
 	if !containsEquality {
 		Glob.SetPlugin("equality", false)
 		Glob.PrintInfo("EQU", "Plugin Equality disabled")
+	} else {
+		Glob.SetPlugin("equality", true)
+		Glob.PrintInfo("EQU", "Plugin Equality enabled")
 	}
 
 	if form == nil {
@@ -204,6 +209,7 @@ func initDebuggers() {
 	Core.InitDebugger()
 	dmt.InitDebugger()
 	equality.InitDebugger()
+	// equality.InitDebugger()
 	incremental.InitDebugger()
 	Search.InitDebugger()
 	Typing.InitDebugger()

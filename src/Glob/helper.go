@@ -39,13 +39,14 @@ package Glob
 import (
 	"bytes"
 	"fmt"
-	"github.com/GoelandProver/Goeland/Lib"
 	"os"
 	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/GoelandProver/Goeland/Lib"
 )
 
 var orocq = false
@@ -126,6 +127,10 @@ func GetGID() uint64 {
 }
 
 /* Getters */
+func GetPlugin(s string) bool {
+	return plugins[s]
+}
+
 func GetDebug() bool {
 	return !debug.IsEmpty()
 }

@@ -117,12 +117,18 @@ func (s State) GetTreePos() Unif.DataStructure {
 	return s.tree_pos
 }
 func (s *State) AddToTreePos(fl Lib.List[AST.Form]) {
+	debug(
+		Lib.MkLazy(func() string { return fmt.Sprintf("%s added to tree pos", Glob.ListToString(fl.GetSlice(), ", ", " ")) }),
+	)
 	s.tree_pos = s.tree_pos.InsertFormulaListToDataStructure(fl)
 }
 func (s State) GetTreeNeg() Unif.DataStructure {
 	return s.tree_neg
 }
 func (s *State) AddToTreeNeg(fl Lib.List[AST.Form]) {
+	debug(
+		Lib.MkLazy(func() string { return fmt.Sprintf("%s added to tree neg", Glob.ListToString(fl.GetSlice(), ", ", " ")) }),
+	)
 	s.tree_neg = s.tree_neg.InsertFormulaListToDataStructure(fl)
 }
 func (s State) GetProof() []ProofStruct {
