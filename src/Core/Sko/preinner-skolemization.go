@@ -204,3 +204,7 @@ func alphaConvertTerm(t AST.Term, substitution map[int]AST.Var) AST.Term {
 	}
 	return t
 }
+
+func (sko PreInnerSkolemization) GetGeneratedSymbol() Lib.Set[AST.Id] {
+	return sko.existingSymbols
+}

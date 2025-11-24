@@ -59,6 +59,10 @@ func (proof TableauxProof) makeSanityCheck() {
 // IProof implementation
 // ----------------------------------------------------------------------------
 
+func (proof TableauxProof) Empty() bool {
+	return (len(proof) == 0)
+}
+
 func (proof TableauxProof) AppliedOn() AST.Form {
 	proof.makeSanityCheck()
 

@@ -52,6 +52,7 @@ var orocq = false
 var olambdapi = false
 var otptp = false
 var osctptp = false
+var otableauxrocq = false
 var Assisted = false
 var destructive = true
 var nb_gor = 0
@@ -222,6 +223,10 @@ func IsSCTPTPOutput() bool {
 	return osctptp
 }
 
+func IsTableauxRocqOutput() bool {
+	return otableauxrocq
+}
+
 func GetProblemName() string {
 	return problem_name
 }
@@ -370,6 +375,10 @@ func OutputTPTP() {
 
 func OutputSCTPTP() {
 	osctptp = true
+}
+
+func OutputTR() {
+	otableauxrocq = true
 }
 
 func SetPlugin(s string, b bool) {

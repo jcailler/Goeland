@@ -62,7 +62,7 @@ type ProofStruct struct {
 	Rule            string
 	Rule_name       string
 	Result_formulas []IntFormAndTermsList
-	Children        [][]ProofStruct
+	Children        []TableauxProof
 }
 
 type JsonProofStruct struct {
@@ -173,7 +173,7 @@ func (p ProofStruct) Copy() ProofStruct {
 	}
 }
 
-func ProofStructListToString(l []ProofStruct) string {
+func ProofStructListToString(l TableauxProof) string {
 	var s_res string
 	for i, v := range l {
 		s_res += "| " + v.ToString() + " | "
@@ -184,7 +184,7 @@ func ProofStructListToString(l []ProofStruct) string {
 	}
 	return s_res
 }
-func ProofChildrenToString(l [][]ProofStruct) string {
+func ProofChildrenToString(l []TableauxProof) string {
 	var s_res string
 	for i, v := range l {
 		s_res += "[" + ProofStructListToString(v) + "]"
@@ -217,7 +217,7 @@ func (p ProofStruct) GetRuleName() string {
 func (p ProofStruct) GetResultFormulas() []IntFormAndTermsList {
 	return p.Result_formulas
 }
-func (p ProofStruct) GetChildren() [][]ProofStruct {
+func (p ProofStruct) GetChildren() []TableauxProof {
 	return p.Children
 }
 
@@ -226,7 +226,7 @@ func SetFileProof(file *os.File) {
 	file_proof = file
 }
 
-func (p *ProofStruct) SetChildrenProof(c [][]ProofStruct) {
+func (p *ProofStruct) SetChildrenProof(c []TableauxProof) {
 	p.Children = copyProofStructChildren(c)
 }
 
@@ -259,7 +259,7 @@ func (p *ProofStruct) SetResultFormulasProof(fl []IntFormAndTermsList) {
 func MakeEmptyProofStruct() ProofStruct {
 	return ProofStruct{
 		Core.MakeFormAndTerm(AST.MakerBot(), Lib.NewList[AST.Term]()),
-		-1, -1, "", "", []IntFormAndTermsList{}, [][]ProofStruct{},
+		-1, -1, "", "", []IntFormAndTermsList{}, []TableauxProof{},
 	}
 }
 
@@ -268,7 +268,7 @@ func MakeProofStruct(
 	formula_use, id int,
 	rule, rule_name string,
 	Result_formulas []IntFormAndTermsList,
-	children [][]ProofStruct,
+	children []TableauxProof,
 ) ProofStruct {
 	return ProofStruct{formula, formula_use, id, rule, rule_name, Result_formulas, children}
 }
@@ -303,7 +303,7 @@ func IntFormAndTermsListToIntIntStringPairList(fl []IntFormAndTermsList) []IntIn
 	return res
 }
 
-func ProofStructListToJsonProofStructList(ps []ProofStruct) []JsonProofStruct {
+func ProofStructListToJsonProofStructList(ps TableauxProof) []JsonProofStruct {
 	res := []JsonProofStruct{}
 	for _, p := range ps {
 		new_json_element := JsonProofStruct{
@@ -320,7 +320,7 @@ func ProofStructListToJsonProofStructList(ps []ProofStruct) []JsonProofStruct {
 	return res
 }
 
-func proofStructChildrenToJsonProofStructChildren(c [][]ProofStruct) [][]JsonProofStruct {
+func proofStructChildrenToJsonProofStructChildren(c []TableauxProof) [][]JsonProofStruct {
 	res := make([][]JsonProofStruct, len(c))
 	for i, c2 := range c {
 		res[i] = ProofStructListToJsonProofStructList(c2)
@@ -335,7 +335,7 @@ func ResetProofFile() {
 	}
 }
 
-func WriteGraphProof(proof_content []ProofStruct) {
+func WriteGraphProof(proof_content TableauxProof) {
 	json_content := ProofStructListToJsonProofStructList(proof_content)
 	if Glob.GetProof() {
 		mutex_file_proof.Lock()
@@ -352,10 +352,10 @@ func WriteGraphProof(proof_content []ProofStruct) {
 }
 
 /* Copy children */
-func copyProofStructChildren(c [][]ProofStruct) [][]ProofStruct {
-	res := make([][]ProofStruct, len(c))
+func copyProofStructChildren(c []TableauxProof) []TableauxProof {
+	res := make([]TableauxProof, len(c))
 	for i := range c {
-		res[i] = make([]ProofStruct, len(c[i]))
+		res[i] = make(TableauxProof, len(c[i]))
 		for j := range c[i] {
 			res[i][j] = c[i][j].Copy()
 		}
@@ -364,8 +364,8 @@ func copyProofStructChildren(c [][]ProofStruct) [][]ProofStruct {
 }
 
 /* Copy a list of proofstruct */
-func CopyProofStructList(ps []ProofStruct) []ProofStruct {
-	res := make([]ProofStruct, len(ps))
+func CopyProofStructList(ps TableauxProof) TableauxProof {
+	res := make(TableauxProof, len(ps))
 	for i := range ps {
 		res[i] = ps[i].Copy()
 	}
@@ -405,7 +405,8 @@ func JsonProofStructListToText(jps []JsonProofStruct) string {
 	return res
 }
 
-func RetrieveUninstantiatedMetaFromProof(proofStruct []ProofStruct) Lib.Set[AST.Meta] {
+
+func RetrieveUninstantiatedMetaFromProof(proofStruct TableauxProof) Lib.Set[AST.Meta] {
 	res := Lib.EmptySet[AST.Meta]()
 
 	for _, proofElement := range proofStruct {
@@ -427,11 +428,8 @@ func RetrieveUninstantiatedMetaFromProof(proofStruct []ProofStruct) Lib.Set[AST.
 }
 
 /* Apply subst on a proof tree */
-func ApplySubstitutionOnProofList(
-	s Lib.List[Unif.MixedSubstitution],
-	proof_list []ProofStruct,
-) []ProofStruct {
-	new_proof_list := []ProofStruct{}
+func ApplySubstitutionOnProofList(s Lib.List[Unif.MixedSubstitution], proof_list TableauxProof) TableauxProof {
+	new_proof_list := TableauxProof{}
 
 	for _, p := range proof_list {
 		p.SetFormulaProof(Core.ApplySubstitutionsOnFormAndTerms(s, p.GetFormula()))
@@ -448,7 +446,7 @@ func ApplySubstitutionOnProofList(
 		}
 		p.SetResultFormulasProof(new_result_formulas)
 
-		new_children := [][]ProofStruct{}
+		new_children := []TableauxProof{}
 		for _, c := range p.GetChildren() {
 			new_children = append(new_children, ApplySubstitutionOnProofList(s, c))
 		}

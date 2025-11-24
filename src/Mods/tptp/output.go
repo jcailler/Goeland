@@ -42,6 +42,7 @@ import (
 	"github.com/GoelandProver/Goeland/Lib"
 	"github.com/GoelandProver/Goeland/Mods/desko"
 	"github.com/GoelandProver/Goeland/Search"
+	"github.com/GoelandProver/Goeland/Unif"
 )
 
 var raise_anomaly = func(msg string) { Glob.Anomaly("TPTP", msg) }
@@ -59,7 +60,7 @@ var TptpOutputProofStruct = &Search.OutputProofStruct{
 // Functions: MakeTptpOutput
 // Main functions of the TPTP module.
 
-func MakeTptpOutput(prf Search.IProof, meta Lib.List[AST.Meta]) string {
+func MakeTptpOutput(prf Search.IProof, meta Lib.List[AST.Meta], sub Unif.Substitutions) string {
 	// FIXME: set AST's printer to be the one of TPTP
 
 	if Glob.IsSCTPTPOutput() {

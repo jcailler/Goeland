@@ -155,3 +155,12 @@ func realSkolemize(
 	}
 	return res
 }
+
+
+func GetGeneratedSymbolSkolemization() Lib.List[AST.Term] {
+	symbols := Lib.NewList[AST.Term]()
+	for _, s := range selectedSkolemization.GetGeneratedSymbol().Elements().GetSlice() {
+		symbols.Append(AST.MakerConst(s))
+	}
+	return symbols
+}

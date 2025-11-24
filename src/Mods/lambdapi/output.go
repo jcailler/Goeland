@@ -41,6 +41,7 @@ import (
 	"github.com/GoelandProver/Goeland/Lib"
 	"github.com/GoelandProver/Goeland/Mods/desko"
 	"github.com/GoelandProver/Goeland/Search"
+	"github.com/GoelandProver/Goeland/Unif"
 )
 
 var contextEnabled bool = false
@@ -65,7 +66,7 @@ func InitDebugger() {
 	debug = Glob.CreateDebugger("LambdaPi")
 }
 
-func MakeLambdapiOutput(prf Search.IProof, meta Lib.List[AST.Meta]) string {
+func MakeLambdapiOutput(prf Search.IProof, meta Lib.List[AST.Meta], sub Unif.Substitutions) string {
 	connectives := LambdapiPrinterConnectives()
 	printer := AST.Printer{PrinterAction: LambdapiPrinterAction(), PrinterConnective: &connectives}
 	AST.SetPrinter(printer)

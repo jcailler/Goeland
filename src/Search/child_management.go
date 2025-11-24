@@ -119,7 +119,7 @@ func (args wcdArgs) printDebugMessages() {
 
 /* Utilitary subfunctions */
 
-func (ds *destructiveSearch) childrenClosedByThemselves(args wcdArgs, proofChildren [][]ProofStruct) error {
+func (ds *destructiveSearch) childrenClosedByThemselves(args wcdArgs, proofChildren []TableauxProof) error {
 	debug(Lib.MkLazy(func() string { return "All children has finished by themselves" }))
 
 	// All children are closed & did not send any subst, i.e., they can be closed.
@@ -157,7 +157,7 @@ func (ds *destructiveSearch) childrenClosedByThemselves(args wcdArgs, proofChild
 	return nil
 }
 
-func (ds *destructiveSearch) passSubstToParent(args wcdArgs, proofChildren [][]ProofStruct, substs []Core.SubstAndForm) error {
+func (ds *destructiveSearch) passSubstToParent(args wcdArgs, proofChildren []TableauxProof, substs []Core.SubstAndForm) error {
 	debug(
 		Lib.MkLazy(func() string {
 			return fmt.Sprintf(
@@ -355,14 +355,14 @@ func (ds *destructiveSearch) manageBacktrackForDMT(args wcdArgs) {
 	ds.waitChildren(args)
 }
 
-func updateProof(args wcdArgs, proofChildren [][]ProofStruct) State {
+func updateProof(args wcdArgs, proofChildren []TableauxProof) State {
 	// Update the proof with the given children proofs.
 	if Glob.GetProof() {
 		proofList := args.st.GetProof()
 		if args.overwrite {
 			// TODO: check if it gets properly rewritten when a backtrack on it is done.
 			if proofList[len(proofList)-1].Rule == "Rewrite" && (proofChildren[0][0].Rule != "Rewrite" || proofChildren[0][0].Node_id != proofList[len(proofList)-1].Node_id) {
-				proofList[len(proofList)-1].Children = [][]ProofStruct{}
+				proofList[len(proofList)-1].Children = []TableauxProof{}
 				proofList = append(proofList, proofChildren[0]...)
 			} else {
 				proofList = append(proofList[:len(proofList)-1], proofChildren[0]...)

@@ -18,6 +18,7 @@ import (
 	"github.com/GoelandProver/Goeland/Mods/lambdapi"
 	"github.com/GoelandProver/Goeland/Mods/rocq"
 	"github.com/GoelandProver/Goeland/Mods/tptp"
+	"github.com/GoelandProver/Goeland/Mods/tableaux-rocq"
 	"github.com/GoelandProver/Goeland/Search"
 	"github.com/GoelandProver/Goeland/Search/incremental"
 )
@@ -304,6 +305,17 @@ func buildOptions() {
 			Glob.OutputLambdapi()
 			Glob.SetProof(true)
 			Search.AddPrintProofAlgorithm(lambdapi.LambdapiOutputProofStruct)
+		},
+		func(bool) {})
+	(&option[bool]{}).init(
+		"otableauxrocq",
+		false,
+		"Enables the TableauxRocq format for proofs instead of text",
+		func(bool) {
+			Glob.OutputTR()
+			Glob.SetProof(true)
+			Search.AddPrintProofAlgorithm(tableauxrocq.TROutputProofStruct)
+
 		},
 		func(bool) {})
 	(&option[bool]{}).init(

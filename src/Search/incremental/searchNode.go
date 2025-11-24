@@ -6,6 +6,7 @@ import (
 	"github.com/GoelandProver/Goeland/AST"
 	"github.com/GoelandProver/Goeland/Core"
 	"github.com/GoelandProver/Goeland/Search"
+	"github.com/GoelandProver/Goeland/Unif"
 )
 
 type SearchNode struct {
@@ -191,7 +192,7 @@ func (sn *SearchNode) keepGoing() {
 	}
 }
 
-func (sn *SearchNode) getResult() (result bool, finalProof []Search.ProofStruct) {
+func (sn *SearchNode) getResult() (result bool, finalProof []Search.ProofStruct, sub Unif.Substitutions) {
 	<-searchNodeCounter.channel
 
 	result = sn.closureManager.isTreeClosed()
@@ -205,13 +206,13 @@ func (sn *SearchNode) getResult() (result bool, finalProof []Search.ProofStruct)
 	}
 
 	if result {
-		finalProof = sn.getProofStruct(chosenSub)
+		finalProof, sub = sn.getProofStruct(chosenSub)
 	}
 
-	return result, finalProof
+	return result, finalProof, sub
 }
 
-func (sn *SearchNode) getProofStruct(chosenSub *Sub) []Search.ProofStruct {
+func (sn *SearchNode) getProofStruct(chosenSub *Sub) ([]Search.ProofStruct, Unif.Substitutions) {
 	everyStep := []Search.ProofStruct{}
 	thisStep := Search.ProofStruct{}
 
@@ -232,18 +233,19 @@ func (sn *SearchNode) getProofStruct(chosenSub *Sub) []Search.ProofStruct {
 	switch {
 	case len(sn.children) > 1:
 		for _, child := range sn.children {
-			thisStep.Children = append(thisStep.Children, child.getProofStruct(chosenSub))
+			tmp, _ := child.getProofStruct(chosenSub)
+			thisStep.Children = append(thisStep.Children, tmp)
 		}
 		everyStep = append(everyStep, thisStep)
 	case len(sn.children) == 1:
 		everyStep = append(everyStep, thisStep)
-		nextStep := sn.children[0].getProofStruct(chosenSub)
+		nextStep, _ := sn.children[0].getProofStruct(chosenSub)
 		everyStep = append(everyStep, nextStep...)
 	case len(sn.children) == 0:
 		everyStep = append(everyStep, thisStep)
 	}
 
-	return everyStep
+	return everyStep, chosenSub.GetAsUnifSubstitution()
 }
 
 func (sn *SearchNode) getFormula() Core.FormAndTerms {

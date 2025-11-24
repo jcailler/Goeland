@@ -39,16 +39,17 @@ import (
 	"github.com/GoelandProver/Goeland/AST"
 	"github.com/GoelandProver/Goeland/Glob"
 	"github.com/GoelandProver/Goeland/Lib"
+	"github.com/GoelandProver/Goeland/Unif"
 )
 
 var BasicOutputProofStruct = &OutputProofStruct{
-	ProofOutput: func(finalProof IProof, _ Lib.List[AST.Meta]) string { return finalProof.ToString() },
+	ProofOutput: func(finalProof IProof, _ Lib.List[AST.Meta], _ Unif.Substitutions) string { return finalProof.ToString() },
 	Name:        "Basic",
 	Extension:   ".proof",
 }
 
 type OutputProofStruct struct {
-	ProofOutput func(finalProof IProof, metaList Lib.List[AST.Meta]) string
+	ProofOutput func(finalProof IProof, metaList Lib.List[AST.Meta], subst Unif.Substitutions) string
 	Name        string
 	Extension   string
 }
@@ -59,7 +60,7 @@ func AddPrintProofAlgorithm(ps *OutputProofStruct) {
 	outputProofStructs = append(outputProofStructs, ps)
 }
 
-func PrintProof(final_proof TableauxProof, metaList Lib.Set[AST.Meta]) {
+func PrintProof(final_proof TableauxProof, metaList Lib.Set[AST.Meta], subst Unif.Substitutions) {
 	if !Glob.GetProof() {
 		return
 	}
@@ -67,17 +68,14 @@ func PrintProof(final_proof TableauxProof, metaList Lib.Set[AST.Meta]) {
 	fmt.Printf("%v SZS output start Proof for %v\n", "%", Glob.GetProblemName())
 
 	for _, ps := range outputProofStructs {
-		ps.printProofWithProofStruct(final_proof, metaList)
+		ps.printProofWithProofStruct(final_proof, metaList, subst)
 	}
 
 	fmt.Printf("%v SZS output end Proof for %v\n", "%", Glob.GetProblemName())
 }
 
-func (ps *OutputProofStruct) printProofWithProofStruct(
-	finalProof TableauxProof,
-	metaList Lib.Set[AST.Meta],
-) {
-	output := ps.ProofOutput(finalProof, metaList.Elements())
+func (ps *OutputProofStruct) printProofWithProofStruct(finalProof TableauxProof, metaList Lib.Set[AST.Meta], subst Unif.Substitutions) {
+	output := ps.ProofOutput(finalProof, metaList.Elements(), subst)
 
 	if Glob.GetWriteLogs() {
 		f, err := os.OpenFile(Glob.ProofFile+ps.Extension, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)

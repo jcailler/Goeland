@@ -45,6 +45,7 @@ import (
 	"github.com/GoelandProver/Goeland/Lib"
 	"github.com/GoelandProver/Goeland/Mods/desko"
 	"github.com/GoelandProver/Goeland/Search"
+	"github.com/GoelandProver/Goeland/Unif"
 )
 
 var contextEnabled bool = false
@@ -65,7 +66,7 @@ func Init() {
 	debug = Glob.CreateDebugger("rocq")
 }
 
-func MakeRocqOutput(prf Search.IProof, meta Lib.List[AST.Meta]) string {
+func MakeRocqOutput(prf Search.IProof, meta Lib.List[AST.Meta], subst Unif.Substitutions) string {
 	// Setup Rocq printer
 	connectives := RocqPrinterConnectives()
 	printer := AST.Printer{PrinterAction: RocqPrinterAction(), PrinterConnective: &connectives}
