@@ -81,3 +81,7 @@ func (sko InnerSkolemization) Skolemize(
 
 	return sko, skolemizedForm
 }
+
+func (sko InnerSkolemization) GetGeneratedSymbol() Lib.Set[AST.Id] {
+	return sko.existingSymbols
+}

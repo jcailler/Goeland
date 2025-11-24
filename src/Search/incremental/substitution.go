@@ -205,6 +205,15 @@ func (s *Sub) GetAsMetasAndTerms() (metas Lib.List[AST.Meta], terms Lib.List[AST
 	return metas, terms
 }
 
+func (s *Sub) GetAsUnifSubstitution() Unif.Substitutions {
+	subst := Unif.MakeEmptySubstitution()
+	for _, ss := range s.everySub {
+			subst.Set(*ss.getMeta(), ss.getTerm())
+		}
+
+	return subst
+}
+
 func (s *Sub) replaceThisByThat(this AST.Term, that AST.Term) *Sub {
 	newSubs := s.Copy()
 

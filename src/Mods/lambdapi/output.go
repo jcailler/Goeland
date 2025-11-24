@@ -41,6 +41,7 @@ import (
 	"github.com/GoelandProver/Goeland/Lib"
 	"github.com/GoelandProver/Goeland/Mods/gs3"
 	"github.com/GoelandProver/Goeland/Search"
+	"github.com/GoelandProver/Goeland/Unif"
 )
 
 var contextEnabled bool = false
@@ -60,7 +61,7 @@ func InitDebugger() {
 	debug = Glob.CreateDebugger("LambdaPi")
 }
 
-func MakeLambdapiOutput(prf []Search.ProofStruct, meta Lib.List[AST.Meta]) string {
+func MakeLambdapiOutput(prf Search.TableauxProof, meta Lib.List[AST.Meta], sub Unif.Substitutions) string {
 	if len(prf) == 0 {
 		Glob.Fatal("LambdaPi", "Nothing to output")
 	}

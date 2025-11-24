@@ -160,18 +160,18 @@ func CopySubstList(sl []Substitutions) []Substitutions {
 
 /* Get all the metavariables of a substitution */
 func (subs Substitutions) GetMeta() Lib.List[AST.Meta] {
-	res := Lib.NewList[AST.Meta]()
+	res := Lib.EmptySet[AST.Meta]()
 
 	for _, singleSubs := range subs {
 		meta, term := singleSubs.Key(), singleSubs.Value()
-		res = Lib.ListAdd(res, meta)
-
-		if term.IsMeta() {
-			res = Lib.ListAdd(res, term.ToMeta())
-		}
+		res = res.Add(meta)
+		meta_term := term.GetMetaList()
+		for _, m := range meta_term.GetSlice() {
+				res = res.Add(m)
+			}
 	}
 
-	return res
+	return res.Elements()
 }
 
 /* check if a subst is inside a list of substitutions */

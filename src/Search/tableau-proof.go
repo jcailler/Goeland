@@ -72,6 +72,7 @@ const (
 )
 
 type IProof interface {
+	Empty() bool
 	AppliedOn() AST.Form
 	RuleApplied() TableauxRule
 	KindOfRule() TableauxRuleKind

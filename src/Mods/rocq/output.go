@@ -45,6 +45,7 @@ import (
 	"github.com/GoelandProver/Goeland/Lib"
 	"github.com/GoelandProver/Goeland/Mods/gs3"
 	"github.com/GoelandProver/Goeland/Search"
+	"github.com/GoelandProver/Goeland/Unif"
 )
 
 var contextEnabled bool = false
@@ -54,7 +55,7 @@ var RocqOutputProofStruct = &Search.OutputProofStruct{ProofOutput: MakeRocqOutpu
 // ----------------------------------------------------------------------------
 // Plugin initialisation and main function to call.
 
-func MakeRocqOutput(prf []Search.ProofStruct, meta Lib.List[AST.Meta]) string {
+func MakeRocqOutput(prf Search.TableauxProof, meta Lib.List[AST.Meta], sub Unif.Substitutions) string {
 	if len(prf) == 0 {
 		Glob.PrintError("Rocq", "Nothing to output")
 		return ""

@@ -63,7 +63,7 @@ type BasicSearchAlgorithm interface {
 	DoEndManageBeta(uint64, State, Communication, []Communication, int, int, []int, []int)
 	manageRewriteRules(uint64, State, Communication, Core.FormAndTermsList, int, int, []int)
 	ManageClosureRule(uint64, *State, Communication, Lib.List[Lib.List[Unif.MixedSubstitution]], Core.FormAndTerms, int, int) (bool, []Core.SubstAndForm)
-	manageResult(c Communication) (Core.Unifier, []ProofStruct, bool)
+	manageResult(c Communication) (Core.Unifier, TableauxProof, bool)
 }
 
 type destructiveSearch struct {
@@ -142,11 +142,11 @@ func (ds *destructiveSearch) doOneStep(limit int, formula AST.Form) (bool, int) 
 			PrintSearchResult(result)
 		}
 
-		if unif := unifier.GetUnifier(); !unif.Empty() {
+		if unif := unifier.GetUnifier(); (!unif.Empty() && Glob.IsTableauxRocqOutput()) {
 			finalProof = ApplySubstitutionOnProofList(unif, finalProof)
 		}
 		uninstanciatedMeta := RetrieveUninstantiatedMetaFromProof(finalProof)
-		PrintProof(finalProof, uninstanciatedMeta)
+		PrintProof(finalProof, uninstanciatedMeta, Unif.ToSubstitutions(unifier.GetUnifier()))
 	}
 
 	Glob.SetNbStep(Glob.GetNbStep() + 1)
@@ -676,9 +676,9 @@ Result :
 
 []Core.SubstAndForm : substitutions list
 */
-func (ds *destructiveSearch) selectChildren(father Communication, children *[]Communication, current_subst Core.SubstAndForm, child_order []int) (int, []Core.SubstAndForm, [][]ProofStruct, []Core.Unifier) {
+func (ds *destructiveSearch) selectChildren(father Communication, children *[]Communication, current_subst Core.SubstAndForm, child_order []int) (int, []Core.SubstAndForm, []TableauxProof, []Core.Unifier) {
 
-	proof_tab := make([][]ProofStruct, len(child_order))
+	proof_tab := make([]TableauxProof, len(child_order))
 
 	// Select structure
 	cases := make([]reflect.SelectCase, len(*children)+1)
@@ -1411,7 +1411,7 @@ func (ds *destructiveSearch) manageReintroductionRules(fatherId uint64, state St
 	ds.ProofSearch(fatherId, state, c, Core.MakeEmptySubstAndForm(), childId, originalNodeId, metaToReintroduce, false)
 }
 
-func (ds *destructiveSearch) manageResult(c Communication) (Core.Unifier, []ProofStruct, bool) {
+func (ds *destructiveSearch) manageResult(c Communication) (Core.Unifier, TableauxProof, bool) {
 	result := <-c.getResult()
 
 	debug(

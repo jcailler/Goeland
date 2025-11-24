@@ -61,7 +61,7 @@ type State struct {
 	last_applied_subst                    Core.SubstAndForm   // For non destructive case only
 	substs_found                          []Core.SubstAndForm // Subst found with mm in d, subst for "bactrack" in nd
 	tree_pos, tree_neg                    Unif.DataStructure
-	proof                                 []ProofStruct
+	proof                                 TableauxProof
 	current_proof                         ProofStruct
 	bt_on_formulas                        bool
 	forbidden                             Lib.List[Lib.List[Unif.MixedSubstitution]]
@@ -125,7 +125,7 @@ func (s State) GetTreeNeg() Unif.DataStructure {
 func (s *State) AddToTreeNeg(fl Lib.List[AST.Form]) {
 	s.tree_neg = s.tree_neg.InsertFormulaListToDataStructure(fl)
 }
-func (s State) GetProof() []ProofStruct {
+func (s State) GetProof() TableauxProof {
 	return CopyProofStructList(s.proof)
 }
 func (s State) GetCurrentProof() ProofStruct {
@@ -192,9 +192,9 @@ func (st *State) SetTreePos(d Unif.DataStructure) {
 func (st *State) SetTreeNeg(d Unif.DataStructure) {
 	st.tree_neg = d
 }
-func (st *State) SetProof(p []ProofStruct) {
+func (st *State) SetProof(p TableauxProof) {
 	if Glob.GetProof() {
-		st.proof = make([]ProofStruct, len(p))
+		st.proof = make(TableauxProof, len(p))
 		copy(st.proof, p)
 	}
 }
@@ -232,7 +232,7 @@ func (st *State) SetCurrentProofRuleName(s string) {
 		st.current_proof.SetRuleNameProof(s)
 	}
 }
-func (st *State) SetCurrentProofChildren(c [][]ProofStruct) {
+func (st *State) SetCurrentProofChildren(c []TableauxProof) {
 	if Glob.GetProof() {
 		st.current_proof.SetChildrenProof(c)
 	}
@@ -282,7 +282,7 @@ func MakeState(limit int, tp, tn Unif.DataStructure, f AST.Form) State {
 		[]Core.SubstAndForm{},
 		tp,
 		tn,
-		[]ProofStruct{},
+		TableauxProof{},
 		current_proof,
 		false,
 		Lib.NewList[Lib.List[Unif.MixedSubstitution]](),
@@ -434,7 +434,7 @@ func (st State) Copy() State {
 		new_state.SetTreeNeg(st.GetTreeNeg())
 	}
 
-	new_state.SetProof([]ProofStruct{})
+	new_state.SetProof(TableauxProof{})
 	new_state.SetCurrentProof(MakeEmptyProofStruct())
 	new_state.SetBTOnFormulas(st.GetBTOnFormulas())
 	new_state.SetForbiddenSubsts(st.GetForbiddenSubsts())

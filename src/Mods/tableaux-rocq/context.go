@@ -30,43 +30,54 @@
 * knowledge of the CeCILL license and that you accept its terms.
 **/
 
-package Sko
+/**
+* This file provides TableauxRocq's context for a proof.
+**/
+
+package tableauxrocq
 
 import (
 	"fmt"
 
-	"github.com/GoelandProver/Goeland/AST"
-	"github.com/GoelandProver/Goeland/Lib"
+	"github.com/GoelandProver/Goeland/Glob"
 )
 
-/** This file provides the generic [Skolemization] interface that is exported
- *  and should be used to skolemize formulas.
- *
- * See [Core.skolemisation] for a thorough description of the structure.
- *
- * It also provides some utility functions that may be used by the different
- * skolemization techniques.
- **/
+var contextEnabled bool = false
 
-type Skolemization interface {
-	Skolemize(
-		AST.Form,
-		AST.Form,
-		AST.TypedVar,
-		Lib.Set[AST.Meta],
-	) (Skolemization, AST.Form)
+func makeContext() string {
+	resultingString := "From Tableaux Require Import All.\n\n"
+	resultingString += "Import ATPCompat.\n\n"
 
-	GetGeneratedSymbol() Lib.Set[AST.Id]
+	return resultingString
 }
 
-/* If every Skolem symbol is created using this function, then it will generate
- * a fresh symbol for sure. Otherwise, nothing is guaranteed.
- */
-func genFreshSymbol(existingSymbols *Lib.Set[AST.Id], x AST.TypedVar) AST.Id {
-	symbol := AST.MakerNewId(
-		fmt.Sprintf("skolem@%v@%d", x.GetName(), existingSymbols.Cardinal()),
-	)
-	*existingSymbols = existingSymbols.Add(symbol)
+func makeContextFormulaBegin() string {
+	return "Definition T :=\n"
+}
 
-	return symbol
+func makeContextFormulaEnd() string {
+	return ").\n\n"
+}
+
+func makeContextSubstBegin() string {
+	return "Definition subst := translate_substitution "
+}
+
+func makeContextSubstEnd() string {
+	return "\n\n"
+}
+
+func makeContextProofBegin() string {
+	resultingString := "Theorem T_proof :\n"
+	skolemization := "OuterSkolemization"
+	if (Glob.IsInnerSko()) {
+		skolemization = "InnerSkolemization"
+	}
+	resultingString += fmt.Sprintf("	hasTableau %v {{ translate_EForm (ENeg T)}} subst.\n", skolemization)
+	resultingString += "Proof.\n"
+	return resultingString
+}
+
+func makeContextProofEnd() string {
+	return "Qed."
 }
