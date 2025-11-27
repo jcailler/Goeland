@@ -93,7 +93,7 @@ func (proof TableauxProof) RuleApplied() TableauxRule {
 
 	r, ok := rule_map[proof[0].Rule_name]
 	if !ok {
-		Glob.Anomaly(label, fmt.Sprintf("Unknown tableau rule %s", proof[0].Rule))
+		Glob.Anomaly(label, fmt.Sprintf("Unknown tableau rule %s", proof[0].Rule_name))
 	}
 
 	return r
@@ -114,7 +114,7 @@ func (proof TableauxProof) Children() Lib.List[IProof] {
 
 	// If proof has only one element, then either:
 	//
-	//	(1) it's a closure rule, but then we return an emptyh list
+	//	(1) it's a closure rule, but then we return an empty list
 	//	(2) it's a beta rule, and we need to return the children
 	//
 	// In both cases, it suffices to convert the children to a list.
