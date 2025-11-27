@@ -72,6 +72,12 @@ func (l *List[T]) Append(value ...T) {
 	l.values = append(l.values, value...)
 }
 
+func (l *List[T]) Append2(value List[T]) {
+	for _, v := range value.GetSlice() {
+		l.values = append(l.values, v)
+	}
+}
+
 func (l *List[T]) Upd(i int, v T) {
 	l.values[i] = v
 }

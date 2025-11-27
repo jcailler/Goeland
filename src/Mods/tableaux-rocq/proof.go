@@ -52,8 +52,8 @@ import (
 
 /************ Formula ************/
 func makeFormula(prf Search.TableauxProof) string {
-	res := FormToTR(prf[0].GetFormula().GetForm())
-	return fmt.Sprintf("	%v \n", res) 
+	res := FormToTR(prf.AppliedOn())
+	return fmt.Sprintf("	%v \n", res)
 }
 
 /************ Substitution ************/
@@ -62,16 +62,17 @@ func makeSubst(m AST.Meta, t AST.Term) string {
 }
 
 func makeGlobalSubst(sub Unif.Substitutions) string {
-	var res strings.Builder; res.WriteString("[")
+	var res strings.Builder
+	res.WriteString("[")
 
 	for i, s := range sub {
-		res .WriteString(makeSubst(s.Get()))
+		res.WriteString(makeSubst(s.Get()))
 		if i < len(sub)-1 {
-			res .WriteString("; ")
+			res.WriteString("; ")
 		}
 	}
 
-	res .WriteString("].\n")
+	res.WriteString("].\n")
 	return res.String()
 }
 
@@ -79,38 +80,107 @@ func extractTermsFromSubstList(sub Unif.Substitutions) (Lib.List[AST.Meta], Lib.
 	return sub.GetMeta(), Core.GetGeneratedSymbolSkolemization()
 }
 
-
-
 /************ Proof ************/
 
-func makeStepInProof(s Search.ProofStruct) string {
-	Glob.PrintInfo("MakeStep", fmt.Sprintf("Rule %v - Form %v", s.GetRule(), s.GetFormula().ToString()))
-	
-	switch s.GetFormula().GetForm().(type) {
-	case AST.Pred:
-		return "Pred"
-	case AST.Not:
-		return "Not"
-	case AST.And:
-		return "And"
-	case AST.Or:
-		return "Or"
-	case AST.Imp:
-		return "Imp"
-	case AST.Equ:
-		return "Equ"
-	case AST.Ex:
-		return "Ex"	
-	case AST.All:
-		return "All"
+// TODO: Keep list of used formula to get the right index
+func makeStepInProof(s Search.IProof, form_list Lib.List[int]) (string, Lib.List[Lib.List[int]]) {
+	Glob.PrintInfo("MakeStep", "-----------------------------")
+	Glob.PrintInfo("MakeStep", fmt.Sprintf("Rule %v - Form %v (ID: %v)", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().ToString(), s.AppliedOn().GetIndex()))
+	Glob.PrintInfo("MakeStep", "Form list : ")
+	for _, v := range form_list.GetSlice() {
+        Glob.PrintInfo("MakeStep", fmt.Sprintf("%v ",v))
+    }
+
+	Glob.PrintInfo("MakeStep", "Children: ")
+	for _, branch := range s.Children().GetSlice() {
+		for _, child := range branch.Children().GetSlice() {
+			Glob.PrintInfo("MakeStep", fmt.Sprintf("%v (ID: %v)", child.AppliedOn().ToString(), child.AppliedOn().GetIndex()))
+		}
+	}
+
+	new_form_list := Lib.NewList[Lib.List[int]]()
+	l1 := form_list.Copy(func(i int) int {return i})
+	// l2 := Lib.NewList[int]()
+
+	index := form_list.IndexOf(s.AppliedOn().GetIndex(), func(i1, i2 int) bool {return i1 == i2})
+	real_index := -1
+
+	switch index_t := index.(type) {
+		case Lib.Some[int]:
+			real_index = index_t.Val - form_list.Len()
+		case Lib.None[int]:
+			Glob.Anomaly("TR", "Index not found in MakeStep")
+	}
+
+
+	// Manage tab formula id
+	// check fs.getform id
+	// check index in the list
+	// tab t[i] = rule id
+	// On garde tout ! Et les indices c'est la distance par rapport à la dernière formule ajoutée
+    // Par exemple on a (Gamma ,, F) et tu veux appliquer sur F, tu dois donner l'indice 0
+	// Get the right index : len - indexOf
+	switch s.RuleApplied()  {
+	case Search.RuleClosure:
+		return "Closure", new_form_list
+	case Search.RuleNotNot:
+		return "Not Not", new_form_list
+	case Search.RuleNotOr:
+		return "Not Or", new_form_list
+	case Search.RuleNotImp:
+		res := fmt.Sprintf("eapply hasTableauNegImp with (i := %v).\n", real_index)
+		res += "1: { reflexivity. }"
+		l1.Append(s.ResultFormulas().At(0).At(0).GetIndex())
+		l1.Append(s.ResultFormulas().At(0).At(1).GetIndex())
+		new_form_list.Append(l1)
+
+		return res, new_form_list
+	case Search.RuleAnd:
+		return "And", new_form_list
+	case Search.RuleNotAnd:
+		return "Not And", new_form_list
+	case Search.RuleNotEqu:
+		return "Not Equ", new_form_list
+	case Search.RuleOr:
+		return "Or", new_form_list
+	case Search.RuleImp:
+		return "Imply", new_form_list
+	case Search.RuleEqu:
+		return "Equiv",new_form_list
+	case Search.RuleNotEx:
+		res := fmt.Sprintf("eapply hasTableauNegEx with (i := %v).\n", real_index)
+		res += "1: { reflexivity. }\n"
+		res += "1: { set_decide. }"
+		l1.Append(s.ResultFormulas().At(0).At(0).GetIndex())
+		new_form_list.Append(l1)
+
+		return res, new_form_list
+	case Search.RuleAll:
+		return "Forall",new_form_list
+	case Search.RuleNotAll:
+		res := fmt.Sprintf("eapply hasTableauNegAll with (i := %v).\n", real_index)
+		res += "1, 2: shelve.\n"
+		res += "1: exact TODO.\n"
+		res += "1, 2: reflexivity.\n"
+		l1.Append(s.ResultFormulas().At(0).At(0).GetIndex())
+		new_form_list.Append(l1)
+
+		return res, new_form_list
+	case Search.RuleEx:
+		res := fmt.Sprintf("eapply hasTableauEx with (i := %v).", real_index)
+		l1.Append(s.ResultFormulas().At(0).At(0).GetIndex())
+		new_form_list.Append(l1)
+
+		return res, new_form_list
+	case Search.RuleReintro: 
+		return "Reintroduction", new_form_list
 	default:
-		return "Admit."
+		return "Error Admit.", new_form_list
 	}
 }
 
 func makeProof(prf Search.TableauxProof, sub Unif.Substitutions) string {
 	res := ""
-
 	var_list, sko_list := extractTermsFromSubstList(sub)
 
 	var_str := ""
@@ -125,16 +195,23 @@ func makeProof(prf Search.TableauxProof, sub Unif.Substitutions) string {
 
 	res += fmt.Sprintf("exists \\{%v\\}, \\{%v\\}.\n", var_str, sko_str)
 
-	for _, s := range prf {
-		res += makeStepInProof(s) + "\n"
-	}
-
-	return res
+	return makeProofAux(prf, Lib.NewList[int]())
 }
 
+func makeProofAux(prf Search.TableauxProof, form_list Lib.List[int]) string {
+	res := ""
+	form_list.Append(prf.AppliedOn().GetIndex())
+	res2, generated_formulas := makeStepInProof(prf, form_list) 
+	
+	res = res + "\n" + res2 + "\n"
 
+	for i, s := range prf.Children().GetSlice() {
+		res_child, _ := makeStepInProof(s, generated_formulas.At(i))
+		res += res_child + "\n"
+	}	
+	return res
 
-
+}
 
 // func makeFormula(prf Search.TableauxProof) string {
 // 	final_tableaux, _ := makeTableaux(unfoldProofSteps(prf), Lib.NewList[AST.Form](), make([]string, 0))
@@ -156,7 +233,7 @@ func makeProof(prf Search.TableauxProof, sub Unif.Substitutions) string {
 // 			}
 // 		}
 // 	}
-// 
+//
 // 	if len(proof[len(proof)-1].GetChildren()) > 1 {
 // 		for _, c := range proof[len(proof)-1].GetChildren() {
 // 			res_form, res_subst := makeTableaux(c, forms.Copy(), previous_instantiations)
@@ -164,12 +241,12 @@ func makeProof(prf Search.TableauxProof, sub Unif.Substitutions) string {
 // 			res += res_form
 // 		}
 // 	}
-// 
+//
 // 	closing_par := ""
 // 	for i := 0; i < len(proof)-1; i++ {
 // 		closing_par += ")"
 // 	}
-// 
+//
 // 	return strings.TrimSuffix(res, " \n") + closing_par + "\n", previous_instantiations
 // }
 
@@ -180,15 +257,15 @@ func makeProof(prf Search.TableauxProof, sub Unif.Substitutions) string {
 // 	for i := 0; i < forms.Len()-1; i++ {
 // 		shift += "  "
 // 	}
-// 
+//
 // 	switch rule {
-// 
+//
 // 	case AX:
 // 		{
 // 			form_original := forms.Copy().Slice()
 // 			slices.Reverse(form_original)
 // 			form_reverse := bt.NewFormList(form_original...)
-// 
+//
 // 			res_form = shift + "(" + TableauxRocqRulesToString(rule) + "\n"
 // 			res_form += shift + "  " + "(" + "Context.make" + "\n"
 // 			forms.Remove(forms.Len() - 1)
@@ -285,7 +362,7 @@ func makeProof(prf Search.TableauxProof, sub Unif.Substitutions) string {
 // 	tmp_step.SetFormulaProof(tmp_form)
 // 	tmp_step.SetResultFormulasProof(tmp_resulting_forms)
 // 	tmp_step.SetChildrenProof(nil)
-// 
+//
 // 	switch t := ps.GetFormula().GetForm().(type) {
 // 	case bt.And: // A, B -> A, B, ~A, ~B
 // 		new_resulting_forms := vp.MakeIntFormAndTermsList(ps.GetResultFormulas()[0].GetI(), nil)
@@ -301,18 +378,18 @@ func makeProof(prf Search.TableauxProof, sub Unif.Substitutions) string {
 // 		neg_a := tmp_step.GetResultFormulas()[0].GetFL()[1]
 // 		a := tmp_step.GetResultFormulas()[1].GetFL()[0]
 // 		b := tmp_step.GetResultFormulas()[1].GetFL()[1]
-// 
+//
 // 		terms_a_imp_b := a.GetTerms().Copy()
 // 		terms_a_imp_b.Merge(b.GetTerms().List)
-// 
+//
 // 		terms_b_imp_a := b.GetTerms().Copy()
 // 		terms_b_imp_a.Merge(a.GetTerms().List)
-// 
+//
 // 		b_imp_a := bt.MakerImp(b.GetForm(), a.GetForm())
 // 		a_imp_b := bt.MakerImp(a.GetForm(), b.GetForm())
 // 		b_imp_a_fnt := bt.MakeFormAndTerm(b_imp_a, terms_b_imp_a)
 // 		a_imp_b_fnt := bt.MakeFormAndTerm(a_imp_b, terms_a_imp_b)
-// 
+//
 // 		neg_neg_b_imp_a := bt.MakeFormAndTerm(bt.MakerNot(bt.MakerNot(b_imp_a)), terms_b_imp_a)
 // 		neg_neg_a_imp_b := bt.MakeFormAndTerm(bt.MakerNot(bt.MakerNot(a_imp_b)), terms_a_imp_b)
 // 		c1 := vp.MakeIntFormAndTermsList(ps.GetResultFormulas()[0].GetI(), bt.FormAndTermsList{neg_b, neg_a, a_imp_b_fnt, b_imp_a_fnt, neg_neg_a_imp_b, neg_neg_b_imp_a})
@@ -337,7 +414,7 @@ func makeProof(prf Search.TableauxProof, sub Unif.Substitutions) string {
 // 			neg_b := tmp_step.GetResultFormulas()[1].GetForms().Get(0)
 // 			terms_neg_a_or_neg_b := tmp_step.GetResultFormulas()[0].GetFL()[0].GetTerms().Copy()
 // 			terms_neg_a_or_neg_b.Merge(tmp_step.GetResultFormulas()[1].GetFL()[0].GetTerms().List)
-// 
+//
 // 			neg_a_or_b := bt.MakerOr(bt.NewFormList(neg_a, neg_b))
 // 			c1 := vp.MakeIntFormAndTermsList(ps.GetResultFormulas()[0].GetI(), bt.FormAndTermsList{bt.MakeFormAndTerm(neg_a, tmp_step.GetResultFormulas()[0].GetFL()[0].GetTerms()), bt.MakeFormAndTerm(neg_a_or_b, terms_neg_a_or_neg_b)})
 // 			c2 := vp.MakeIntFormAndTermsList(ps.GetResultFormulas()[1].GetI(), bt.FormAndTermsList{bt.MakeFormAndTerm(neg_b, tmp_step.GetResultFormulas()[1].GetFL()[0].GetTerms()), bt.MakeFormAndTerm(neg_a_or_b, terms_neg_a_or_neg_b)})
@@ -356,25 +433,25 @@ func makeProof(prf Search.TableauxProof, sub Unif.Substitutions) string {
 // 			neg_b := tmp_step.GetResultFormulas()[0].GetFL()[1]
 // 			b := tmp_step.GetResultFormulas()[1].GetFL()[0]
 // 			neg_a := tmp_step.GetResultFormulas()[1].GetFL()[1]
-// 
+//
 // 			neg_neg_a := bt.MakeFormAndTerm(bt.MakerNot(bt.MakerNot(a.GetForm())), a.GetTerms())
 // 			neg_neg_b := bt.MakeFormAndTerm(bt.MakerNot(bt.MakerNot(b.GetForm())), b.GetTerms())
-// 
+//
 // 			b_imp_a := bt.MakerImp(b.GetForm(), a.GetForm())
 // 			a_imp_b := bt.MakerImp(a.GetForm(), b.GetForm())
 // 			neg_b_imp_a := bt.MakerNot(b_imp_a)
 // 			neg_a_imp_b := bt.MakerNot(a_imp_b)
-// 
+//
 // 			terms_neg_a_imp_b := a.GetTerms().Copy()
 // 			terms_neg_a_imp_b.Merge(b.GetTerms().List)
-// 
+//
 // 			terms_neg_b_imp_a := b.GetTerms().Copy()
 // 			terms_neg_b_imp_a.Merge(a.GetTerms().List)
-// 
+//
 // 			neg_b_imp_a_fnt := bt.MakeFormAndTerm(neg_b_imp_a, terms_neg_b_imp_a)
 // 			neg_a_imp_b_fnt := bt.MakeFormAndTerm(neg_a_imp_b, terms_neg_a_imp_b)
 // 			or_neg_imp := bt.MakeFormAndTerm(bt.MakerOr(bt.NewFormList(neg_a_imp_b, neg_b_imp_a)), terms_neg_a_imp_b)
-// 
+//
 // 			c1 := vp.MakeIntFormAndTermsList(ps.GetResultFormulas()[0].GetI(), bt.FormAndTermsList{a, neg_neg_a, neg_b, neg_a_imp_b_fnt, or_neg_imp})
 // 			c2 := vp.MakeIntFormAndTermsList(ps.GetResultFormulas()[1].GetI(), bt.FormAndTermsList{b, neg_neg_b, neg_a, neg_b_imp_a_fnt, or_neg_imp})
 // 			tmp_step.SetResultFormulasProof([]vp.IntFormAndTermsList{c2, c1})
@@ -400,9 +477,9 @@ func makeProof(prf Search.TableauxProof, sub Unif.Substitutions) string {
 // 			new_child = append(new_child, unfoldProofSteps(c))
 // 		}
 // 		new_step.SetChildrenProof(new_child)
-// 
+//
 // 		new_proof = append(new_proof, new_step)
 // 	}
-// 
+//
 // 	return new_proof
 // }
