@@ -196,15 +196,17 @@ func FormToTR(f AST.Form) string {
 		case AST.Ex: // extend E x, y, z -> ex x, ex y, ex z
 				res:= ""
 				for _, v := range ft.GetVarList().GetSlice() {
-					res += res + fmt.Sprintf("EEX \"%v\" (", v.ToString() )
+					res += fmt.Sprintf("EEx \"%v\" (", v.ToBoundVar().ToString() )
 				}
-				return res + fmt.Sprintf("%v)", FormToTR(ft.GetChildFormulas().At(0)))
+				res += fmt.Sprintf("%v", FormToTR(ft.GetChildFormulas().At(0))) 
+				return res + strings.Repeat(")", ft.GetVarList().Len())
 		case AST.All: //extend
 				res:= ""
 				for _, v := range ft.GetVarList().GetSlice() {
-					res += res + fmt.Sprintf("EAll \"%v\" (", v.ToString())
+					res += res + fmt.Sprintf("EAll \"%v\" (", v.ToBoundVar().ToString())
 				}
-				return res + fmt.Sprintf("%v)", FormToTR(ft.GetChildFormulas().At(0)))
+			res += fmt.Sprintf("%v", FormToTR(ft.GetChildFormulas().At(0))) 
+				return res + strings.Repeat(")", ft.GetVarList().Len())
 	}
 	Glob.Anomaly("FormToTR", "Formula type unknown")
 	return ""
