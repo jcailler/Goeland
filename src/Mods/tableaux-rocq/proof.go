@@ -169,10 +169,12 @@ func manageBinaryRule(s Search.IProof, index int, rule_name string, form_list Li
 func makeStepInProof(s Search.IProof, form_list Lib.List[AST.Form]) (string, Lib.List[Lib.List[AST.Form]]) {
 	Glob.PrintInfo("MakeStep", "-----------------------------")
 	Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v][%v] : %v", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().GetIndex(), s.AppliedOn().ToString()))
+	Glob.PrintInfo("MakeStep", " ")
 	Glob.PrintInfo("MakeStep", "Form list : ")
 	for _, v := range form_list.GetSlice() {
         Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v ",v.GetIndex(), v.ToString()))
     }
+	Glob.PrintInfo("MakeStep", "")
 
 	index := form_list.IndexOf(s.AppliedOn(), func(i1, i2 AST.Form) bool {return i1.Equals(i2)})
 	real_index := -1
@@ -201,7 +203,7 @@ func makeStepInProof(s Search.IProof, form_list Lib.List[AST.Form]) (string, Lib
 	}
 
 	switch s.RuleApplied()  {
-	case Search.RuleClosure:
+	case Search.RuleClosure: // F, neg F
 		index_pos, index_neg := findIndexClosureRule(real_index, s.AppliedOn(), form_list)
 		res := fmt.Sprintf("eapply hasTableauContr with (i := %v) (j := %v).\n", index_pos, index_neg)
 		res += "1: { reflexivity. }\n"
@@ -221,15 +223,19 @@ func makeStepInProof(s Search.IProof, form_list Lib.List[AST.Form]) (string, Lib
 		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauNegOr", form_list)
 		res += "1: { reflexivity. }\n"
 		return res, new_form_list
-	case Search.RuleNotImp:
-		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauNegImp", form_list)
+	case Search.RuleNotImp: // Neg (F -> G) -> Neg neg F, Neg G, F
+		res := fmt.Sprintf("eapply %v with (i := %v).\n", "hasTableauNegImp", real_index)
 		res += "1: { reflexivity. }\n"
+		
+		new_form_list := Lib.NewList[Lib.List[AST.Form]]()
+		l1 := form_list.Copy(func(i AST.Form) AST.Form {return i})
 		tmp_form := AST.MakerNot(AST.MakerNot(s.ResultFormulas().At(0).At(0)))
-		tmp_l1 := new_form_list.At(0).Copy(func(i AST.Form) AST.Form {return i})
-		tmp_l1.Append(tmp_form)
-		tmp_new_form_list :=  Lib.NewList[Lib.List[AST.Form]]()
-		tmp_new_form_list.Append(tmp_l1)
-		return res, tmp_new_form_list
+		l1.Append(tmp_form)
+		l1.Append(s.ResultFormulas().At(0).At(1))
+		l1.Append(s.ResultFormulas().At(0).At(0))
+		new_form_list.Append(l1)
+
+		return res, new_form_list
 	case Search.RuleAnd:
 		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauAnd", form_list)
 		return res, new_form_list
@@ -250,12 +256,17 @@ func makeStepInProof(s Search.IProof, form_list Lib.List[AST.Form]) (string, Lib
 		res, new_form_list := manageBinaryRule(s, real_index, "hasTableauEqu", form_list)
 		return res, new_form_list
 	case Search.RuleNotEx: // Neg (Ex x F) -> ForAll x (neg F), neg F
-		new_form := AST.MakerAll(Lib.MkListV(s.AppliedOn().(AST.Not).GetForm().(AST.Ex).GetVarList().At(0)), AST.MakerNot(s.AppliedOn().(AST.Not).GetForm().(AST.Ex).GetForm()))
-		form_list.Append(new_form)
-
-		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauNegEx", form_list)
+		res := fmt.Sprintf("eapply %v with (i := %v).\n", "hasTableauNegEx", real_index)
 		res += "1: { reflexivity. }\n"
 		res += "1: { set_decide. }\n"
+
+		new_form_list := Lib.NewList[Lib.List[AST.Form]]()
+		l1 := form_list.Copy(func(i AST.Form) AST.Form {return i})
+		tmp_form := AST.MakerAll(Lib.MkListV(s.AppliedOn().(AST.Not).GetForm().(AST.Ex).GetVarList().At(0)), AST.MakerNot(s.AppliedOn().(AST.Not).GetForm().(AST.Ex).GetForm()))
+		l1.Append(tmp_form)
+		l1.Append(s.ResultFormulas().At(0).At(0))
+		new_form_list.Append(l1)
+	
 		return res, new_form_list
 	case Search.RuleAll:
 		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauAl", form_list)
@@ -291,7 +302,7 @@ func makeStepInProof(s Search.IProof, form_list Lib.List[AST.Form]) (string, Lib
 	case Search.RuleEx:
 		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauEx", form_list)
 		return res, new_form_list
-	case Search.RuleReintro: 
+	case Search.RuleReintro: // Skip
 		new_form_list := Lib.NewList[Lib.List[AST.Form]]()
 		l1 := form_list.Copy(func(i AST.Form) AST.Form {return i})
 		new_form_list.Append(l1)
