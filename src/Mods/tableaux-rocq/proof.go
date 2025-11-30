@@ -52,8 +52,14 @@ import (
 
 /************ Formula ************/
 func makeFormula(prf Search.IProof) string {
-	res := FormToTR(prf.AppliedOn())
-	return fmt.Sprintf("	%v \n", res) 
+
+	if f_not, ok := prf.AppliedOn().(AST.Not); ok {
+		res := FormToTR(f_not.GetForm())
+		return fmt.Sprintf("	%v \n", res)
+	} else {
+		Glob.Anomaly("TableauxRocq — makeFormula", "The proof does not start by a refutation")
+		return "Error"
+	}
 }
 
 /************ Substitution ************/
@@ -83,16 +89,31 @@ func extractTermsFromSubstList(sub Unif.Substitutions) (Lib.List[AST.Meta], Lib.
 /************ Proof ************/
 
 // Return a pair of indexes of complementary predicate (positive, negative) among a list of formulas
-func findIndexClosureRule(f AST.Form, form_list Lib.List[AST.Form]) (int, int) {
+func findIndexClosureRule(index_f int, f AST.Form, form_list Lib.List[AST.Form]) (int, int) {
 	f_pos := -1
 	f_neg := -1
 
-	switch initial_formula := f.(type) {
-		case AST.Not:
-			targetPos = get(initial_formula.GetForm(), hypotheses)
-		default:
-			targetPos = target
+	var other_form AST.Form
+
+
+	switch f_t := f.(type) {
+		case AST.Pred:
+			f_pos = index_f
+			other_form = AST.MakerNot(f_t)
+			for index_other_f, f_candidate := range form_list.GetSlice() {
+			if f_candidate.Equals(other_form) {
+				f_neg = form_list.Len() - 1 - index_other_f
+			}
 		}
+		case AST.Not:
+			f_neg = index_f
+			other_form = f_t.GetForm()
+			for index_other_f, f_candidate := range form_list.GetSlice() {
+			if f_candidate.Equals(other_form) {
+				f_pos = form_list.Len() - 1 - index_other_f
+			}
+		}
+	}
 
 	if (f_pos == -1) || (f_neg == -1) {
 		Glob.Anomaly("findIndexClosureRule", "Complementary literal not found")
@@ -101,56 +122,59 @@ func findIndexClosureRule(f AST.Form, form_list Lib.List[AST.Form]) (int, int) {
 	return f_pos, f_neg
 }
 
-func manageUnaryRule(s Search.IProof, index int, rule_name string, form_list Lib.List[int], unshelve ...bool) (string, Lib.List[Lib.List[int]]) {
-	new_form_list := Lib.NewList[Lib.List[int]]()
-	l1 := form_list.Copy(func(i int) int {return i})
+func manageUnaryRule(s Search.IProof, index int, rule_name string, form_list Lib.List[AST.Form], full_line ...string) (string, Lib.List[Lib.List[AST.Form]]) {
+	new_form_list := Lib.NewList[Lib.List[AST.Form]]()
+	l1 := form_list.Copy(func(i AST.Form) AST.Form {return i})
 
-	res := fmt.Sprintf("eapply %v (i := %v).\n", rule_name, index)
-	if len(unshelve) > 0 {
-		res = "unshelve " + res
+	res := ""
+	if len(full_line) > 0 {
+		res = full_line[0]
+	} else {
+		res = fmt.Sprintf("eapply %v with (i := %v).\n", rule_name, index)
 	}
 
 	for _, child := range s.ResultFormulas().At(0).GetSlice() {
-		l1.Append(child.GetIndex())
+		l1.Append(child)
 	}
 	new_form_list.Append(l1)
 	return res, new_form_list
 }
 
-func manageBinaryRule(s Search.IProof, index int, rule_name string, form_list Lib.List[int], unshelve ...bool) (string, Lib.List[Lib.List[int]]) {
-	new_form_list := Lib.NewList[Lib.List[int]]()
-	l1 := form_list.Copy(func(i int) int {return i})
-	l2 := form_list.Copy(func(i int) int {return i})
+func manageBinaryRule(s Search.IProof, index int, rule_name string, form_list Lib.List[AST.Form], full_line ...string) (string, Lib.List[Lib.List[AST.Form]]) {
+	new_form_list := Lib.NewList[Lib.List[AST.Form]]()
+	l1 := form_list.Copy(func(i AST.Form) AST.Form {return i})
+	l2 := form_list.Copy(func(i AST.Form) AST.Form {return i})
 
-	res := fmt.Sprintf("eapply %v (i := %v).\n", rule_name, index)
-
-	if len(unshelve) > 0 {
-		res = "unshelve " + res
+	res := ""
+	if len(full_line) > 0 {
+		res = full_line[0]
+	} else {
+		res = fmt.Sprintf("eapply %v with (i := %v).\n", rule_name, index)
 	}
 
 	for _, child := range s.ResultFormulas().At(0).GetSlice() {
-		l1.Append(child.GetIndex())
+		l1.Append(child)
 	}
 
 	for _, child := range s.ResultFormulas().At(1).GetSlice() {
-		l2.Append(child.GetIndex())
+		l2.Append(child)
 	}
 	new_form_list.Append(l1)
 	new_form_list.Append(l2)
 	return res, new_form_list
 }
 
-
-
-func makeStepInProof(s Search.IProof, form_list Lib.List[int]) (string, Lib.List[Lib.List[int]]) {
+// TODO : apply multiple rule to split exists
+// TODO : vérifier ce que fait gogo
+func makeStepInProof(s Search.IProof, form_list Lib.List[AST.Form]) (string, Lib.List[Lib.List[AST.Form]]) {
 	Glob.PrintInfo("MakeStep", "-----------------------------")
 	Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v][%v] : %v", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().GetIndex(), s.AppliedOn().ToString()))
 	Glob.PrintInfo("MakeStep", "Form list : ")
 	for _, v := range form_list.GetSlice() {
-        Glob.PrintInfo("MakeStep", fmt.Sprintf("%v ",v))
+        Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v ",v.GetIndex(), v.ToString()))
     }
 
-	index := form_list.IndexOf(s.AppliedOn().GetIndex(), func(i1, i2 int) bool {return i1 == i2})
+	index := form_list.IndexOf(s.AppliedOn(), func(i1, i2 AST.Form) bool {return i1.Equals(i2)})
 	real_index := -1
 
 	switch index_t := index.(type) {
@@ -178,15 +202,15 @@ func makeStepInProof(s Search.IProof, form_list Lib.List[int]) (string, Lib.List
 
 	switch s.RuleApplied()  {
 	case Search.RuleClosure:
-		index_pos, index_neg := findIndexClosureRule(s.AppliedOn(), s.)
-		res := fmt.Sprintf("eapply hasTableauContr (i := %v) (j := %v).\n", index_pos, index_neg)
+		index_pos, index_neg := findIndexClosureRule(real_index, s.AppliedOn(), form_list)
+		res := fmt.Sprintf("eapply hasTableauContr with (i := %v) (j := %v).\n", index_pos, index_neg)
 		res += "1: { reflexivity. }\n"
 		res += "1: { reflexivity. }\n"
 		res += "esimpl.\n"
 		res += "reflexivity.\n"
-		new_form_list := Lib.NewList[Lib.List[int]]()
-		l1 := form_list.Copy(func(i int) int {return i})
-		l1.Append(-1)
+		new_form_list := Lib.NewList[Lib.List[AST.Form]]()
+		l1 := form_list.Copy(func(i AST.Form) AST.Form {return i})
+		l1.Append(s.AppliedOn())
 		new_form_list.Append(l1)
 
 		return res, new_form_list
@@ -201,9 +225,9 @@ func makeStepInProof(s Search.IProof, form_list Lib.List[int]) (string, Lib.List
 		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauNegImp", form_list)
 		res += "1: { reflexivity. }\n"
 		tmp_form := AST.MakerNot(AST.MakerNot(s.ResultFormulas().At(0).At(0)))
-		tmp_l1 := new_form_list.At(0).Copy(func(i int) int {return i})
-		tmp_l1.Append(tmp_form.GetIndex())
-		tmp_new_form_list :=  Lib.NewList[Lib.List[int]]()
+		tmp_l1 := new_form_list.At(0).Copy(func(i AST.Form) AST.Form {return i})
+		tmp_l1.Append(tmp_form)
+		tmp_new_form_list :=  Lib.NewList[Lib.List[AST.Form]]()
 		tmp_new_form_list.Append(tmp_l1)
 		return res, tmp_new_form_list
 	case Search.RuleAnd:
@@ -225,7 +249,10 @@ func makeStepInProof(s Search.IProof, form_list Lib.List[int]) (string, Lib.List
 	case Search.RuleEqu:
 		res, new_form_list := manageBinaryRule(s, real_index, "hasTableauEqu", form_list)
 		return res, new_form_list
-	case Search.RuleNotEx:
+	case Search.RuleNotEx: // Neg (Ex x F) -> ForAll x (neg F), neg F
+		new_form := AST.MakerAll(Lib.MkListV(s.AppliedOn().(AST.Not).GetForm().(AST.Ex).GetVarList().At(0)), AST.MakerNot(s.AppliedOn().(AST.Not).GetForm().(AST.Ex).GetForm()))
+		form_list.Append(new_form)
+
 		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauNegEx", form_list)
 		res += "1: { reflexivity. }\n"
 		res += "1: { set_decide. }\n"
@@ -234,7 +261,11 @@ func makeStepInProof(s Search.IProof, form_list Lib.List[int]) (string, Lib.List
 		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauAl", form_list)
 		return res, new_form_list
 	case Search.RuleNotAll:
-		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauNegAll", form_list, true)
+		sko := "OuterSkolemization"
+		if Glob.IsInnerSko() {
+			sko = "InnerSkolemization"
+		}
+		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauNegAll", form_list, fmt.Sprintf("unshelve eapply hasTableauNegAll with (sko := %v) (i := %v).\n", sko, real_index))
 		
 		var real_generated_term AST.Term
 		generated_term := s.TermGenerated()
@@ -261,13 +292,12 @@ func makeStepInProof(s Search.IProof, form_list Lib.List[int]) (string, Lib.List
 		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauEx", form_list)
 		return res, new_form_list
 	case Search.RuleReintro: 
-		new_form_list := Lib.NewList[Lib.List[int]]()
-		l1 := form_list.Copy(func(i int) int {return i})
-		l1.Append(-1)
+		new_form_list := Lib.NewList[Lib.List[AST.Form]]()
+		l1 := form_list.Copy(func(i AST.Form) AST.Form {return i})
 		new_form_list.Append(l1)
 		return "", new_form_list
 	default:
-		return "Error Admit.", Lib.NewList[Lib.List[int]]()
+		return "Error Admit.", Lib.NewList[Lib.List[AST.Form]]()
 	}
 }
 
@@ -276,27 +306,33 @@ func makeProof(prf Search.IProof, sub Unif.Substitutions) string {
 	var_list, sko_list := extractTermsFromSubstList(sub)
 
 	var_str := ""
-	for _, v := range var_list.GetSlice() {
+	for i, v := range var_list.GetSlice() {
 		var_str += fmt.Sprintf(" \"%v\" ", v.ToString())
+		if (i < var_list.Len()-1) {
+			var_str += ","
+		}
 	}
 
 	sko_str := ""
-	for _, s := range sko_list.GetSlice() {
+	for i, s := range sko_list.GetSlice() {
 		sko_str += fmt.Sprintf(" \"%v\" ", s.GetName())
+		if (i < sko_list.Len()-1) {
+			sko_str += ","
+		}
 	}
 
 	res += fmt.Sprintf("exists \\{%v\\}, \\{%v\\}.\n", var_str, sko_str)
 
-	form_list := Lib.MkListV(prf.AppliedOn().GetIndex())
+	form_list := Lib.MkListV(prf.AppliedOn())
 
 	return res + makeProofAux(prf, form_list)
 }
 
-func makeProofAux(prf Search.IProof, form_list Lib.List[int]) string {
+func makeProofAux(prf Search.IProof, form_list Lib.List[AST.Form]) string {
 	res, generated_formulas := makeStepInProof(prf, form_list) 
 	for i, s := range prf.Children().GetSlice() {
 		res_child := makeProofAux(s, generated_formulas.At(i))
-		res += res_child + "\n"
+		res += res_child
 	}	
 	return res
 

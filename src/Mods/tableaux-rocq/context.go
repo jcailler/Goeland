@@ -52,11 +52,11 @@ func makeContext() string {
 }
 
 func makeContextFormulaBegin() string {
-	return "Definition T :=\n"
+	return "Definition T : EForm :=\n"
 }
 
 func makeContextFormulaEnd() string {
-	return ").\n\n"
+	return ".\n\n"
 }
 
 func makeContextSubstBegin() string {
