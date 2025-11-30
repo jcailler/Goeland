@@ -82,100 +82,192 @@ func extractTermsFromSubstList(sub Unif.Substitutions) (Lib.List[AST.Meta], Lib.
 
 /************ Proof ************/
 
-// TODO: Keep list of used formula to get the right index
+// Return a pair of indexes of complementary predicate (positive, negative) among a list of formulas
+func findIndexClosureRule(f AST.Form, form_list Lib.List[AST.Form]) (int, int) {
+	f_pos := -1
+	f_neg := -1
+
+	switch initial_formula := f.(type) {
+		case AST.Not:
+			targetPos = get(initial_formula.GetForm(), hypotheses)
+		default:
+			targetPos = target
+		}
+
+	if (f_pos == -1) || (f_neg == -1) {
+		Glob.Anomaly("findIndexClosureRule", "Complementary literal not found")
+	}
+
+	return f_pos, f_neg
+}
+
+func manageUnaryRule(s Search.IProof, index int, rule_name string, form_list Lib.List[int], unshelve ...bool) (string, Lib.List[Lib.List[int]]) {
+	new_form_list := Lib.NewList[Lib.List[int]]()
+	l1 := form_list.Copy(func(i int) int {return i})
+
+	res := fmt.Sprintf("eapply %v (i := %v).\n", rule_name, index)
+	if len(unshelve) > 0 {
+		res = "unshelve " + res
+	}
+
+	for _, child := range s.ResultFormulas().At(0).GetSlice() {
+		l1.Append(child.GetIndex())
+	}
+	new_form_list.Append(l1)
+	return res, new_form_list
+}
+
+func manageBinaryRule(s Search.IProof, index int, rule_name string, form_list Lib.List[int], unshelve ...bool) (string, Lib.List[Lib.List[int]]) {
+	new_form_list := Lib.NewList[Lib.List[int]]()
+	l1 := form_list.Copy(func(i int) int {return i})
+	l2 := form_list.Copy(func(i int) int {return i})
+
+	res := fmt.Sprintf("eapply %v (i := %v).\n", rule_name, index)
+
+	if len(unshelve) > 0 {
+		res = "unshelve " + res
+	}
+
+	for _, child := range s.ResultFormulas().At(0).GetSlice() {
+		l1.Append(child.GetIndex())
+	}
+
+	for _, child := range s.ResultFormulas().At(1).GetSlice() {
+		l2.Append(child.GetIndex())
+	}
+	new_form_list.Append(l1)
+	new_form_list.Append(l2)
+	return res, new_form_list
+}
+
+
+
 func makeStepInProof(s Search.IProof, form_list Lib.List[int]) (string, Lib.List[Lib.List[int]]) {
 	Glob.PrintInfo("MakeStep", "-----------------------------")
-	Glob.PrintInfo("MakeStep", fmt.Sprintf("Rule %v - Form %v (ID: %v)", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().ToString(), s.AppliedOn().GetIndex()))
+	Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v][%v] : %v", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().GetIndex(), s.AppliedOn().ToString()))
 	Glob.PrintInfo("MakeStep", "Form list : ")
 	for _, v := range form_list.GetSlice() {
         Glob.PrintInfo("MakeStep", fmt.Sprintf("%v ",v))
     }
-
-	Glob.PrintInfo("MakeStep", "Children: ")
-	for _, branch := range s.Children().GetSlice() {
-		for _, child := range branch.Children().GetSlice() {
-			Glob.PrintInfo("MakeStep", fmt.Sprintf("%v (ID: %v)", child.AppliedOn().ToString(), child.AppliedOn().GetIndex()))
-		}
-	}
-
-	new_form_list := Lib.NewList[Lib.List[int]]()
-	l1 := form_list.Copy(func(i int) int {return i})
-	// l2 := Lib.NewList[int]()
 
 	index := form_list.IndexOf(s.AppliedOn().GetIndex(), func(i1, i2 int) bool {return i1 == i2})
 	real_index := -1
 
 	switch index_t := index.(type) {
 		case Lib.Some[int]:
-			real_index = index_t.Val - form_list.Len()
+			real_index = form_list.Len() - 1 - index_t.Val
 		case Lib.None[int]:
 			Glob.Anomaly("TR", "Index not found in MakeStep")
 	}
+	Glob.PrintInfo("MakeStep", fmt.Sprintf("Real index : %v", real_index))
 
 
-	// Manage tab formula id
-	// check fs.getform id
-	// check index in the list
-	// tab t[i] = rule id
-	// On garde tout ! Et les indices c'est la distance par rapport à la dernière formule ajoutée
-    // Par exemple on a (Gamma ,, F) et tu veux appliquer sur F, tu dois donner l'indice 0
-	// Get the right index : len - indexOf
+	Glob.PrintInfo("MakeStep", fmt.Sprintf(fmt.Sprintf("Children: %v", s.Children().Len())))
+	for _, branch := range s.Children().GetSlice() {
+		for _, child := range branch.Children().GetSlice() {
+			Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v",child.AppliedOn().GetIndex(), child.AppliedOn().ToString()))
+		}
+	}
+
+	Glob.PrintInfo("MakeStep","Result Forms:")
+	for _, rfl := range s.ResultFormulas().GetSlice() {
+		for _, rf := range rfl.GetSlice() {
+			Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v", rf.GetIndex(), rf.ToString()))
+		}
+	}
+
 	switch s.RuleApplied()  {
 	case Search.RuleClosure:
-		return "Closure", new_form_list
-	case Search.RuleNotNot:
-		return "Not Not", new_form_list
-	case Search.RuleNotOr:
-		return "Not Or", new_form_list
-	case Search.RuleNotImp:
-		res := fmt.Sprintf("eapply hasTableauNegImp with (i := %v).\n", real_index)
-		res += "1: { reflexivity. }"
-		l1.Append(s.ResultFormulas().At(0).At(0).GetIndex())
-		l1.Append(s.ResultFormulas().At(0).At(1).GetIndex())
+		index_pos, index_neg := findIndexClosureRule(s.AppliedOn(), s.)
+		res := fmt.Sprintf("eapply hasTableauContr (i := %v) (j := %v).\n", index_pos, index_neg)
+		res += "1: { reflexivity. }\n"
+		res += "1: { reflexivity. }\n"
+		res += "esimpl.\n"
+		res += "reflexivity.\n"
+		new_form_list := Lib.NewList[Lib.List[int]]()
+		l1 := form_list.Copy(func(i int) int {return i})
+		l1.Append(-1)
 		new_form_list.Append(l1)
 
 		return res, new_form_list
-	case Search.RuleAnd:
-		return "And", new_form_list
-	case Search.RuleNotAnd:
-		return "Not And", new_form_list
-	case Search.RuleNotEqu:
-		return "Not Equ", new_form_list
-	case Search.RuleOr:
-		return "Or", new_form_list
-	case Search.RuleImp:
-		return "Imply", new_form_list
-	case Search.RuleEqu:
-		return "Equiv",new_form_list
-	case Search.RuleNotEx:
-		res := fmt.Sprintf("eapply hasTableauNegEx with (i := %v).\n", real_index)
+	case Search.RuleNotNot:
+		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauNegNeg", form_list)
+		return res, new_form_list
+	case Search.RuleNotOr:
+		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauNegOr", form_list)
 		res += "1: { reflexivity. }\n"
-		res += "1: { set_decide. }"
-		l1.Append(s.ResultFormulas().At(0).At(0).GetIndex())
-		new_form_list.Append(l1)
-
+		return res, new_form_list
+	case Search.RuleNotImp:
+		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauNegImp", form_list)
+		res += "1: { reflexivity. }\n"
+		tmp_form := AST.MakerNot(AST.MakerNot(s.ResultFormulas().At(0).At(0)))
+		tmp_l1 := new_form_list.At(0).Copy(func(i int) int {return i})
+		tmp_l1.Append(tmp_form.GetIndex())
+		tmp_new_form_list :=  Lib.NewList[Lib.List[int]]()
+		tmp_new_form_list.Append(tmp_l1)
+		return res, tmp_new_form_list
+	case Search.RuleAnd:
+		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauAnd", form_list)
+		return res, new_form_list
+	case Search.RuleNotAnd:
+		res, new_form_list := manageBinaryRule(s, real_index, "hasTableauNegAnd", form_list)
+		res += "1: { reflexivity. }\n"
+		return res, new_form_list
+	case Search.RuleNotEqu:
+		res, new_form_list := manageBinaryRule(s, real_index, "hasTableauNegEqu", form_list)
+		return res, new_form_list
+	case Search.RuleOr:
+		res, new_form_list := manageBinaryRule(s, real_index, "hasTableauOr", form_list)
+		return res, new_form_list
+	case Search.RuleImp:
+		res, new_form_list := manageBinaryRule(s, real_index, "hasTableauImp", form_list)
+		return res, new_form_list
+	case Search.RuleEqu:
+		res, new_form_list := manageBinaryRule(s, real_index, "hasTableauEqu", form_list)
+		return res, new_form_list
+	case Search.RuleNotEx:
+		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauNegEx", form_list)
+		res += "1: { reflexivity. }\n"
+		res += "1: { set_decide. }\n"
 		return res, new_form_list
 	case Search.RuleAll:
-		return "Forall",new_form_list
+		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauAl", form_list)
+		return res, new_form_list
 	case Search.RuleNotAll:
-		res := fmt.Sprintf("eapply hasTableauNegAll with (i := %v).\n", real_index)
-		res += "1, 2: shelve.\n"
-		res += "1: exact TODO.\n"
-		res += "1, 2: reflexivity.\n"
-		l1.Append(s.ResultFormulas().At(0).At(0).GetIndex())
-		new_form_list.Append(l1)
+		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauNegAll", form_list, true)
+		
+		var real_generated_term AST.Term
+		generated_term := s.TermGenerated()
+		switch generated_term_t := generated_term.(type) {
+			case Lib.Some[Lib.Either[AST.Ty, AST.Term]]:
+				switch generated_term_t2 := generated_term_t.Val.(type) {
+					case Lib.Left[AST.Ty, AST.Term]:
+						Glob.Fatal("TMakeStepR", "Not implemented yet")
+					case Lib.Right[AST.Ty, AST.Term]:
+						real_generated_term = generated_term_t2.Val
+					}
+			case Lib.None[AST.Term]:
+				Glob.Anomaly("MakeStep", "Generated term not found")
+		}
 
+		Glob.PrintInfo("MakeStep", fmt.Sprintf("Generated term : %v", real_generated_term.ToString()))
+
+		res += "1, 2: shelve.\n"
+		res += fmt.Sprintf("1: exact (%v).\n", TermToTR(real_generated_term))
+		res += "2, 3: reflexivity.\n"
+		res += "1: { set_decide. }\n"
 		return res, new_form_list
 	case Search.RuleEx:
-		res := fmt.Sprintf("eapply hasTableauEx with (i := %v).", real_index)
-		l1.Append(s.ResultFormulas().At(0).At(0).GetIndex())
-		new_form_list.Append(l1)
-
+		res, new_form_list := manageUnaryRule(s, real_index, "hasTableauEx", form_list)
 		return res, new_form_list
 	case Search.RuleReintro: 
-		return "Reintroduction", new_form_list
+		new_form_list := Lib.NewList[Lib.List[int]]()
+		l1 := form_list.Copy(func(i int) int {return i})
+		l1.Append(-1)
+		new_form_list.Append(l1)
+		return "", new_form_list
 	default:
-		return "Error Admit.", new_form_list
+		return "Error Admit.", Lib.NewList[Lib.List[int]]()
 	}
 }
 
@@ -195,18 +287,15 @@ func makeProof(prf Search.IProof, sub Unif.Substitutions) string {
 
 	res += fmt.Sprintf("exists \\{%v\\}, \\{%v\\}.\n", var_str, sko_str)
 
-	return makeProofAux(prf, Lib.NewList[int]())
+	form_list := Lib.MkListV(prf.AppliedOn().GetIndex())
+
+	return res + makeProofAux(prf, form_list)
 }
 
 func makeProofAux(prf Search.IProof, form_list Lib.List[int]) string {
-	res := ""
-	form_list.Append(prf.AppliedOn().GetIndex())
-	res2, generated_formulas := makeStepInProof(prf, form_list) 
-	
-	res = res + "\n" + res2 + "\n"
-
+	res, generated_formulas := makeStepInProof(prf, form_list) 
 	for i, s := range prf.Children().GetSlice() {
-		res_child, _ := makeStepInProof(s, generated_formulas.At(i))
+		res_child := makeProofAux(s, generated_formulas.At(i))
 		res += res_child + "\n"
 	}	
 	return res
