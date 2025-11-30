@@ -73,7 +73,7 @@ func makeContextProofBegin() string {
 	if (Glob.IsInnerSko()) {
 		skolemization = "InnerSkolemization"
 	}
-	resultingString += fmt.Sprintf("	hasTableau %v {{ translate_EForm (ENeg T)}} subst.\n", skolemization)
+	resultingString += fmt.Sprintf("	hasTableau %v {{ translate_EForm (ENeg T) }} subst.\n", skolemization)
 	resultingString += "Proof.\n"
 	return resultingString
 }
