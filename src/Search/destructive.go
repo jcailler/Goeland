@@ -142,9 +142,9 @@ func (ds *destructiveSearch) doOneStep(limit int, formula AST.Form) (bool, int) 
 			PrintSearchResult(result)
 		}
 
-		if unif := unifier.GetUnifier(); (!unif.Empty() && Glob.IsTableauxRocqOutput()) {
-			finalProof = ApplySubstitutionOnProofList(unif, finalProof)
-		}
+		// if unif := unifier.GetUnifier(); (!unif.Empty() && Glob.IsTableauxRocqOutput()) {
+		// 	finalProof = ApplySubstitutionOnProofList(unif, finalProof)
+		// }
 		uninstanciatedMeta := RetrieveUninstantiatedMetaFromProof(finalProof)
 		PrintProof(finalProof, uninstanciatedMeta, Unif.ToSubstitutions(unifier.GetUnifier()))
 	}
