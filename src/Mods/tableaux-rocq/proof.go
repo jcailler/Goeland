@@ -89,28 +89,33 @@ func extractTermsFromSubstList(sub Unif.Substitutions) (Lib.List[AST.Meta], Lib.
 /************ Proof ************/
 
 // Return a pair of indexes of complementary predicate (positive, negative) among a list of formulas
-func findIndexClosureRule(index_f int, f AST.Form, form_list Lib.List[AST.Form]) (int, int) {
+func findIndexClosureRule(index_f int, sub Unif.Substitutions, f AST.Form, form_list Lib.List[AST.Form]) (int, int) {
 	f_pos := -1
 	f_neg := -1
 
 	var other_form AST.Form
+	new_f := Core.ApplySubstitutionsOnFormula(Unif.FromSubstitutions(sub), f)
+	new_form_list := Lib.NewList[AST.Form]()
 
+	for _, form := range form_list.GetSlice() {
+		new_form_list.Append(Core.ApplySubstitutionsOnFormula(Unif.FromSubstitutions(sub), form))
+	}
 
-	switch f_t := f.(type) {
+	switch f_t := new_f.(type) {
 		case AST.Pred:
 			f_pos = index_f
 			other_form = AST.MakerNot(f_t)
-			for index_other_f, f_candidate := range form_list.GetSlice() {
+			for index_other_f, f_candidate := range new_form_list.GetSlice() {
 			if f_candidate.Equals(other_form) {
-				f_neg = form_list.Len() - 1 - index_other_f
+				f_neg = new_form_list.Len() - 1 - index_other_f
 			}
 		}
 		case AST.Not:
 			f_neg = index_f
 			other_form = f_t.GetForm()
-			for index_other_f, f_candidate := range form_list.GetSlice() {
+			for index_other_f, f_candidate := range new_form_list.GetSlice() {
 			if f_candidate.Equals(other_form) {
-				f_pos = form_list.Len() - 1 - index_other_f
+				f_pos = new_form_list.Len() - 1 - index_other_f
 			}
 		}
 	}
@@ -120,50 +125,6 @@ func findIndexClosureRule(index_f int, f AST.Form, form_list Lib.List[AST.Form])
 	}
 
 	return f_pos, f_neg
-}
-
-// TODO : to delete
-func manageUnaryRule(s Search.IProof, index int, rule_name string, form_list Lib.List[AST.Form], full_line ...string) (string, Lib.List[Lib.List[AST.Form]]) {
-	new_form_list := Lib.NewList[Lib.List[AST.Form]]()
-	l1 := form_list.Copy(func(i AST.Form) AST.Form {return i})
-
-	res := ""
-	if len(full_line) > 0 {
-		res = full_line[0]
-	} else {
-		res = fmt.Sprintf("eapply %v with (i := %v).\n", rule_name, index)
-	}
-
-	for _, child := range s.ResultFormulas().At(0).GetSlice() {
-		l1.Append(child)
-	}
-	new_form_list.Append(l1)
-	return res, new_form_list
-}
-
-// TODO : to delete
-func manageBinaryRule(s Search.IProof, index int, rule_name string, form_list Lib.List[AST.Form], full_line ...string) (string, Lib.List[Lib.List[AST.Form]]) {
-	new_form_list := Lib.NewList[Lib.List[AST.Form]]()
-	l1 := form_list.Copy(func(i AST.Form) AST.Form {return i})
-	l2 := form_list.Copy(func(i AST.Form) AST.Form {return i})
-
-	res := ""
-	if len(full_line) > 0 {
-		res = full_line[0]
-	} else {
-		res = fmt.Sprintf("eapply %v with (i := %v).\n", rule_name, index)
-	}
-
-	for _, child := range s.ResultFormulas().At(0).GetSlice() {
-		l1.Append(child)
-	}
-
-	for _, child := range s.ResultFormulas().At(1).GetSlice() {
-		l2.Append(child)
-	}
-	new_form_list.Append(l1)
-	new_form_list.Append(l2)
-	return res, new_form_list
 }
 
 func getRealGeneratedTerm(s Search.IProof) AST.Term {
@@ -196,27 +157,56 @@ func getRealIndex(s Search.IProof, form_list Lib.List[AST.Form]) int {
 	return real_index
 }
 
-func printSkosAndMetas(metas, skos Lib.Set[AST.Term]) {
-
-	Glob.PrintInfo("MakeStep", "Metas: ")
-	for _, v := range metas.Elements().GetSlice() {
-        Glob.PrintInfo("MakeStep", fmt.Sprintf("%v ", v.ToString()))
-    }
-	Glob.PrintInfo("MakeStep", "")
-
-	Glob.PrintInfo("MakeStep", "Skos: ")
-	for _, v := range skos.Elements().GetSlice() {
-        Glob.PrintInfo("MakeStep", fmt.Sprintf("%v ", v.ToString()))
-    }
-	Glob.PrintInfo("MakeStep", "")
+func manageMetasFromChild(metas Lib.Set[AST.Term]) string {
+	res := "@empty_set string _"
+	if metas.Cardinal() > 0 {
+		res = "\\{"
+		for i, meta := range metas.Elements().GetSlice() {
+			res += "\"" + meta.ToString() + "\""
+			if i < (metas.Cardinal()-1) {
+				res += ", "
+			}
+		}
+		res += "\\}"
+	}
+	return res
 }
 
-func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form]) (string, Lib.List[Lib.List[AST.Form]], Lib.Set[AST.Term], Lib.Set[AST.Term]) {
+func manageSkolemsFromChild(skolems Lib.Set[AST.Term]) string {
+	res := "empty_record"
+	if skolems.Cardinal() > 0 {
+		res = "\\{"
+		for i, sko := range skolems.Elements().GetSlice() {
+			res += sko.ToString()
+			if i < (skolems.Cardinal()-1) {
+				res += ", "
+			}
+		}
+		res += "\\}"
+	}
+	return res
+}
+
+func printSkosAndMetas(metas, skos Lib.Set[AST.Term]) {
+
+	Glob.PrintWarn("MakeStep", "Metas: ")
+	for _, v := range metas.Elements().GetSlice() {
+        Glob.PrintWarn("MakeStep", fmt.Sprintf("%v ", v.ToString()))
+    }
+	Glob.PrintWarn("MakeStep", "")
+
+	Glob.PrintWarn("MakeStep", "Skos: ")
+	for _, v := range skos.Elements().GetSlice() {
+        Glob.PrintWarn("MakeStep", fmt.Sprintf("%v ", v.ToString()))
+    }
+	Glob.PrintWarn("MakeStep", "")
+}
+
+func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substitutions) (string, Lib.Set[AST.Term], Lib.Set[AST.Term]) {
 	
 	// List of formula (for each branch)
-	new_form_list := Lib.NewList[Lib.List[AST.Form]]()
 	l1 := form_list.Copy(func(i AST.Form) AST.Form {return i})
-	// l2 := form_list.Copy(func(i AST.Form) AST.Form {return i})
+	l2 := form_list.Copy(func(i AST.Form) AST.Form {return i})
 
 	// Set of metas generated below this node
 	metas := Lib.EmptySet[AST.Term]()
@@ -251,84 +241,115 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form]) (string, Lib.Li
 		}
 	}
 
-	// Todo : copie sets when branching
 	switch s.RuleApplied()  {
 	case Search.RuleClosure: // F, neg F
-		index_pos, index_neg := findIndexClosureRule(index, s.AppliedOn(), form_list)
+		index_pos, index_neg := findIndexClosureRule(index, sub, s.AppliedOn(), form_list)
 		res := fmt.Sprintf("eapply hasTableauContr with (i := %v) (j := %v).\n", index_pos, index_neg)
 		res += "1: { reflexivity. }\n"
 		res += "1: { reflexivity. }\n"
-		res += "esimpl.\n"
-		res += "reflexivity.\n"
+		res += "now esimpl.\n"
 		
 		new_form_list := Lib.NewList[Lib.List[AST.Form]]()
 		l1 := form_list.Copy(func(i AST.Form) AST.Form {return i})
 		l1.Append(s.AppliedOn())
 		new_form_list.Append(l1)
 
-		return res, new_form_list, metas, skos
+		return res, metas, skos
 	case Search.RuleNotNot:
-		res, new_form_list := manageUnaryRule(s, index, "hasTableauNegNeg", form_list)
-		return res, new_form_list, metas, skos
+		// res, new_form_list := manageUnaryRule(s, index, "hasTableauNegNeg", form_list)
+		return "", metas, skos
 	case Search.RuleNotOr:
-		res, new_form_list := manageUnaryRule(s, index, "hasTableauNegOr", form_list)
-		res += "1: { reflexivity. }\n"
-		return res, new_form_list, metas, skos
+		// res, new_form_list := manageUnaryRule(s, index, "hasTableauNegOr", form_list)
+		return "", metas, skos
 	case Search.RuleNotImp: // Neg (F -> G) -> Neg Neg F, Neg G, F	
 		tmp_form := AST.MakerNot(AST.MakerNot(s.ResultFormulas().At(0).At(0)))
 		l1.Append(tmp_form)
 		l1.Append(s.ResultFormulas().At(0).At(1))
 		l1.Append(s.ResultFormulas().At(0).At(0))
 		
-		next_res, next_form, next_metas, next_skos := makeProofAux(s.Children().At(0), l1)
+		next_res, next_metas, next_skos := makeProofAux(s.Children().At(0), l1, sub)
 		
 		res := fmt.Sprintf("eapply %v with (i := %v).\n", "hasTableauNegImp", index)
 		res += "1: { reflexivity. }\n"
 		res += next_res
 		
-		return res, next_form, next_metas, next_skos
+		return res, next_metas, next_skos
 	case Search.RuleAnd:
-		res, new_form_list := manageUnaryRule(s, index, "hasTableauAnd", form_list)
-		return res, new_form_list, metas, skos
-	case Search.RuleNotAnd: // TODO
-		res, new_form_list := manageBinaryRule(s, index, "hasTableauNegAnd", form_list)
+		// res, new_form_list := manageUnaryRule(s, index, "hasTableauAnd", form_list)
+		return "", metas, skos
+	case Search.RuleNotAnd: // Neg (F /\ G) -> [Neg F \/ Neg G, Neg F] [Neg F \/ Neg G, Neg G]
+		neg_f := s.ResultFormulas().At(0).At(0)
+		neg_g := s.ResultFormulas().At(1).At(0)
+		tmp_list := Lib.NewList[AST.Form]()
+		tmp_list.Append(neg_f)
+		tmp_list.Append(neg_g)
+		neg_f_or_g := AST.MakerOr(tmp_list)
+
+		l1.Append(neg_f_or_g)
+		l1.Append(neg_f)
+		l2.Append(neg_f_or_g)
+		l2.Append(neg_g)
+		
+		next_res1, next_metas1, next_skos1 := makeProofAux(s.Children().At(1), l2, sub)
+		next_res2, next_metas2, next_skos2 := makeProofAux(s.Children().At(0), l1, sub)
+		
+		s1, s2, sf1, sf2 := manageMetasFromChild(next_metas1), manageMetasFromChild(next_metas2), manageSkolemsFromChild(next_skos1), manageSkolemsFromChild(next_skos2)
+
+		res := fmt.Sprintf("eapply hasTableauNegAnd with (S1 := %v) (S2 := %v) (Sf1 := %v) (Sf2 := %v) (i := %v).\n", s1, s2, sf1, sf2, index)
 		res += "1: { reflexivity. }\n"
-		return res, new_form_list, metas, skos
+		res += "3-5: set_decide.\n"
+		res += fmt.Sprintf("{\n%v}\n", next_res1)
+		res += fmt.Sprintf("{\n%v}\n", next_res2)
+
+		
+		new_metas := next_metas1.Union(next_metas2)
+		new_skos := next_skos1.Union(next_skos2)
+		printSkosAndMetas(new_skos, new_metas)
+		
+		return res, new_metas, new_skos
 	case Search.RuleNotEqu:
-		res, new_form_list := manageBinaryRule(s, index, "hasTableauNegEqu", form_list)
-		return res, new_form_list, metas, skos
+		// res, new_form_list := manageBinaryRule(s, index, "hasTableauNegEqu", form_list)
+		return "", metas, skos
 	case Search.RuleOr:
-		res, new_form_list := manageBinaryRule(s, index, "hasTableauOr", form_list)
-		return res, new_form_list, metas, skos
+		// res := manageBinaryRule(s, index, "hasTableauOr", form_list)
+		return "", metas, skos
 	case Search.RuleImp:
-		res, new_form_list := manageBinaryRule(s, index, "hasTableauImp", form_list)
-		return res, new_form_list, metas, skos
+		// res, new_form_list := manageBinaryRule(s, index, "hasTableauImp", form_list)
+		return "", metas, skos
 	case Search.RuleEqu:
-		res, new_form_list := manageBinaryRule(s, index, "hasTableauEqu", form_list)
-		return res, new_form_list, metas, skos
+		// res, new_form_list := manageBinaryRule(s, index, "hasTableauEqu", form_list)
+		return "", metas, skos
 	case Search.RuleNotEx: // Neg (Ex x F[x]) -> All x (neg F[x]), neg F[x -> t]
 		tmp_form := AST.MakerAll(Lib.MkListV(s.AppliedOn().(AST.Not).GetForm().(AST.Ex).GetVarList().At(0)), AST.MakerNot(s.AppliedOn().(AST.Not).GetForm().(AST.Ex).GetForm()))
 		l1.Append(tmp_form)
 		l1.Append(s.ResultFormulas().At(0).At(0))
-		
-		next_res, next_form, next_metas, next_skos := makeProofAux(s.Children().At(0), l1)
+
+		meta_test := s.ResultFormulas().At(0).At(0).GetMetas()
+		Glob.PrintError("MakeAux", fmt.Sprintf("meta_test: %v", meta_test.Elements().Len()))
 		real_generated_term := getRealGeneratedTerm(s)
+		Glob.PrintError("MakeAux", fmt.Sprintf("generated term: %v",real_generated_term.ToString()))
+
+		
+		next_res, next_metas, next_skos := makeProofAux(s.Children().At(0), l1, sub)
 		new_metas := next_metas.Copy()
 		
+		Glob.PrintError("MakeAux", fmt.Sprintf("%v", real_generated_term.GetMetas().Elements().Len()))
 		if meta_generated, ok := real_generated_term.(AST.Meta); ok {
 			new_metas = new_metas.Add(meta_generated)
 		}
 
-		res := fmt.Sprintf("eapply %v with (i := %v).\n", "hasTableauNegEx", index)
+		printSkosAndMetas(next_skos, new_metas)
+
+		res := fmt.Sprintf("eapply hasTableauNegEx with (i := %v).\n", index)
 		res += "1: { reflexivity. }\n"
 		res += "1: { set_decide. }\n"
 		res += next_res
 	
-		return res, next_form, new_metas, next_skos
+		return res, new_metas, next_skos
 	case Search.RuleAll: // All x F[x] -> F[x -> t]
 		l1.Append(s.ResultFormulas().At(0).At(0))
-		
-		next_res, next_form, next_metas, next_skos := makeProofAux(s.Children().At(0), l1)
+
+		next_res, next_metas, next_skos := makeProofAux(s.Children().At(0), l1, sub)
 		real_generated_term := getRealGeneratedTerm(s)
 		new_metas := next_metas.Copy()
 		
@@ -340,12 +361,14 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form]) (string, Lib.Li
 		res += "1: { reflexivity. }\n"
 		res += "1: { set_decide. }\n"
 		res += next_res
+
+
 	
-		return res, next_form, new_metas, next_skos
+		return res, new_metas, next_skos
 	case Search.RuleNotAll: // Neg (All x F[x]) -> neg (F[x-> t])
 		l1.Append(s.ResultFormulas().At(0).At(0))
 
-		next_res, next_form, next_metas, next_skos := makeProofAux(s.Children().At(0), l1)
+		next_res, next_metas, next_skos := makeProofAux(s.Children().At(0), l1, sub)
 
 		sko := "OuterSkolemization"
 		if Glob.IsInnerSko() {
@@ -366,13 +389,13 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form]) (string, Lib.Li
 		res += "1: { set_decide. }\n"
 		res += next_res
 
-		return res, next_form, next_metas, new_skos
+		return res, next_metas, new_skos
 	case Search.RuleEx: // Ex x F[x] -> neg (neg (Ex x F[x -> t])), F[x -> t]
 		tmp_form := AST.MakerNot(AST.MakerNot(s.AppliedOn().(AST.Ex).GetForm()))
 		l1.Append(tmp_form)
 		l1.Append(s.ResultFormulas().At(0).At(0))
 
-		next_res, next_form, next_metas, next_skos := makeProofAux(s.Children().At(0), l1)
+		next_res, next_metas, next_skos := makeProofAux(s.Children().At(0), l1, sub)
 
 		sko := "OuterSkolemization"
 		if Glob.IsInnerSko() {
@@ -393,11 +416,11 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form]) (string, Lib.Li
 		res += "1: { set_decide. }\n"
 		res += next_res
 
-		return res, next_form, next_metas, new_skos
+		return res, next_metas, new_skos
 	case Search.RuleReintro: // Skip
-		return makeProofAux(s.Children().At(0), form_list)
+		return makeProofAux(s.Children().At(0), form_list, sub)
 	default:
-		return "Error Admit.", new_form_list, metas, skos
+		return "Error Admit.", metas, skos
 	}
 }
 
@@ -424,7 +447,7 @@ func makeProof(prf Search.IProof, sub Unif.Substitutions) string {
 	res += fmt.Sprintf("exists \\{%v\\}, \\{%v\\}.\n", var_str, sko_str)
 
 	form_list := Lib.MkListV(prf.AppliedOn())
-	res2, _, _, _ := makeProofAux(prf, form_list)
+	res_aux, _, _ := makeProofAux(prf, form_list, sub)
 
-	return res + res2
+	return res + res_aux
 }

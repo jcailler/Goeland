@@ -163,11 +163,17 @@ func TermToTR(t AST.Term) string {
 
 func TermListToTR(tl Lib.List[AST.Term]) string {
 	var res strings.Builder
+	if tl.Len() > 0 {
+		res.WriteString("(")
+	}
 	for i, t := range tl.GetSlice() {
 		res.WriteString(TermToTR(t))
 		if (i < tl.Len()-1) {
 			res.WriteString(" ")
 		}
+	}
+	if tl.Len() > 0 {
+		res.WriteString(")")
 	}
 	return res.String()
 }
