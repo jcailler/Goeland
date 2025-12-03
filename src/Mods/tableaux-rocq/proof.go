@@ -290,8 +290,8 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		l2.Append(neg_f_or_g)
 		l2.Append(neg_g)
 		
-		next_res1, next_metas1, next_skos1 := makeProofAux(s.Children().At(1), l2, sub)
-		next_res2, next_metas2, next_skos2 := makeProofAux(s.Children().At(0), l1, sub)
+		next_res1, next_metas1, next_skos1 := makeProofAux(s.Children().At(0), l1, sub)
+		next_res2, next_metas2, next_skos2 := makeProofAux(s.Children().At(1), l2, sub)
 		
 		s1, s2, sf1, sf2 := manageMetasFromChild(next_metas1), manageMetasFromChild(next_metas2), manageSkolemsFromChild(next_skos1), manageSkolemsFromChild(next_skos2)
 
@@ -427,9 +427,12 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 func makeProof(prf Search.IProof, sub Unif.Substitutions) string {
 	res := ""
 	var_list, sko_list := extractTermsFromSubstList(sub)
+	
+	form_list := Lib.MkListV(prf.AppliedOn())
+	res_aux, metas, _ := makeProofAux(prf, form_list, sub)
 
 	var_str := ""
-	for i, v := range var_list.GetSlice() {
+	for i, v := range metas.Elements().GetSlice() {
 		var_str += fmt.Sprintf(" \"%v\" ", v.ToString())
 		if (i < var_list.Len()-1) {
 			var_str += ","
@@ -444,10 +447,8 @@ func makeProof(prf Search.IProof, sub Unif.Substitutions) string {
 		}
 	}
 
-	res += fmt.Sprintf("exists \\{%v\\}, \\{%v\\}.\n", var_str, sko_str)
-
-	form_list := Lib.MkListV(prf.AppliedOn())
-	res_aux, _, _ := makeProofAux(prf, form_list, sub)
+	
+	res += fmt.Sprintf("exists \\{%v\\}, \\{%v\\}.\n", var_str, sko_str) + res
 
 	return res + res_aux
 }
