@@ -147,6 +147,9 @@ func findIndexClosureRule(index_f int, sub Unif.Substitutions, f AST.Form, form_
 }
 
 func getRealGeneratedTerm(s Search.IProof) AST.Term {
+
+	Glob.PrintError("getRealGenerated - TR", fmt.Sprintf("AppliedOn: %v", s.AppliedOn().ToString()))
+
 	var real_generated_term AST.Term
 	switch generated_term_t := s.TermGenerated().(type) {
 		case Lib.Some[Lib.Either[AST.Ty, AST.Term]]:
@@ -163,6 +166,10 @@ func getRealGeneratedTerm(s Search.IProof) AST.Term {
 }
 
 func getRealIndex(s Search.IProof, form_list Lib.List[AST.Form]) int {
+
+	// Glob.PrintError("applied on", fmt.Sprintf("%v", s.AppliedOn().ToString()))
+	// Glob.PrintError("getRealIndex", fmt.Sprintf("%v", Lib.ListToString(form_list, ",", "")))
+
 	index := form_list.IndexOf(s.AppliedOn(), func(i1, i2 AST.Form) bool {return i1.Equals(i2)})
 	real_index := -1
 
@@ -236,29 +243,31 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 	// Index of the current formula
 	index := getRealIndex(s, form_list)
 	
-// 	// Debug
-// 	Glob.PrintInfo("MakeStep", "-----------------------------")
-// 	Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v][%v] : %v", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().GetIndex(), s.AppliedOn().ToString()))
-// 	Glob.PrintInfo("MakeStep", " ")
-// 	Glob.PrintInfo("MakeStep", "Form list: ")
-// 	for _, v := range form_list.GetSlice() {
-//         Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v ",v.GetIndex(), v.ToString()))
-//     }
-// 	Glob.PrintInfo("MakeStep", "")
-// 
-// 	Glob.PrintInfo("MakeStep", fmt.Sprintf("Real index: %v", index))
-// 	Glob.PrintInfo("MakeStep", fmt.Sprintf(fmt.Sprintf("Children: %v", s.Children().Len())))
-// 	for _, branch := range s.Children().GetSlice() {
-// 		for _, child := range branch.Children().GetSlice() {
-// 			Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v",child.AppliedOn().GetIndex(), child.AppliedOn().ToString()))
-// 		}
-// 	}
-// 	Glob.PrintInfo("MakeStep","Result Forms:")
-// 	for _, rfl := range s.ResultFormulas().GetSlice() {
-// 		for _, rf := range rfl.GetSlice() {
-// 			Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v", rf.GetIndex(), rf.ToString()))
-// 		}
-// 	}
+	// Debug
+	Glob.PrintInfo("MakeStep", "-----------------------------")
+	Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v][%v] : %v", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().GetIndex(), s.AppliedOn().ToString()))
+	Glob.PrintInfo("MakeStep", " ")
+	Glob.PrintInfo("MakeStep", "Form list: ")
+	for _, v := range form_list.GetSlice() {
+        Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v ",v.GetIndex(), v.ToString()))
+    }
+	Glob.PrintInfo("MakeStep", "")
+	Glob.PrintInfo("MakeStep", fmt.Sprintf("Real index: %v", index))
+	Glob.PrintInfo("MakeStep"," ")
+	Glob.PrintInfo("MakeStep", fmt.Sprintf(fmt.Sprintf("Children: %v", s.Children().Len())))
+	if s.Children().Len() > 0 {
+		for i, branch := range s.Children().GetSlice() {
+			Glob.PrintInfo("MakeStep", fmt.Sprintf("Child %v: %v", i, branch.AppliedOn().ToString()))
+		}
+		Glob.PrintInfo("MakeStep"," ")
+		Glob.PrintInfo("MakeStep","Result Forms:")
+		for i, rfl := range s.ResultFormulas().GetSlice() {
+			Glob.PrintInfo("MakeStep", fmt.Sprintf("Rf %v:", i))
+			for _, rf := range rfl.GetSlice() {
+				Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v", rf.GetIndex(), rf.ToString()))
+			}
+		}
+	}
 
 	switch s.RuleApplied()  {
 	case Search.RuleClosure: // F, neg F
@@ -274,7 +283,7 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		new_form_list.Append(l1)
 
 		return res, metas, skos
-	case Search.RuleNotNot: // Neg (Neg F) -> F
+	case Search.RuleNotNot: // Neg (Neg F) -> F``
 		f := s.ResultFormulas().At(0).At(0)
 		neg_neg_f := AST.MakerNot(AST.MakerNot(f))
 		l1.Append(neg_neg_f)
@@ -392,8 +401,8 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		l2.Append(neg_f)
 		l2.Append(g)
 		
-		next_res1, next_metas1, next_skos1 := makeProofAux(s.Children().At(0), l1, sub)
-		next_res2, next_metas2, next_skos2 := makeProofAux(s.Children().At(1), l2, sub)
+		next_res1, next_metas1, next_skos1 := makeProofAux(s.Children().At(0), l2, sub)
+		next_res2, next_metas2, next_skos2 := makeProofAux(s.Children().At(1), l1, sub)
 		
 		s1, s2, sf1, sf2 := manageMetasFromChild(next_metas1), manageMetasFromChild(next_metas2), manageSkolemsFromChild(next_skos1), manageSkolemsFromChild(next_skos2)
 
@@ -493,8 +502,8 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		f := s.ResultFormulas().At(0).At(0)
 		l1.Append(f)
 
-		next_res, next_metas, next_skos := makeProofAux(s.Children().At(0), l1, sub)
 		real_generated_term := getRealGeneratedTerm(s)
+		next_res, next_metas, next_skos := makeProofAux(s.Children().At(0), l1, sub)
 		new_metas := next_metas.Copy()
 		
 		if meta_generated, ok := real_generated_term.(AST.Meta); ok {
@@ -511,8 +520,8 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		f := s.ResultFormulas().At(0).At(0)
 		l1.Append(f)
 
-		next_res, next_metas, next_skos := makeProofAux(s.Children().At(0), l1, sub)
 		real_generated_term := getRealGeneratedTerm(s)
+		next_res, next_metas, next_skos := makeProofAux(s.Children().At(0), l1, sub)
 		new_metas := next_metas.Copy()
 		
 		if meta_generated, ok := real_generated_term.(AST.Meta); ok {
@@ -529,6 +538,7 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		f := s.ResultFormulas().At(0).At(0)
 		l1.Append(f)
 
+		real_generated_term := getRealGeneratedTerm(s)
 		next_res, next_metas, next_skos := makeProofAux(s.Children().At(0), l1, sub)
 
 		sko := "OuterSkolemization"
@@ -536,7 +546,6 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 			sko = "InnerSkolemization"
 		}
 
-		real_generated_term := getRealGeneratedTerm(s)
 		new_skos := next_skos.Copy()
 		
 		if skos_generated, ok := real_generated_term.(AST.Fun); ok {
@@ -557,6 +566,7 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		f := s.ResultFormulas().At(0).At(0)
 		l1.Append(f)
 
+		real_generated_term := getRealGeneratedTerm(s)
 		next_res, next_metas, next_skos := makeProofAux(s.Children().At(0), l1, sub)
 
 		sko := "OuterSkolemization"
@@ -564,7 +574,6 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 			sko = "InnerSkolemization"
 		}
 
-		real_generated_term := getRealGeneratedTerm(s)
 		new_skos := next_skos.Copy()
 		
 		if skos_generated, ok := real_generated_term.(AST.Fun); ok {
@@ -587,24 +596,22 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 }
 
 func makeProof(prf Search.IProof, sub Unif.Substitutions, form_list Lib.List[AST.Form]) string {
-	res := ""
-	_, sko_list := extractTermsFromSubstList(sub)
-	
+	res := ""	
 	new_form_list := Lib.ListAdd(form_list, prf.AppliedOn())
-	res_aux, metas, _ := makeProofAux(prf, new_form_list, sub)
+	res_aux, metas_set, skos_set := makeProofAux(prf, new_form_list, sub)
 
 	var_str := ""
-	for i, v := range metas.Elements().GetSlice() {
+	for i, v := range metas_set.Elements().GetSlice() {
 		var_str += fmt.Sprintf(" \"%v\" ", v.ToString())
-		if (i < metas.Cardinal()-1) {
+		if (i < metas_set.Cardinal()-1) {
 			var_str += ","
 		}
 	}
 
 	sko_str := ""
-	for i, s := range sko_list.GetSlice() {
+	for i, s := range skos_set.Elements().GetSlice() {
 		sko_str += fmt.Sprintf(" \"%v\" ", s.GetName())
-		if (i < sko_list.Len()-1) {
+		if (i < skos_set.Cardinal()-1) {
 			sko_str += ","
 		}
 	}

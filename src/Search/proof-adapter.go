@@ -420,6 +420,7 @@ func getTermInTy(ty AST.Ty, occurrence Lib.List[Lib.Int]) AST.Ty {
 				ty.ToString(),
 			)
 		}))
+
 		Glob.Anomaly(label, "Occurrence not found in type")
 		return nil
 	}

@@ -86,7 +86,7 @@ func makeContextProofBegin(axioms Lib.List[AST.Form]) string {
 
 	axioms_string := ""
 	for i := 0; i<axioms.Len()-1; i++ {
-		axioms_string += fmt.Sprintf("translate_EForm (Axiom%v) ,, ",i)
+		axioms_string += fmt.Sprintf("translate_EForm (Axiom%v) ;; ",i)
 	}
 
 	resultingString += fmt.Sprintf("	hasTableau %v {{ %v translate_EForm (ENeg T) }} subst.\n", skolemization, axioms_string)
