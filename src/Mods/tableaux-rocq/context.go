@@ -40,6 +40,8 @@ import (
 	"fmt"
 
 	"github.com/GoelandProver/Goeland/Glob"
+	"github.com/GoelandProver/Goeland/Lib"
+	"github.com/GoelandProver/Goeland/AST"
 )
 
 var contextEnabled bool = false
@@ -51,11 +53,19 @@ func makeContext() string {
 	return resultingString
 }
 
-func makeContextFormulaBegin() string {
+func makeContextAxiomBegin(i int) string {
+	return fmt.Sprintf("Definition Axiom%v : EForm :=\n", i)
+}
+
+func makeContextAxiomEnd() string {
+	return ".\n\n"
+}
+
+func makeContextConjectureBegin() string {
 	return "Definition T : EForm :=\n"
 }
 
-func makeContextFormulaEnd() string {
+func makeContextConjectureEnd() string {
 	return ".\n\n"
 }
 
@@ -67,13 +77,19 @@ func makeContextSubstEnd() string {
 	return "\n\n"
 }
 
-func makeContextProofBegin() string {
+func makeContextProofBegin(axioms Lib.List[AST.Form]) string {
 	resultingString := "Theorem T_proof :\n"
 	skolemization := "OuterSkolemization"
 	if (Glob.IsInnerSko()) {
 		skolemization = "InnerSkolemization"
 	}
-	resultingString += fmt.Sprintf("	hasTableau %v {{ translate_EForm (ENeg T) }} subst.\n", skolemization)
+
+	axioms_string := ""
+	for i := 0; i<axioms.Len()-1; i++ {
+		axioms_string += fmt.Sprintf("translate_EForm (Axiom%v) ,, ",i)
+	}
+
+	resultingString += fmt.Sprintf("	hasTableau %v {{ %v translate_EForm (ENeg T) }} subst.\n", skolemization, axioms_string)
 	resultingString += "Proof.\n"
 	return resultingString
 }

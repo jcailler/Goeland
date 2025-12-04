@@ -128,16 +128,25 @@ var MakeTableauxRocqProof = func(prf Search.IProof, meta Lib.List[AST.Meta], sub
 	res := ""
 	res += makeContext()
 
-	res += makeContextFormulaBegin()
-	res += makeFormula(prf)
-	res += makeContextFormulaEnd()
+	axioms, conjecture := processMainFormula(prf.AppliedOn())
+
+	res += makeAxioms(axioms)
+	axioms.Append(AST.MakerNot(conjecture))
+
+	res += makeContextConjectureBegin()
+	res += makeConjecture(conjecture)
+	res += makeContextConjectureEnd()
 
 	res += makeContextSubstBegin()
 	res += makeGlobalSubst(sub)
 	res += makeContextSubstEnd()
 
-	res += makeContextProofBegin()
-	res += makeProof(prf, sub)
+	res += makeContextProofBegin(axioms)
+	if axioms.Len() > 1 {
+		res += makeProof(prf.Children().At(0), sub, axioms)
+	} else {
+		res += makeProof(prf, sub, axioms)
+	}
 	res += makeContextProofEnd()
 
 	res += "\n\n"
