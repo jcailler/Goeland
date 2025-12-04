@@ -163,11 +163,11 @@ var MakeTableauxRocqProof = func(prf Search.TableauxProof, meta Lib.List[AST.Met
 func TermToTR(t AST.Term) string {
 	switch tt := t.(type) {
 		case AST.Meta:
-			return  fmt.Sprintf("EVar \"%v\"", tt.ToString())
+			return  fmt.Sprintf("(EVar \"%v\")", tt.ToString())
 		case AST.Var:
-			return  fmt.Sprintf("EVar \"%v\"", tt.ToString())
+			return  fmt.Sprintf("(EVar \"%v\")", tt.ToString())
 		case AST.Fun: 
-			return fmt.Sprintf("EFun \"%v\" [%v]", tt.GetName(), TermListToTR(tt.GetArgs()))
+			return fmt.Sprintf("(EFun \"%v\" [%v])", tt.GetName(), TermListToTR(tt.GetArgs()))
 		default:
 			Glob.PrintError("TableauxRocq", "Error in TermToTR")
 			return ""
@@ -176,17 +176,11 @@ func TermToTR(t AST.Term) string {
 
 func TermListToTR(tl Lib.List[AST.Term]) string {
 	var res strings.Builder
-	if tl.Len() > 0 {
-		res.WriteString("(")
-	}
 	for i, t := range tl.GetSlice() {
 		res.WriteString(TermToTR(t))
 		if (i < tl.Len()-1) {
-			res.WriteString(" ")
+			res.WriteString(" ; ")
 		}
-	}
-	if tl.Len() > 0 {
-		res.WriteString(")")
 	}
 	return res.String()
 }

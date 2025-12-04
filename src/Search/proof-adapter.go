@@ -181,7 +181,6 @@ func (proof TableauxProof) TermGenerated() Lib.Option[Lib.Either[AST.Ty, AST.Ter
 
 	source_form := proof[0].Formula.GetForm()
 	target_form := proof[0].Result_formulas[0].GetForms().At(0)
-
 	replaced_variable := getReplacedVariable(source_form)
 	occurrence_opt := getOneOccurrence(source_form, replaced_variable)
 
@@ -264,15 +263,15 @@ func getTermAtOcc(form AST.Form, occurrence Lib.List[Lib.Int]) Lib.Either[AST.Ty
 func getCleanForm(form AST.Form) AST.Form {
 	switch f := form.(type) {
 	case AST.All:
-		return f.GetForm()
+		return getCleanForm(f.GetForm())
 	case AST.Ex:
-		return f.GetForm()
+		return getCleanForm(f.GetForm())
 	case AST.Not:
 		switch nf := f.GetForm().(type) {
 		case AST.All:
-			return AST.MakerNot(nf.GetForm())
+			return AST.MakerNot(getCleanForm(nf.GetForm()))
 		case AST.Ex:
-			return AST.MakerNot(nf.GetForm())
+			return AST.MakerNot(getCleanForm(nf.GetForm()))
 		}
 	}
 	return form
@@ -343,6 +342,7 @@ func getFunctionalTermAtOcc(
 	terms Lib.List[AST.Term],
 	occurrence Lib.List[Lib.Int],
 ) Lib.Either[AST.Ty, AST.Term] {
+
 	index := int(occurrence.At(0))
 	next_occ := occurrence.Slice(1, occurrence.Len())
 
@@ -399,6 +399,7 @@ func getTermInTy(ty AST.Ty, occurrence Lib.List[Lib.Int]) AST.Ty {
 				ty.ToString(),
 			)
 		}))
+
 		Glob.Anomaly(label, "Occurrence not found in type")
 		return nil
 	}
@@ -435,7 +436,7 @@ func getTermInTerm(trm AST.Term, occurrence Lib.List[Lib.Int]) Lib.Either[AST.Ty
 				trm.ToString(),
 			)
 		}))
-		Glob.Anomaly(label, "Occurrence not found in type")
+		Glob.Anomaly(label, "Occurrence not found in term")
 		return nil
 	}
 }
