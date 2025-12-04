@@ -78,6 +78,12 @@ func (l *List[T]) Append2(value List[T]) {
 	}
 }
 
+func (l *List[T]) Append3(value []T) {
+	for _, v := range value {
+		l.values = append(l.values, v)
+	}
+}
+
 func (l *List[T]) Upd(i int, v T) {
 	l.values[i] = v
 }
