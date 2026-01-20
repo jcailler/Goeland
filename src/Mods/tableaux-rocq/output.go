@@ -190,6 +190,10 @@ func TermListToTR(tl Lib.List[AST.Term]) string {
 
 func FormToTR(f AST.Form) string {
 	switch ft := f.(type) {
+		case AST.Top:
+			return "ETop"
+		case AST.Bot:
+			return "EBot"
 		case AST.Pred:
 			return fmt.Sprintf("EPred \"%v\" [%v]", ft.GetID().ToString(), TermListToTR(ft.GetArgs()))
 		case AST.Not:
