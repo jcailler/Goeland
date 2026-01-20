@@ -272,12 +272,31 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 	// }
 
 	switch s.RuleApplied()  {
-	case Search.RuleClosure: // F, neg F
-		index_pos, index_neg := findIndexClosureRule(index, sub, s.AppliedOn(), form_list)
-		res := fmt.Sprintf("eapply hasTableauContr with (i := %v) (j := %v).\n", index_pos, index_neg)
-		res += "1: reflexivity. \n"
-		res += "1: reflexivity. \n"
-		res += "reflexivity.\n"
+	case Search.RuleClosure: // F, neg F, ~Top or Bot
+		res := ""
+		if _, ok :=  s.AppliedOn().(AST.Bot); ok {
+			res += fmt.Sprintf("eapply hasTableauBot with (i := %v).\n", index)
+			res += "reflexivity.\n"
+		} else {
+			if s2, ok :=  s.AppliedOn().(AST.Not); ok {
+				if _, ok2 :=  s2.GetForm().(AST.Top); ok2 {
+					res += fmt.Sprintf("eapply hasTableauNegTop with (i := %v).\n", index)
+					res += "reflexivity.\n"
+				} else {
+					index_pos, index_neg := findIndexClosureRule(index, sub, s.AppliedOn(), form_list)
+					res += fmt.Sprintf("eapply hasTableauContr with (i := %v) (j := %v).\n", index_pos, index_neg)
+					res += "1: reflexivity. \n"
+					res += "1: reflexivity. \n"
+					res += "reflexivity.\n"
+				}
+			} else {
+				index_pos, index_neg := findIndexClosureRule(index, sub, s.AppliedOn(), form_list)
+				res += fmt.Sprintf("eapply hasTableauContr with (i := %v) (j := %v).\n", index_pos, index_neg)
+				res += "1: reflexivity. \n"
+				res += "1: reflexivity. \n"
+				res += "reflexivity.\n"
+			}
+		}
 		
 		new_form_list := Lib.NewList[Lib.List[AST.Form]]()
 		l1 := form_list.Copy(func(i AST.Form) AST.Form {return i})
@@ -286,14 +305,12 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 
 		return res, metas, skos
 	case Search.RuleNotNot: // Neg (Neg F) -> F``
-		idx_b1 := 0
-		idx_f := 0
-		f := s.ResultFormulas().At(idx_b1).At(idx_f)
+		f := s.ResultFormulas().At(0).At(0)
 		neg_neg_f := AST.MakerNot(AST.MakerNot(f))
 		l1.Append(neg_neg_f)
 		l1.Append(f)
 		
-		next_res, next_metas, next_skos := makeProofAux(s.Children().At(idx_b1), l1, sub)
+		next_res, next_metas, next_skos := makeProofAux(s.Children().At(0), l1, sub)
 		
 		res := fmt.Sprintf("eapply %v with (i := %v).\n", "hasTableauNegNeg", index)
 		res += "1: reflexivity. \n"
