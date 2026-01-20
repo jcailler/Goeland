@@ -235,47 +235,49 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 	l2 := form_list.Copy(func(i AST.Form) AST.Form {return i})
 
 	// Set of metas generated below this node
+	// TODO : list and add instead of set
 	metas := Lib.EmptySet[AST.Term]()
 
 	// Set of Skolem terms generated below this node
+	// TODO : list and add instead of set
 	skos := Lib.EmptySet[AST.Term]()
 
 	// Index of the current formula
 	index := getRealIndex(s, form_list)
 	
-	// Debug
-	Glob.PrintInfo("MakeStep", "-----------------------------")
-	Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v][%v] : %v", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().GetIndex(), s.AppliedOn().ToString()))
-	Glob.PrintInfo("MakeStep", " ")
-	Glob.PrintInfo("MakeStep", "Form list: ")
-	for _, v := range form_list.GetSlice() {
-        Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v ",v.GetIndex(), v.ToString()))
-    }
-	Glob.PrintInfo("MakeStep", "")
-	Glob.PrintInfo("MakeStep", fmt.Sprintf("Real index: %v", index))
-	Glob.PrintInfo("MakeStep"," ")
-	Glob.PrintInfo("MakeStep", fmt.Sprintf(fmt.Sprintf("Children: %v", s.Children().Len())))
-	if s.Children().Len() > 0 {
-		for i, branch := range s.Children().GetSlice() {
-			Glob.PrintInfo("MakeStep", fmt.Sprintf("Child %v: %v", i, branch.AppliedOn().ToString()))
-		}
-		Glob.PrintInfo("MakeStep"," ")
-		Glob.PrintInfo("MakeStep","Result Forms:")
-		for i, rfl := range s.ResultFormulas().GetSlice() {
-			Glob.PrintInfo("MakeStep", fmt.Sprintf("Rf %v:", i))
-			for _, rf := range rfl.GetSlice() {
-				Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v", rf.GetIndex(), rf.ToString()))
-			}
-		}
-	}
+	// // Debug
+	// Glob.PrintInfo("MakeStep", "-----------------------------")
+	// Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v][%v] : %v", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().GetIndex(), s.AppliedOn().ToString()))
+	// Glob.PrintInfo("MakeStep", " ")
+	// Glob.PrintInfo("MakeStep", "Form list: ")
+	// for _, v := range form_list.GetSlice() {
+    //     Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v ",v.GetIndex(), v.ToString()))
+    // }
+	// Glob.PrintInfo("MakeStep", "")
+	// Glob.PrintInfo("MakeStep", fmt.Sprintf("Real index: %v", index))
+	// Glob.PrintInfo("MakeStep"," ")
+	// Glob.PrintInfo("MakeStep", fmt.Sprintf(fmt.Sprintf("Children: %v", s.Children().Len())))
+	// if s.Children().Len() > 0 {
+	// 	for i, branch := range s.Children().GetSlice() {
+	// 		Glob.PrintInfo("MakeStep", fmt.Sprintf("Child %v: %v", i, branch.AppliedOn().ToString()))
+	// 	}
+	// 	Glob.PrintInfo("MakeStep"," ")
+	// 	Glob.PrintInfo("MakeStep","Result Forms:")
+	// 	for i, rfl := range s.ResultFormulas().GetSlice() {
+	// 		Glob.PrintInfo("MakeStep", fmt.Sprintf("Rf %v:", i))
+	// 		for _, rf := range rfl.GetSlice() {
+	// 			Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v", rf.GetIndex(), rf.ToString()))
+	// 		}
+	// 	}
+	// }
 
 	switch s.RuleApplied()  {
 	case Search.RuleClosure: // F, neg F
 		index_pos, index_neg := findIndexClosureRule(index, sub, s.AppliedOn(), form_list)
 		res := fmt.Sprintf("eapply hasTableauContr with (i := %v) (j := %v).\n", index_pos, index_neg)
-		res += "1: { reflexivity. }\n"
-		res += "1: { reflexivity. }\n"
-		res += "now esimpl.\n"
+		res += "1: reflexivity. \n"
+		res += "1: reflexivity. \n"
+		res += "reflexivity.\n"
 		
 		new_form_list := Lib.NewList[Lib.List[AST.Form]]()
 		l1 := form_list.Copy(func(i AST.Form) AST.Form {return i})
@@ -284,49 +286,60 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 
 		return res, metas, skos
 	case Search.RuleNotNot: // Neg (Neg F) -> F``
-		f := s.ResultFormulas().At(0).At(0)
+		idx_b1 := 0
+		idx_f := 0
+		f := s.ResultFormulas().At(idx_b1).At(idx_f)
 		neg_neg_f := AST.MakerNot(AST.MakerNot(f))
 		l1.Append(neg_neg_f)
 		l1.Append(f)
 		
-		next_res, next_metas, next_skos := makeProofAux(s.Children().At(0), l1, sub)
+		next_res, next_metas, next_skos := makeProofAux(s.Children().At(idx_b1), l1, sub)
 		
 		res := fmt.Sprintf("eapply %v with (i := %v).\n", "hasTableauNegNeg", index)
-		res += "1: { reflexivity. }\n"
+		res += "1: reflexivity. \n"
 		res += next_res
 		
 		return res, next_metas, next_skos
 	case Search.RuleNotOr: // Neg (F \/ G) -> Neg F, Neg G
-		neg_f := s.ResultFormulas().At(0).At(0)
-		neg_g := s.ResultFormulas().At(0).At(1)
+		idx_b1 := 0
+		idx_neg_f := 0
+		idx_neg_g := 1
+		neg_f := s.ResultFormulas().At(idx_b1).At(idx_neg_f)
+		neg_g := s.ResultFormulas().At(idx_b1).At(idx_neg_g)
 		l1.Append(neg_f)
 		l1.Append(neg_g)
 		
-		next_res, next_metas, next_skos := makeProofAux(s.Children().At(0), l1, sub)
+		next_res, next_metas, next_skos := makeProofAux(s.Children().At(idx_b1), l1, sub)
 		
 		res := fmt.Sprintf("eapply %v with (i := %v).\n", "hasTableauNegOr", index)
-		res += "1: { reflexivity. }\n"
+		res += "1: reflexivity. \n"
 		res += next_res
 		
 		return res, next_metas, next_skos
 	case Search.RuleNotImp: // Neg (F -> G) -> Neg Neg F, Neg G, F	
-		f := s.ResultFormulas().At(0).At(0)
-		neg_g := s.ResultFormulas().At(0).At(1)
+		idx_b1 := 0
+		idx_f := 0
+		idx_neg_g := 1
+		f := s.ResultFormulas().At(idx_b1).At(idx_f)
+		neg_g := s.ResultFormulas().At(idx_b1).At(idx_neg_g)
 		neg_neg_f := AST.MakerNot(AST.MakerNot(f))
 		l1.Append(neg_neg_f)
 		l1.Append(neg_g)
 		l1.Append(f)
 		
-		next_res, next_metas, next_skos := makeProofAux(s.Children().At(0), l1, sub)
+		next_res, next_metas, next_skos := makeProofAux(s.Children().At(idx_b1), l1, sub)
 		
 		res := fmt.Sprintf("eapply %v with (i := %v).\n", "hasTableauNegImp", index)
-		res += "1: { reflexivity. }\n"
+		res += "1: reflexivity.\n"
 		res += next_res
 		
 		return res, next_metas, next_skos
 	case Search.RuleAnd: // (F /\ G) -> Neg (Neg F)), Neg(Neg G), F, G
-		f := s.ResultFormulas().At(0).At(0)
-		g := s.ResultFormulas().At(0).At(1)
+		idx_b1 := 0
+		idx_f := 0
+		idx_g := 1
+		f := s.ResultFormulas().At(idx_b1).At(idx_f)
+		g := s.ResultFormulas().At(idx_b1).At(idx_g)
 		neg_neg_f := AST.MakerNot(f)
 		neg_neg_g := AST.MakerNot(g)
 		l1.Append(neg_neg_f)
@@ -334,16 +347,20 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		l1.Append(f)
 		l1.Append(g)
 		
-		next_res, next_metas, next_skos := makeProofAux(s.Children().At(0), l1, sub)
+		next_res, next_metas, next_skos := makeProofAux(s.Children().At(idx_b1), l1, sub)
 		
 		res := fmt.Sprintf("eapply %v with (i := %v).\n", "hasTableauNegAnd", index)
-		res += "1: { reflexivity. }\n"
+		res += "1: reflexivity. \n"
 		res += next_res
 		
 		return res, next_metas, next_skos
 	case Search.RuleNotAnd: // Neg (F /\ G) -> [Neg F \/ Neg G, Neg F] [Neg F \/ Neg G, Neg G]
-		neg_f := s.ResultFormulas().At(0).At(0)
-		neg_g := s.ResultFormulas().At(1).At(0)
+		idx_b1 := 0
+		idx_b2 := 1
+		idx_neg_f := 0
+		idx_neg_g := 0
+		neg_f := s.ResultFormulas().At(idx_b1).At(idx_neg_f)
+		neg_g := s.ResultFormulas().At(idx_b2).At(idx_neg_g)
 		tmp_list := Lib.NewList[AST.Form]()
 		tmp_list.Append(neg_f)
 		tmp_list.Append(neg_g)
@@ -354,14 +371,16 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		l2.Append(neg_f_or_g)
 		l2.Append(neg_g)
 		
-		next_res1, next_metas1, next_skos1 := makeProofAux(s.Children().At(0), l1, sub)
-		next_res2, next_metas2, next_skos2 := makeProofAux(s.Children().At(1), l2, sub)
+		next_res1, next_metas1, next_skos1 := makeProofAux(s.Children().At(idx_b1), l1, sub)
+		next_res2, next_metas2, next_skos2 := makeProofAux(s.Children().At(idx_b2), l2, sub)
 		
 		s1, s2, sf1, sf2 := manageMetasFromChild(next_metas1), manageMetasFromChild(next_metas2), manageSkolemsFromChild(next_skos1), manageSkolemsFromChild(next_skos2)
 
 		res := fmt.Sprintf("eapply hasTableauNegAnd with (S1 := %v) (S2 := %v) (Sf1 := %v) (Sf2 := %v) (i := %v).\n", s1, s2, sf1, sf2, index)
-		res += "1: { reflexivity. }\n"
-		res += "3-5: set_decide.\n"
+		res += "1: reflexivity.\n"
+		res += "3: now esimpl. \n"
+		res += "3: now esimpl. \n"
+		res += "3: now esimpl. \n"
 		res += fmt.Sprintf("{\n%v}\n", next_res1)
 		res += fmt.Sprintf("{\n%v}\n", next_res2)
 
@@ -371,11 +390,17 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		
 		return res, new_metas, new_skos
 	case Search.RuleNotEqu:  // Neg (F <-> G) -> [ (Neg (F -> G) \/ (Neg (G -> F)), Neg (F -> G), Neg Neg F, Neg G, F] [(Neg (F -> G) \/ (Neg (G -> F)), Neg (G -> F), Neg (Neg G), Neg F, G]
-		neg_f := s.ResultFormulas().At(0).At(0)
-		g := s.ResultFormulas().At(0).At(1)
-		f := s.ResultFormulas().At(1).At(0)
-		neg_g := s.ResultFormulas().At(1).At(1)
+		idx_b1 := 0
+		idx_b2 := 1
+		idx_f := 0
+		idx_g := 1
+		idx_neg_f := 0
+		idx_neg_g := 1
 
+		neg_f := s.ResultFormulas().At(idx_b1).At(idx_neg_f)
+		g := s.ResultFormulas().At(idx_b1).At(idx_g)
+		f := s.ResultFormulas().At(idx_b2).At(idx_f)
+		neg_g := s.ResultFormulas().At(idx_b2).At(idx_neg_g)
 
 		neg_neg_f := AST.MakerNot(neg_f)
 		neg_neg_g := AST.MakerNot(neg_g)
@@ -401,14 +426,16 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		l2.Append(neg_f)
 		l2.Append(g)
 		
-		next_res1, next_metas1, next_skos1 := makeProofAux(s.Children().At(0), l2, sub)
-		next_res2, next_metas2, next_skos2 := makeProofAux(s.Children().At(1), l1, sub)
+		next_res1, next_metas1, next_skos1 := makeProofAux(s.Children().At(idx_b1), l2, sub)
+		next_res2, next_metas2, next_skos2 := makeProofAux(s.Children().At(idx_b2), l1, sub)
 		
 		s1, s2, sf1, sf2 := manageMetasFromChild(next_metas1), manageMetasFromChild(next_metas2), manageSkolemsFromChild(next_skos1), manageSkolemsFromChild(next_skos2)
 
 		res := fmt.Sprintf("eapply hasTableauNegEqu with (S1 := %v) (S2 := %v) (Sf1 := %v) (Sf2 := %v) (i := %v).\n", s1, s2, sf1, sf2, index)
-		res += "1: { reflexivity. }\n"
-		res += "3-5: set_decide.\n"
+		res += "1: reflexivity.\n"
+		res += "3: now esimpl. \n"
+		res += "3: now esimpl. \n"
+		res += "3: now esimpl. \n"
 		res += fmt.Sprintf("{\n%v}\n", next_res1)
 		res += fmt.Sprintf("{\n%v}\n", next_res2)
 
@@ -418,19 +445,25 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		
 		return res, new_metas, new_skos
 	case Search.RuleOr: // (F \/ G) -> [F] [G]
-		f := s.ResultFormulas().At(0).At(0)
-		g := s.ResultFormulas().At(1).At(0)
+		idx_b1 := 0
+		idx_b2 := 1
+		idx_f := 0
+		idx_g := 0
+		f := s.ResultFormulas().At(idx_b1).At(idx_f)
+		g := s.ResultFormulas().At(idx_b2).At(idx_g)
 		l1.Append(f)
 		l2.Append(g)
 		
-		next_res1, next_metas1, next_skos1 := makeProofAux(s.Children().At(0), l1, sub)
-		next_res2, next_metas2, next_skos2 := makeProofAux(s.Children().At(1), l2, sub)
+		next_res1, next_metas1, next_skos1 := makeProofAux(s.Children().At(idx_b1), l1, sub)
+		next_res2, next_metas2, next_skos2 := makeProofAux(s.Children().At(idx_b2), l2, sub)
 		
 		s1, s2, sf1, sf2 := manageMetasFromChild(next_metas1), manageMetasFromChild(next_metas2), manageSkolemsFromChild(next_skos1), manageSkolemsFromChild(next_skos2)
 
 		res := fmt.Sprintf("eapply hasTableauOr with (S1 := %v) (S2 := %v) (Sf1 := %v) (Sf2 := %v) (i := %v).\n", s1, s2, sf1, sf2, index)
-		res += "1: { reflexivity. }\n"
-		res += "3-5: set_decide.\n"
+		res += "1: reflexivity.\n"
+		res += "3: now esimpl. \n"
+		res += "3: now esimpl. \n"
+		res += "3: now esimpl. \n"
 		res += fmt.Sprintf("{\n%v}\n", next_res1)
 		res += fmt.Sprintf("{\n%v}\n", next_res2)
 
@@ -440,19 +473,25 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		
 		return res, new_metas, new_skos
 	case Search.RuleImp: // (F -> G) -> [neg F] [G]
-		neg_f := s.ResultFormulas().At(0).At(0)
-		g := s.ResultFormulas().At(1).At(0)
+		idx_b1 := 0
+		idx_b2 := 1
+		idx_neg_f := 0
+		idx_g := 0
+		neg_f := s.ResultFormulas().At(idx_b1).At(idx_neg_f)
+		g := s.ResultFormulas().At(idx_b2).At(idx_g)
 		l1.Append(neg_f)
 		l2.Append(g)
 		
-		next_res1, next_metas1, next_skos1 := makeProofAux(s.Children().At(0), l1, sub)
-		next_res2, next_metas2, next_skos2 := makeProofAux(s.Children().At(1), l2, sub)
+		next_res1, next_metas1, next_skos1 := makeProofAux(s.Children().At(idx_b1), l1, sub)
+		next_res2, next_metas2, next_skos2 := makeProofAux(s.Children().At(idx_b2), l2, sub)
 		
 		s1, s2, sf1, sf2 := manageMetasFromChild(next_metas1), manageMetasFromChild(next_metas2), manageSkolemsFromChild(next_skos1), manageSkolemsFromChild(next_skos2)
 
 		res := fmt.Sprintf("eapply hasTableauImp with (S1 := %v) (S2 := %v) (Sf1 := %v) (Sf2 := %v) (i := %v).\n", s1, s2, sf1, sf2, index)
-		res += "1: { reflexivity. }\n"
-		res += "3-5: set_decide.\n"
+		res += "1: reflexivity.\n"
+		res += "3: now esimpl. \n"
+		res += "3: now esimpl. \n"
+		res += "3: now esimpl. \n"
 		res += fmt.Sprintf("{\n%v}\n", next_res1)
 		res += fmt.Sprintf("{\n%v}\n", next_res2)
 
@@ -462,10 +501,17 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		
 		return res, new_metas, new_skos
 	case Search.RuleEqu: // (F <-> G) -> [Neg (Neg (F -> G)), Neg (Neg (G -> F)), F -> G, G -> F, Neg F, Neg G] [Neg (Neg (F -> G)), Neg (Neg (G -> F)), F -> G, G -> F, F, G]
-		neg_f := s.ResultFormulas().At(0).At(0)
-		neg_g := s.ResultFormulas().At(0).At(1)
-		f := s.ResultFormulas().At(1).At(0)
-		g := s.ResultFormulas().At(1).At(1)
+		idx_b1 := 0
+		idx_b2 := 1
+		idx_f := 0
+		idx_g := 1
+		idx_neg_f := 0
+		idx_neg_g := 1
+
+		neg_f := s.ResultFormulas().At(idx_b1).At(idx_neg_f)
+		neg_g := s.ResultFormulas().At(idx_b1).At(idx_neg_g)
+		f := s.ResultFormulas().At(idx_b2).At(idx_f)
+		g := s.ResultFormulas().At(idx_b2).At(idx_g)
 
 		f_imp_g := AST.MakerImp(f, g)
 		g_imp_f := AST.MakerImp(g, f)
@@ -480,14 +526,16 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		l2.Append(f)
 		l2.Append(g)
 		
-		next_res1, next_metas1, next_skos1 := makeProofAux(s.Children().At(0), l1, sub)
-		next_res2, next_metas2, next_skos2 := makeProofAux(s.Children().At(1), l2, sub)
+		next_res1, next_metas1, next_skos1 := makeProofAux(s.Children().At(idx_b1), l1, sub)
+		next_res2, next_metas2, next_skos2 := makeProofAux(s.Children().At(idx_b2), l2, sub)
 		
 		s1, s2, sf1, sf2 := manageMetasFromChild(next_metas1), manageMetasFromChild(next_metas2), manageSkolemsFromChild(next_skos1), manageSkolemsFromChild(next_skos2)
 
 		res := fmt.Sprintf("eapply hasTableauEqu with (S1 := %v) (S2 := %v) (Sf1 := %v) (Sf2 := %v) (i := %v).\n", s1, s2, sf1, sf2, index)
-		res += "1: { reflexivity. }\n"
-		res += "3-5: set_decide.\n"
+		res += "1: reflexivity.\n"
+		res += "3: now esimpl. \n"
+		res += "3: now esimpl. \n"
+		res += "3: now esimpl. \n"
 		res += fmt.Sprintf("{\n%v}\n", next_res1)
 		res += fmt.Sprintf("{\n%v}\n", next_res2)
 
@@ -508,11 +556,17 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		
 		if meta_generated, ok := real_generated_term.(AST.Meta); ok {
 			new_metas = new_metas.Add(meta_generated)
+		} else {
+			Glob.PrintError("MakeProofAux - TR", fmt.Sprintf("The generated term %v is not a meta", real_generated_term.ToString()))
 		}
 
-		res := fmt.Sprintf("eapply hasTableauNegEx with (i := %v).\n", index)
-		res += "1: { reflexivity. }\n"
-		res += "1: { set_decide. }\n"
+		res := fmt.Sprintf("unshelve eapply hasTableauNegEx with (i := %v).\n", index)
+		res += "1-3: shelve.\n"
+		res += fmt.Sprintf("1: exact \"%v\".\n", real_generated_term.ToString())
+		res += "1: reflexivity.\n"
+		res += "1: now esimpl.\n"
+		res += "1: reflexivity.\n"
+		res += "1: now esimpl.\n"
 		res += next_res
 	
 		return res, new_metas, next_skos
@@ -528,9 +582,13 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 			new_metas = new_metas.Add(meta_generated)
 		}
 
-		res := fmt.Sprintf("eapply %v with (i := %v).\n", "hasTableauAll", index)
-		res += "1: { reflexivity. }\n"
-		res += "1: { set_decide. }\n"
+		res := fmt.Sprintf("unshelve eapply %v with (i := %v).\n", "hasTableauAll", index)
+		res += "1-3: shelve.\n"
+		res += fmt.Sprintf("1: exact \"%v\".\n", real_generated_term.ToString())
+		res += "1: reflexivity.\n"
+		res += "1: now esimpl.\n"
+		res += "1: reflexivity.\n"
+		res += "1: now esimpl.\n"
 		res += next_res
 	
 		return res, new_metas, next_skos
@@ -553,10 +611,11 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		}
 
 		res := fmt.Sprintf("unshelve eapply hasTableauNegAll with (sko := %v) (i := %v).\n", sko, index)
-		res += "1, 2: shelve.\n"
+		res += "1-3: shelve.\n"
 		res += fmt.Sprintf("1: exact (%v).\n", TermToTR(real_generated_term))
 		res += "2, 3: reflexivity.\n"
-		res += "1: { set_decide. }\n"
+		res += "1: now esimpl.\n"
+		res += "1: now esimpl.\n"
 		res += next_res
 
 		return res, next_metas, new_skos
@@ -581,10 +640,11 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		}
 
 		res := fmt.Sprintf("unshelve eapply hasTableauEx with (sko := %v) (i := %v).\n", sko, index)
-		res += "1, 2: shelve.\n"
+		res += "1-3: shelve.\n"
 		res += fmt.Sprintf("1: exact (%v).\n", TermToTR(real_generated_term))
 		res += "2, 3: reflexivity.\n"
-		res += "1: { set_decide. }\n"
+		res += "1: now esimpl.\n"
+		res += "1: now esimpl.\n"
 		res += next_res
 
 		return res, next_metas, new_skos
