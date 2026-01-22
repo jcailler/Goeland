@@ -44,7 +44,7 @@ else:
         if LaunchTest("Goéland", "timeout "+timeout+" ../src/_build/goeland -noeq" + " ".join(sys.argv[3:]) + " " + problem_path, "% RES : VALID", None, "% RES : NOT VALID"):
             cpt += 1
             # Copy the file to the success folder
-            shutil.copy(problem_path, success_folder)
+            shutil.move(problem_path, success_folder)
             print(f"Copied {file} to {success_folder}")
 
     print(f"Number of problems solved : {cpt}/{total}")
