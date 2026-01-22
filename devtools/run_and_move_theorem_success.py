@@ -20,18 +20,19 @@ def LaunchTest(prover_name, command_line, success, memory_limit=None, failure=No
     
     return res
 
-if len(sys.argv) < 3: 
-    print(f"python3 {sys.argv[0]} problem_folder timeout goeland_options")
+if len(sys.argv) < 4: 
+    print(f"python3 {sys.argv[0]} problem_folder output_folder_suffix timeout goeland_options")
 else:
     folder = sys.argv[1]
     folder_split = folder.split("/")
     folder += "/"
    
+    suffix = sys.argv[2]
     entries = os.listdir(folder)
-    timeout = sys.argv[2]
+    timeout = sys.argv[3]
 
     # Create the success folder name
-    success_folder = folder.rstrip("/") + "_SUCCESS_OUTER/"
+    success_folder = folder.rstrip("/") + f"_{suffix}/"
     os.makedirs(success_folder, exist_ok=True)
 
     cpt = 0
@@ -41,7 +42,7 @@ else:
         problem_path = folder + file
         print(f"Problem {index+1}/{total} : {problem_path}")
 
-        if LaunchTest("Goéland", "timeout "+timeout+" ../src/_build/goeland -noeq" + " ".join(sys.argv[3:]) + " " + problem_path, "% RES : VALID", None, "% RES : NOT VALID"):
+        if LaunchTest("Goéland", "timeout "+timeout+" ../tool/goeland -noeq" + " ".join(sys.argv[4:]) + " " + problem_path, "% RES : VALID", None, "% RES : NOT VALID"):
             cpt += 1
             # Copy the file to the success folder
             shutil.move(problem_path, success_folder)
