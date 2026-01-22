@@ -50,7 +50,7 @@ import (
 	"github.com/GoelandProver/Goeland/Unif"
 )
 
-/************ Axiom and COnjecture ************/
+/************ Axiom and Conjecture ************/
 // Processes the formula that was proven by Goéland.
 func processMainFormula(form AST.Form) (Lib.List[AST.Form], AST.Form) {
 	formList := Lib.NewList[AST.Form]()
@@ -147,7 +147,6 @@ func findIndexClosureRule(index_f int, sub Unif.Substitutions, f AST.Form, form_
 }
 
 func getRealGeneratedTerm(s Search.IProof) AST.Term {
-
 	var real_generated_term AST.Term
 	switch generated_term_t := s.TermGenerated().(type) {
 		case Lib.Some[Lib.Either[AST.Ty, AST.Term]]:
@@ -164,7 +163,6 @@ func getRealGeneratedTerm(s Search.IProof) AST.Term {
 }
 
 func getRealIndex(s Search.IProof, form_list Lib.List[AST.Form]) int {
-
 	index := form_list.IndexOf(s.AppliedOn(), func(i1, i2 AST.Form) bool {return i1.Equals(i2)})
 	real_index := -1
 
@@ -238,6 +236,32 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 	// Index of the current formula
 	index := getRealIndex(s, form_list)
 	
+	// Debug
+	// Glob.PrintInfo("MakeStep", "-----------------------------")
+	// Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v][%v] : %v", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().GetIndex(), s.AppliedOn().ToString()))
+	// Glob.PrintInfo("MakeStep", " ")
+	// Glob.PrintInfo("MakeStep", "Form list: ")
+	// for _, v := range form_list.GetSlice() {
+    //     Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v ",v.GetIndex(), v.ToString()))
+    // }
+	// Glob.PrintInfo("MakeStep", "")
+	// Glob.PrintInfo("MakeStep", fmt.Sprintf("Real index: %v", index))
+	// Glob.PrintInfo("MakeStep"," ")
+	// Glob.PrintInfo("MakeStep", fmt.Sprintf(fmt.Sprintf("Children: %v", s.Children().Len())))
+	// if s.Children().Len() > 0 {
+	// 	for i, branch := range s.Children().GetSlice() {
+	// 		Glob.PrintInfo("MakeStep", fmt.Sprintf("Child %v: %v", i, branch.AppliedOn().ToString()))
+	// 	}
+	// 	Glob.PrintInfo("MakeStep"," ")
+	// 	Glob.PrintInfo("MakeStep","Result Forms:")
+	// 	for i, rfl := range s.ResultFormulas().GetSlice() {
+	// 		Glob.PrintInfo("MakeStep", fmt.Sprintf("Rf %v:", i))
+	// 		for _, rf := range rfl.GetSlice() {
+	// 			Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v", rf.GetIndex(), rf.ToString()))
+	// 		}
+	// 	}
+	// }
+
 	switch s.RuleApplied()  {
 	case Search.RuleClosure: // F, neg F, ~Top or Bot
 		res := ""
@@ -376,12 +400,12 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 	case Search.RuleNotEqu:  // Neg (F <-> G) -> 
 	// [ (Neg (F -> G) \/ (Neg (G -> F)), Neg (F -> G), Neg Neg F, Neg G, F] 
 	// [ (Neg (F -> G) \/ (Neg (G -> F)), Neg (G -> F), Neg Neg G, Neg F, G]
-		idx_b1 := 0
-		idx_b2 := 1
-		idx_f := 0
-		idx_g := 1
-		idx_neg_f := 0
-		idx_neg_g := 1
+		idx_b1 := 1
+		idx_b2 := 0
+		idx_f := 1
+		idx_g := 0
+		idx_neg_f := 1
+		idx_neg_g := 0
 
 		neg_f := s.ResultFormulas().At(idx_b1).At(idx_neg_f)
 		g := s.ResultFormulas().At(idx_b1).At(idx_g)
