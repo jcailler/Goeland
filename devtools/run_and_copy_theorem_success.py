@@ -41,11 +41,12 @@ else:
     for index, file in enumerate(entries):
         problem_path = folder + file
         print(f"Problem {index+1}/{total} : {problem_path}")
+        print("../tool/goeland -noeq " + " ".join(sys.argv[4:]) + " " + problem_path)
 
-        if LaunchTest("Goéland", "timeout "+timeout+" ../tool/goeland -noeq" + " ".join(sys.argv[4:]) + " " + problem_path, "% RES : VALID", None, "% RES : NOT VALID"):
+        if LaunchTest("Goéland", "timeout "+timeout+" ../tool/goeland -noeq " + " ".join(sys.argv[4:]) + " " + problem_path, "% RES : VALID", None, "% RES : NOT VALID"):
             cpt += 1
             # Copy the file to the success folder
-            shutil.move(problem_path, success_folder)
+            shutil.copy(problem_path, success_folder)
             print(f"Copied {file} to {success_folder}")
 
     print(f"Number of problems solved : {cpt}/{total}")

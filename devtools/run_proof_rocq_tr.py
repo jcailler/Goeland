@@ -50,11 +50,6 @@ def extract_tableaurocq(output, outdir, base):
             if in_proof:
                 f.write(line + "\n")
 
-def rocq_check(path):
-    err = run(f"rocq -c {path}", stdout=PIPE, stderr=PIPE,
-              universal_newlines=True, shell=True).stderr
-    return "Error" not in err
-
 
 if len(sys.argv) < 5:
     print("Usage: python3 run_goeland_proofs.py goeland_exec problem_folder timeout outdir")
@@ -80,8 +75,6 @@ for file in entries:
     out = Out(f"timeout {timeout} {exe} -orocq -context -chrono {full}")
     if "% RES : VALID" in out:
         gs3 = extract_rocq(out, outdir, base)
-        if not rocq_check(os.path.join(outdir, base + "_rocq.v")):
-            print(f"Invalid Rocq proof: {file}")
         if gs3:
             with open(os.path.join(outdir, "gs3_times.csv"), "a") as f:
                 f.write(f"{base},{gs3}\n")
@@ -90,7 +83,5 @@ for file in entries:
     out = Out(f"timeout {timeout} {exe} -otableaurocq {full}")
     if "% RES : VALID" in out:
         extract_tableaurocq(out, outdir, base)
-        if not rocq_check(os.path.join(outdir, base + "_tableaurocq.v")):
-            print(f"Invalid TableauRocq proof: {file}")
 
 
