@@ -129,7 +129,7 @@ func TableauxRocqPrinterAction() AST.PrinterAction {
 
 
 var MakeTableauxRocqProof = func(prf Search.TableauxProof, meta Lib.List[AST.Meta], sub Unif.Substitutions) string {
-	res := ""
+	res := "Set Warnings \"-native-compiler\".\n"
 	res += makeContext()
 
 	axioms, conjecture := processMainFormula(prf.AppliedOn())
