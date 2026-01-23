@@ -59,9 +59,9 @@ for file in os.listdir(folder):
         data[key]["rocq"] = count_branches(path)
         data[key]["rocq_check_time"] = rocq_check_time(path)
 
-    elif file.endswith("_tableaurocq.v"):
-        data[key]["tableaurocq"] = count_branches(path)
-        data[key]["tableaurocq_check_time"] = rocq_check_time(path)
+    elif file.endswith("_tableauxrocq.v"):
+        data[key]["tableauxrocq"] = count_branches(path)
+        data[key]["tableauxrocq_check_time"] = rocq_check_time(path)
 
 # ---- Write CSV
 with open(outfile, "w", newline="") as csvfile:
@@ -70,20 +70,20 @@ with open(outfile, "w", newline="") as csvfile:
         "problem",
         "branches_normal",
         "branches_rocq",
-        "branches_tableaurocq",
+        "branches_tableauxrocq",
         "rocq_ratio",
         "gs3_time",
         "rocq_check_time",
-        "tableaurocq_check_time"
+        "tableauxrocq_check_time"
     ])
 
     for k, v in sorted(data.items()):
         bn = v.get("normal", "")
         br = v.get("rocq", "")
-        bt = v.get("tableaurocq", "")
+        bt = v.get("tableauxrocq", "")
         gs3 = v.get("gs3", "")
         rt = v.get("rocq_check_time", "")
-        tt = v.get("tableaurocq_check_time", "")
+        tt = v.get("tableauxrocq_check_time", "")
 
         ratio = ""
         if bn and br:

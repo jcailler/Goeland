@@ -37,9 +37,9 @@ def extract_rocq(output, outdir, base):
 
     return gs3
 
-def extract_tableaurocq(output, outdir, base):
+def extract_tableauxrocq(output, outdir, base):
     in_proof = False
-    path = os.path.join(outdir, base + "_tableaurocq.v")
+    path = os.path.join(outdir, base + "_tableauxrocq.v")
     with open(path, "w") as f:
         for line in output.splitlines():
             if "% SZS output start Proof" in line:
@@ -51,11 +51,14 @@ def extract_tableaurocq(output, outdir, base):
                 f.write(line + "\n")
 
 
-if len(sys.argv) < 5:
-    print("Usage: python3 run_goeland_proofs.py goeland_exec problem_folder timeout outdir")
+if len(sys.argv) < 4:
+    print(f"Usage: python3 {sys.argv[0]} problem_folder timeout outdir goeland_options")
     exit(1)
 
-exe, folder, timeout, outdir = sys.argv[1:5]
+folder = sys.argv[1]
+timeout = sys.argv[2]
+outdir = sys.argv[3]
+exe = " ../tool/goeland -noeq " + " ".join(sys.argv[4:]) + " "
 os.makedirs(outdir, exist_ok=True)
 
 entries = [f for f in os.listdir(folder) if f.endswith(".p")]
@@ -67,21 +70,21 @@ for file in entries:
     print(f"Processing {file}")
 
     # NORMAL
-    out = Out(f"timeout {timeout} {exe} -proof -pretty {full}")
+    out = Out(f"{exe} -proof -pretty {full}")
     if "% RES : VALID" in out:
         extract_normal_proof(out, outdir, base)
 
     # ROCQ
-    out = Out(f"timeout {timeout} {exe} -orocq -context -chrono {full}")
+    out = Out(f"{exe} -orocq -context -chrono {full}")
     if "% RES : VALID" in out:
         gs3 = extract_rocq(out, outdir, base)
         if gs3:
             with open(os.path.join(outdir, "gs3_times.csv"), "a") as f:
                 f.write(f"{base},{gs3}\n")
 
-    # TABLEAU ROCQ
-    out = Out(f"timeout {timeout} {exe} -otableaurocq {full}")
+    # TABLEAUX ROCQ
+    out = Out(f"{exe} -otableauxrocq {full}")
     if "% RES : VALID" in out:
-        extract_tableaurocq(out, outdir, base)
+        extract_tableauxrocq(out, outdir, base)
 
 
