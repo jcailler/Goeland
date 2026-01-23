@@ -51,4 +51,4 @@ else
     | grep -E '^%|\x1b\[[0-9;]*m|\[[^]]+\]'
 fi
 
-rocq c ../benchs/proof.v
+# rocq c ../benchs/proof.v

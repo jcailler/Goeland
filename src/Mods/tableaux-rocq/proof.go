@@ -165,6 +165,7 @@ func getRealGeneratedTerm(s Search.IProof) AST.Term {
 func getRealIndex(s Search.IProof, form_list Lib.List[AST.Form]) int {
 	index := form_list.IndexOf(s.AppliedOn(), func(i1, i2 AST.Form) bool {return i1.Equals(i2)})
 	real_index := -1
+	Glob.PrintInfo("TR", fmt.Sprintf("Search index of : %v", s.AppliedOn().ToString()))
 
 	// Find the index of the current formula
 	switch index_t := index.(type) {
@@ -237,30 +238,30 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 	index := getRealIndex(s, form_list)
 	
 	// Debug
-	// Glob.PrintInfo("MakeStep", "-----------------------------")
-	// Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v][%v] : %v", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().GetIndex(), s.AppliedOn().ToString()))
-	// Glob.PrintInfo("MakeStep", " ")
-	// Glob.PrintInfo("MakeStep", "Form list: ")
-	// for _, v := range form_list.GetSlice() {
-    //     Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v ",v.GetIndex(), v.ToString()))
-    // }
-	// Glob.PrintInfo("MakeStep", "")
-	// Glob.PrintInfo("MakeStep", fmt.Sprintf("Real index: %v", index))
-	// Glob.PrintInfo("MakeStep"," ")
-	// Glob.PrintInfo("MakeStep", fmt.Sprintf(fmt.Sprintf("Children: %v", s.Children().Len())))
-	// if s.Children().Len() > 0 {
-	// 	for i, branch := range s.Children().GetSlice() {
-	// 		Glob.PrintInfo("MakeStep", fmt.Sprintf("Child %v: %v", i, branch.AppliedOn().ToString()))
-	// 	}
-	// 	Glob.PrintInfo("MakeStep"," ")
-	// 	Glob.PrintInfo("MakeStep","Result Forms:")
-	// 	for i, rfl := range s.ResultFormulas().GetSlice() {
-	// 		Glob.PrintInfo("MakeStep", fmt.Sprintf("Rf %v:", i))
-	// 		for _, rf := range rfl.GetSlice() {
-	// 			Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v", rf.GetIndex(), rf.ToString()))
-	// 		}
-	// 	}
-	// }
+	Glob.PrintInfo("MakeStep", "-----------------------------")
+	Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v][%v] : %v", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().GetIndex(), s.AppliedOn().ToString()))
+	Glob.PrintInfo("MakeStep", " ")
+	Glob.PrintInfo("MakeStep", "Form list: ")
+	for _, v := range form_list.GetSlice() {
+        Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v ",v.GetIndex(), v.ToString()))
+    }
+	Glob.PrintInfo("MakeStep", "")
+	Glob.PrintInfo("MakeStep", fmt.Sprintf("Real index: %v", index))
+	Glob.PrintInfo("MakeStep"," ")
+	Glob.PrintInfo("MakeStep", fmt.Sprintf(fmt.Sprintf("Children: %v", s.Children().Len())))
+	if s.Children().Len() > 0 {
+		for i, branch := range s.Children().GetSlice() {
+			Glob.PrintInfo("MakeStep", fmt.Sprintf("Child %v: %v", i, branch.AppliedOn().ToString()))
+		}
+		Glob.PrintInfo("MakeStep"," ")
+		Glob.PrintInfo("MakeStep","Result Forms:")
+		for i, rfl := range s.ResultFormulas().GetSlice() {
+			Glob.PrintInfo("MakeStep", fmt.Sprintf("Rf %v:", i))
+			for _, rf := range rfl.GetSlice() {
+				Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v", rf.GetIndex(), rf.ToString()))
+			}
+		}
+	}
 
 	switch s.RuleApplied()  {
 	case Search.RuleClosure: // F, neg F, ~Top or Bot
@@ -363,8 +364,8 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		
 		return res, next_metas, next_skos
 	case Search.RuleNotAnd: // Neg (F /\ G) -> [Neg F \/ Neg G, Neg F] [Neg F \/ Neg G, Neg G]
-		idx_b1 := 0
-		idx_b2 := 1
+		idx_b1 := 1
+		idx_b2 := 0
 		idx_neg_f := 0
 		idx_neg_g := 0
 		neg_f := s.ResultFormulas().At(idx_b1).At(idx_neg_f)
@@ -384,13 +385,13 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		
 		s1, s2, sf1, sf2 := manageMetasFromChild(next_metas1), manageMetasFromChild(next_metas2), manageSkolemsFromChild(next_skos1), manageSkolemsFromChild(next_skos2)
 
-		res := fmt.Sprintf("eapply hasTableauNegAnd with (S1 := %v) (S2 := %v) (Sf1 := %v) (Sf2 := %v) (i := %v).\n", s1, s2, sf1, sf2, index)
+		res := fmt.Sprintf("eapply hasTableauNegAnd with (S1 := %v) (S2 := %v) (Sf1 := %v) (Sf2 := %v) (i := %v).\n", s2, s1, sf2, sf1, index)
 		res += "1: reflexivity.\n"
 		res += "3: now esimpl. \n"
 		res += "3: now esimpl. \n"
 		res += "3: now esimpl. \n"
-		res += fmt.Sprintf("{\n%v}\n", next_res1)
 		res += fmt.Sprintf("{\n%v}\n", next_res2)
+		res += fmt.Sprintf("{\n%v}\n", next_res1)
 
 		
 		new_metas := next_metas1.Union(next_metas2)
@@ -440,13 +441,13 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		
 		s1, s2, sf1, sf2 := manageMetasFromChild(next_metas1), manageMetasFromChild(next_metas2), manageSkolemsFromChild(next_skos1), manageSkolemsFromChild(next_skos2)
 
-		res := fmt.Sprintf("eapply hasTableauNegEqu with (S1 := %v) (S2 := %v) (Sf1 := %v) (Sf2 := %v) (i := %v).\n", s1, s2, sf1, sf2, index)
+		res := fmt.Sprintf("eapply hasTableauNegEqu with (S1 := %v) (S2 := %v) (Sf1 := %v) (Sf2 := %v) (i := %v).\n", s2, s1, sf2, sf1, index)
 		res += "1: reflexivity.\n"
 		res += "3: now esimpl. \n"
 		res += "3: now esimpl. \n"
 		res += "3: now esimpl. \n"
-		res += fmt.Sprintf("{\n%v}\n", next_res1)
 		res += fmt.Sprintf("{\n%v}\n", next_res2)
+		res += fmt.Sprintf("{\n%v}\n", next_res1)
 
 		
 		new_metas := next_metas1.Union(next_metas2)
