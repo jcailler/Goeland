@@ -157,6 +157,7 @@ func (ds *destructiveSearch) doOneStep(limit int, formula AST.Form) (bool, int) 
 		PrintProof(finalProof, uninstanciatedMeta, Unif.ToSubstitutions(unifier.GetUnifier()))
 		fmt.Printf("%v SZS output end Proof and R\n", "%")
 
+		// TO REVERT
 // 		if unif := unifier.GetUnifier(); (!unif.Empty() && !Glob.IsTableauxRocqOutput()) {
 // 			finalProof = ApplySubstitutionOnProofList(unif, finalProof)
 // 		}
