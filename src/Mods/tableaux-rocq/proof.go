@@ -446,8 +446,8 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		res += "3: now esimpl. \n"
 		res += "3: now esimpl. \n"
 		res += "3: now esimpl. \n"
-		res += fmt.Sprintf("{\n%v}\n", next_res2)
 		res += fmt.Sprintf("{\n%v}\n", next_res1)
+		res += fmt.Sprintf("{\n%v}\n", next_res2)
 
 		
 		new_metas := next_metas1.Union(next_metas2)
@@ -569,7 +569,7 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		if meta_generated, ok := real_generated_term.(AST.Meta); ok {
 			new_metas = new_metas.Add(meta_generated)
 		} else {
-			Glob.PrintError("MakeProofAux - TR", fmt.Sprintf("The generated term %v is not a meta", real_generated_term.ToString()))
+			// Glob.PrintError("MakeProofAux - TR", fmt.Sprintf("The generated term %v is not a meta", real_generated_term.ToString()))
 		}
 
 		res := fmt.Sprintf("unshelve eapply hasTableauNegEx with (i := %v).\n", index)
