@@ -197,7 +197,7 @@ func manageSkolemsFromChild(skolems Lib.Set[AST.Term]) string {
 	if skolems.Cardinal() > 0 {
 		res = "\\{"
 		for i, sko := range skolems.Elements().GetSlice() {
-			res += sko.ToString()
+			res += fmt.Sprintf(" \"%v\" ", sko.GetName())
 			if i < (skolems.Cardinal()-1) {
 				res += ", "
 			}

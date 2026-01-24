@@ -15,8 +15,8 @@ def run_goeland(problem_path, prover_option=None):
     opt = f"{prover_option} " if prover_option else ""
 
     cmd = (
-        f"../src/_build/goeland -noeq "
-        # f"../tool/goeland -noeq "
+        # f"../src/_build/goeland -noeq "
+        f"../tool/goeland -noeq "
         f"{opt}"
         f"-otableauxrocq -pretty -proof -context -orocq -chrono "
         f"{problem_path}"

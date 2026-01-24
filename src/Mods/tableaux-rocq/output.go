@@ -209,13 +209,13 @@ func FormToTR(f AST.Form) string {
 				}
 				res += fmt.Sprintf("%v", FormToTR(ft.GetChildFormulas().At(0))) 
 				return res + strings.Repeat(")", ft.GetVarList().Len())
-		case AST.All: //extend
+		case AST.All: //extend V x, y, x -> V x V y V z
 				res:= ""
 				for _, v := range ft.GetVarList().GetSlice() {
-					res += res + fmt.Sprintf("EAll \"%v\" (", v.ToBoundVar().ToString())
+					res += fmt.Sprintf("EAll \"%v\" (", v.ToBoundVar().ToString())
 				}
 			res += fmt.Sprintf("%v", FormToTR(ft.GetChildFormulas().At(0))) 
-				return res + strings.Repeat(")", ft.GetVarList().Len())
+			return res + strings.Repeat(")", ft.GetVarList().Len())
 	}
 	Glob.Anomaly("FormToTR", "Formula type unknown")
 	return ""
