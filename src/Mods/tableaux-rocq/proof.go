@@ -569,6 +569,7 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		if meta_generated, ok := real_generated_term.(AST.Meta); ok {
 			new_metas = new_metas.Add(meta_generated)
 		} else {
+			// TO REVERT
 			// Glob.PrintError("MakeProofAux - TR", fmt.Sprintf("The generated term %v is not a meta", real_generated_term.ToString()))
 		}
 
