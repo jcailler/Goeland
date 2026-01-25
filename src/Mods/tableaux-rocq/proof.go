@@ -139,6 +139,7 @@ func findIndexClosureRule(index_f int, sub Unif.Substitutions, f AST.Form, form_
 		}
 	}
 
+
 	if (f_pos == -1) || (f_neg == -1) {
 		Glob.Anomaly("findIndexClosureRule", "Complementary literal not found")
 	}
@@ -162,17 +163,24 @@ func getRealGeneratedTerm(s Search.IProof) AST.Term {
 	return real_generated_term
 }
 
-func getRealIndex(s Search.IProof, form_list Lib.List[AST.Form]) int {
-	index := form_list.IndexOf(s.AppliedOn(), func(i1, i2 AST.Form) bool {return i1.Equals(i2)})
+func getRealIndex(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substitutions) int {
+	
+	fl_after_subst := Lib.NewList[AST.Form]()
+	for _, f := range form_list.GetSlice() {
+		fl_after_subst.Append(Core.ApplySubstitutionsOnFormula(Unif.FromSubstitutions(sub), f))
+	}
+	index := fl_after_subst.IndexOf(Core.ApplySubstitutionsOnFormula(Unif.FromSubstitutions(sub), s.AppliedOn()), func(i1, i2 AST.Form) bool {return i1.Equals(i2)})
+
+	// index := form_list.IndexOf(s.AppliedOn(), func(i1, i2 AST.Form) bool {return i1.Equals(i2)})
 	real_index := -1
-	// Glob.PrintInfo("TR", fmt.Sprintf("Search index of : %v", s.AppliedOn().ToString()))
+	// Glob.PrintInfo("getRealIndex", fmt.Sprintf("Search index of : %v", s.AppliedOn().ToString()))
 
 	// Find the index of the current formula
 	switch index_t := index.(type) {
 		case Lib.Some[int]:
 			real_index = form_list.Len() - 1 - index_t.Val
 		case Lib.None[int]:
-			Glob.Anomaly("TR", "Index not found in MakeStep")
+			Glob.Anomaly("getRealIndex", "Index not found in MakeStep")
 	}
 	return real_index
 }
@@ -235,7 +243,7 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 	skos := Lib.EmptySet[AST.Term]()
 
 	// Index of the current formula
-	index := getRealIndex(s, form_list)
+	index := getRealIndex(s, form_list, sub)
 	
 	// Debug
 	// Glob.PrintInfo("MakeStep", "-----------------------------")
@@ -349,8 +357,8 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		idx_g := 1
 		f := s.ResultFormulas().At(idx_b1).At(idx_f)
 		g := s.ResultFormulas().At(idx_b1).At(idx_g)
-		neg_neg_f := AST.MakerNot(f)
-		neg_neg_g := AST.MakerNot(g)
+		neg_neg_f := AST.MakerNot(AST.MakerNot(f))
+		neg_neg_g := AST.MakerNot(AST.MakerNot(g))
 		l1.Append(neg_neg_f)
 		l1.Append(neg_neg_g)
 		l1.Append(f)

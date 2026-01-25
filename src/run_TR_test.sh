@@ -41,7 +41,7 @@ if [[ "$QUIET" -eq 1 ]]; then
     > "$OUTPUT_PATH"
 else
   # Stdout = filtered-out lines only
-  ./_build/goeland -otableauxrocq "$INPUT_PATH" \
+  ./_build/goeland -otableauxrocq -inner -noeq "$INPUT_PATH" \
     | tee >(
         grep -v '^%' \
         | sed 's/\x1b\[[0-9;]*m//g' \
