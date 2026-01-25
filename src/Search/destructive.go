@@ -142,28 +142,28 @@ func (ds *destructiveSearch) doOneStep(limit int, formula AST.Form) (bool, int) 
 			PrintSearchResult(result)
 		}
 
-		if (Glob.IsTableauxRocqOutput()){
-			fmt.Printf("%v SZS output start TR\n", "%")
-			uninstanciatedMeta := RetrieveUninstantiatedMetaFromProof(finalProof)
-			PrintProof(finalProof, uninstanciatedMeta, Unif.ToSubstitutions(unifier.GetUnifier()))
-			fmt.Printf("%v SZS output end TR\n", "%")
-		}
-
-		fmt.Printf("%v SZS output start Proof and R\n", "%")
-		if unif := unifier.GetUnifier(); (!unif.Empty()) {
-			finalProof = ApplySubstitutionOnProofList(unif, finalProof)
-		}
-		uninstanciatedMeta := RetrieveUninstantiatedMetaFromProof(finalProof)
-		PrintProof(finalProof, uninstanciatedMeta, Unif.ToSubstitutions(unifier.GetUnifier()))
-		fmt.Printf("%v SZS output end Proof and R\n", "%")
-
-		// TO REVERT
-// 		if unif := unifier.GetUnifier(); (!unif.Empty() && !Glob.IsTableauxRocqOutput()) {
-// 			finalProof = ApplySubstitutionOnProofList(unif, finalProof)
+// 		if (Glob.IsTableauxRocqOutput()){
+// 			fmt.Printf("%v SZS output start TR\n", "%")
+// 			uninstanciatedMeta := RetrieveUninstantiatedMetaFromProof(finalProof)
+// 			PrintProof(finalProof, uninstanciatedMeta, Unif.ToSubstitutions(unifier.GetUnifier()))
+// 			fmt.Printf("%v SZS output end TR\n", "%")
 // 		}
 // 
+// 		fmt.Printf("%v SZS output start Proof and R\n", "%")
+// 		if unif := unifier.GetUnifier(); (!unif.Empty()) {
+// 			finalProof = ApplySubstitutionOnProofList(unif, finalProof)
+// 		}
 // 		uninstanciatedMeta := RetrieveUninstantiatedMetaFromProof(finalProof)
 // 		PrintProof(finalProof, uninstanciatedMeta, Unif.ToSubstitutions(unifier.GetUnifier()))
+// 		fmt.Printf("%v SZS output end Proof and R\n", "%")
+
+		// TO REVERT
+		if unif := unifier.GetUnifier(); (!unif.Empty() && !Glob.IsTableauxRocqOutput()) {
+			finalProof = ApplySubstitutionOnProofList(unif, finalProof)
+		}
+
+		uninstanciatedMeta := RetrieveUninstantiatedMetaFromProof(finalProof)
+		PrintProof(finalProof, uninstanciatedMeta, Unif.ToSubstitutions(unifier.GetUnifier()))
 
 		
 	}
