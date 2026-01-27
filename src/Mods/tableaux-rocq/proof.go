@@ -449,7 +449,7 @@ func makeProofAux(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substi
 		
 		s1, s2, sf1, sf2 := manageMetasFromChild(next_metas1), manageMetasFromChild(next_metas2), manageSkolemsFromChild(next_skos1), manageSkolemsFromChild(next_skos2)
 
-		res := fmt.Sprintf("eapply hasTableauNegEqu with (S1 := %v) (S2 := %v) (Sf1 := %v) (Sf2 := %v) (i := %v).\n", s2, s1, sf2, sf1, index)
+		res := fmt.Sprintf("eapply hasTableauNegEqu with (S1 := %v) (S2 := %v) (Sf1 := %v) (Sf2 := %v) (i := %v).\n", s1, s2, sf1, sf2, index)
 		res += "1: reflexivity.\n"
 		res += "3: now esimpl. \n"
 		res += "3: now esimpl. \n"
