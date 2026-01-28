@@ -4,156 +4,75 @@ import os
 import sys
 from subprocess import run, PIPE, TimeoutExpired
 
-TIMEOUT = 350          # seconds
-RETRY_FOREVER = True
+TIMEOUT = 350  # seconds
 
 
 # ============================================================
-# Run Goéland with timeout + retry
+# Run Goéland
 # ============================================================
-def run_goeland(problem_path, prover_option=None):
-    opt = f"{prover_option} " if prover_option else ""
+def run_goeland(problem_path, mode):
+    if mode == "rocq":
+        opts = "-context -orocq"
+    elif mode == "tableauxRocq":
+        opts = "-otableauxrocq"
+    else:
+        raise ValueError(f"Unknown mode: {mode}")
 
-    cmd = (
-        f"../src/_build/goeland -noeq "
-        # f"../tool/goeland -noeq "
-        f"{opt}"
-        f"-otableauxrocq -pretty -proof -context -orocq -chrono "
-        f"{problem_path}"
-    )
+    # cmd = f"../src/_build/goeland -noeq {opts} {problem_path}"
+    cmd = f"../tool/goeland -noeq {opts} {problem_path}"
 
-    attempt = 0
-    while attempt<10:
-        attempt += 1
-        try:
-            print(f"  → Goéland attempt {attempt}")
-            res = run(
-                cmd,
-                shell=True,
-                stdout=PIPE,
-                stderr=PIPE,
-                universal_newlines=True,
-                timeout=TIMEOUT,
-            )
-            return res.stdout
-            
+    try:
+        print(f"  → {mode}: {cmd}")
+        res = run(
+            cmd,
+            shell=True,
+            stdout=PIPE,
+            stderr=PIPE,
+            universal_newlines=True,
+            timeout=TIMEOUT,
+        )
+        return res.stdout
 
-        except TimeoutExpired:
-            print(f"  [TIMEOUT] {TIMEOUT}s exceeded")
+    except TimeoutExpired:
+        print(f"  [TIMEOUT] {TIMEOUT}s exceeded")
+        return ""
 
-        except Exception as e:
-            print(f"  [ERROR] {e}")
-
-        if not RETRY_FOREVER:
-            return ""
+    except Exception as e:
+        print(f"  [ERROR] {e}")
+        return ""
 
 
 # ============================================================
-# Parse Goéland output
+# Extract proof
 # ============================================================
-def parse_goeland_output(text):
-    tr_tableaux_rocq = []
-    normal_proof = []
-    rocq_proof = []
-    gs3_time = None
-
-    section = None       # None | TR | PR
-    collecting = None    # None | TR_TABLEAUX | NORMAL | ROCQ
+def extract_proof(text):
+    collecting = False
+    proof = []
 
     for line in text.splitlines():
-        # -------------------------
-        # Section delimiters
-        # -------------------------
-        if "% SZS output start TR" in line:
-            section = "TR"
-            collecting = None
+        if "% SZS output start Proof" in line:
+            collecting = True
             continue
+        if "% SZS output end Proof" in line:
+            break
+        if collecting:
+            proof.append(line)
 
-        if "% SZS output end TR" in line:
-            section = None
-            collecting = None
-            continue
-
-        if "% SZS output start Proof and R" in line:
-            section = "PR"
-            collecting = None
-            continue
-
-        if "% SZS output end Proof and R" in line:
-            section = None
-            collecting = None
-            continue
-
-        # -------------------------
-        # TR section
-        # -------------------------
-        if section == "TR":
-            if 'Set Warnings "-native-compiler"' in line:
-                collecting = "TR_TABLEAUX"
-                tr_tableaux_rocq.append(line)
-                continue
-
-            if collecting == "TR_TABLEAUX":
-                tr_tableaux_rocq.append(line)
-                if line.strip() == "Qed.":
-                    collecting = None
-                continue
-
-        # -------------------------
-        # Proof and R section
-        # -------------------------
-        if section == "PR":
-            if "% SZS output start Proof for" in line:
-                collecting = "NORMAL"
-                continue
-
-            if "% Chrono - GS3 -" in line:
-                gs3_time = line.split("-")[-1].strip()
-                collecting = None
-                continue
-
-            if "% Chrono - Rocq -" in line:
-                collecting = "ROCQ"
-                continue
-
-            if 'Set Warnings "-native-compiler"' in line:
-                collecting = None
-                continue
-
-            if collecting == "NORMAL":
-                normal_proof.append(line)
-            elif collecting == "ROCQ":
-                rocq_proof.append(line)
-        
-    return {
-        "tr_tableaux_rocq": "\n".join(tr_tableaux_rocq).strip(),
-        "normal_proof": "\n".join(normal_proof).strip(),
-        "rocq_proof": "\n".join(rocq_proof).strip(),
-        "gs3_time": gs3_time,
-    }
+    return "\n".join(proof).strip()
 
 
 # ============================================================
 # Main
 # ============================================================
 def main():
-    if len(sys.argv) not in (3, 4):
-        print(
-            f"Usage:\n"
-            f"  {sys.argv[0]} problem_folder output_folder [prover_option]\n\n"
-            f"Examples:\n"
-            f"  {sys.argv[0]} problems out\n"
-            f"  {sys.argv[0]} problems out -inner\n"
-        )
+    if len(sys.argv) != 3:
+        print(f"Usage:\n  {sys.argv[0]} <problem_folder> <output_folder>")
         sys.exit(1)
 
     problem_dir = sys.argv[1]
     outdir = sys.argv[2]
-    prover_option = sys.argv[3] if len(sys.argv) == 4 else None
 
     os.makedirs(outdir, exist_ok=True)
-
-    gs3_csv = os.path.join(outdir, "gs3_times.csv")
 
     problems = sorted(f for f in os.listdir(problem_dir) if f.endswith(".p"))
 
@@ -163,34 +82,27 @@ def main():
 
         print(f"\n=== Processing {prob} ===")
 
-        output = run_goeland(prob_path, prover_option)
-        if not output:
-            print("  [SKIPPED] No output")
-            continue
+        # Rocq
+        rocq_out = run_goeland(prob_path, "rocq")
+        rocq_proof = extract_proof(rocq_out)
 
-        parsed = parse_goeland_output(output)
-
-        # -------------------------
-        # Write proofs
-        # -------------------------
-        if parsed["tr_tableaux_rocq"]:
-            with open(os.path.join(outdir, f"{base}_tableauxrocq.v"), "w") as f:
-                f.write(parsed["tr_tableaux_rocq"] + "\n")
-
-        if parsed["normal_proof"]:
-            with open(os.path.join(outdir, f"{base}.proof"), "w") as f:
-                f.write(parsed["normal_proof"] + "\n")
-
-        if parsed["rocq_proof"]:
+        if rocq_proof:
             with open(os.path.join(outdir, f"{base}_rocq.v"), "w") as f:
-                f.write(parsed["rocq_proof"] + "\n")
+                f.write(rocq_proof + "\n")
+            print("  ✓ Rocq proof written")
+        else:
+            print("  [NO ROCQ PROOF]")
 
-        # -------------------------
-        # GS3 time (single CSV)
-        # -------------------------
-        if parsed["gs3_time"] is not None:
-            with open(gs3_csv, "a") as f:
-                f.write(f"{base},{parsed['gs3_time']}\n")
+        # Tableaux Rocq
+        tab_out = run_goeland(prob_path, "tableauxRocq")
+        tab_proof = extract_proof(tab_out)
+
+        if tab_proof:
+            with open(os.path.join(outdir, f"{base}_tableauxrocq.v"), "w") as f:
+                f.write(tab_proof + "\n")
+            print("  ✓ Tableaux Rocq proof written")
+        else:
+            print("  [NO TABLEAUX PROOF]")
 
 
 if __name__ == "__main__":

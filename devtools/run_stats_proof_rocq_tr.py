@@ -16,7 +16,7 @@ def count_branches(path):
                 "auto." in line
                 or "congruence." in line
                 or "CLOSURE" in line
-                or "hasTableauContr" in line
+                or "Leaf" in line
             ):
                 count += 1
     return count

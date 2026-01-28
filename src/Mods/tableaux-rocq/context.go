@@ -48,7 +48,6 @@ var contextEnabled bool = false
 
 func makeContext() string {
 	resultingString := "From Tableaux Require Import All.\n\n"
-	resultingString += "Import ATPCompat.\n\n"
 
 	return resultingString
 }
@@ -77,8 +76,18 @@ func makeContextSubstEnd() string {
 	return "\n\n"
 }
 
+func makeContextTreeBegin() string {
+	resultingString := "Definition T_Proof : ExtendedRuleTree.\n"
+	resultingString += "Proof.\n"
+	return resultingString
+}
+
+func makeContextTreeEnd() string {
+	return "Defined.\n\n"
+}
+
 func makeContextProofBegin(axioms Lib.List[AST.Form]) string {
-	resultingString := "Theorem T_proof :\n"
+	resultingString := "Theorem hasTableau_T_proof :\n"
 	skolemization := "OuterSkolemization"
 	if (Glob.IsInnerSko()) {
 		skolemization = "InnerSkolemization"
@@ -86,14 +95,14 @@ func makeContextProofBegin(axioms Lib.List[AST.Form]) string {
 
 	axioms_string := ""
 	for i := 0; i<axioms.Len()-1; i++ {
-		axioms_string += fmt.Sprintf("translate_EForm (Axiom%v) ;; ",i)
+		axioms_string += fmt.Sprintf(" [[ Axiom%v ]] ; ", i)
 	}
 
-	resultingString += fmt.Sprintf("	hasTableau %v {{ %v translate_EForm (ENeg T) }} subst.\n", skolemization, axioms_string)
+	resultingString += fmt.Sprintf("	GuidedTableauSearch %v [ %v Neg [[ T ]] ]\nsubst T_Proof = ret true.\n", skolemization, axioms_string)
 	resultingString += "Proof.\n"
 	return resultingString
 }
 
 func makeContextProofEnd() string {
-	return "Qed."
+	return "now native_compute.\nQed."
 }
