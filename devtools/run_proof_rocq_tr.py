@@ -4,7 +4,7 @@ import os
 import sys
 from subprocess import run, PIPE, TimeoutExpired
 
-TIMEOUT = 350  # seconds
+TIMEOUT = 1200  # seconds
 
 
 # ============================================================

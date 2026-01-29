@@ -30,12 +30,12 @@ fi
 INPUT_PATH="$1"
 OUTPUT_PATH="../benchs/proof.v"
 
-make
+cd ../src/ && make
 
 if [[ "$QUIET" -eq 1 ]]; then
   # No stdout at all
   # ./_build/goeland -otableauxrocq "$INPUT_PATH" \
-  ./_build/goeland -context -orocq -noeq "$INPUT_PATH" \
+  ../src/_build/goeland -context -orocq -noeq "$INPUT_PATH" \
     | grep -v '^%' \
     | sed 's/\x1b\[[0-9;]*m//g' \
     | grep -Ev '^\[[^]]+\]' \
@@ -43,7 +43,7 @@ if [[ "$QUIET" -eq 1 ]]; then
 else
   # Stdout = filtered-out lines only
   # ./_build/goeland -context -orocq -noeq "$INPUT_PATH" \
-  ./_build/goeland -otableauxrocq -inner -noeq "$INPUT_PATH" \
+  ../src/_build/goeland -otableauxrocq -inner -noeq "$INPUT_PATH" \
     | tee >(
         grep -v '^%' \
         | sed 's/\x1b\[[0-9;]*m//g' \

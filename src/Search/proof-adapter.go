@@ -160,6 +160,7 @@ func (proof TableauxProof) TermGenerated() Lib.Option[Lib.Either[AST.Ty, AST.Ter
 	}
 
 	source_form := proof[0].Formula.GetForm()
+	Glob.PrintInfo("PA", fmt.Sprintf("Source_form: %v", source_form.ToString()))
 	target_form := proof[0].Result_formulas[0].GetForms().At(0)
 
 	replaced_variable, is_quantified := getReplacedVariable(source_form)
@@ -287,12 +288,13 @@ func getOneOccInCleanForm(
 ) Lib.Option[Lib.List[Lib.Int]] {
 	switch f := form.(type) {
 	case AST.Pred:
+		Glob.PrintInfo("getOneOccInCleanForm", fmt.Sprintf("TyArgs: %v", Lib.ListToString(f.GetTyArgs(), ", ", "")))
 		return getFunctionalOcc(f.GetTyArgs(), f.GetArgs(), v, occurrence)
 
 	default:
 		for i, child := range form.GetChildFormulas().GetSlice() {
 			local_occ := appCopy(Lib.MkInt(i), occurrence)
-			occ := getOneOccInCleanForm(child, v, local_occ)
+			occ := getOneOccInCleanForm(getCleanForm(child), v, local_occ)
 
 			if _, ok := occ.(Lib.Some[Lib.List[Lib.Int]]); ok {
 				return occ
@@ -312,6 +314,7 @@ func getTermAtOccInCleanForm(
 		return getFunctionalTermAtOcc(f.GetTyArgs(), f.GetArgs(), occurrence)
 
 	default:
+		Glob.PrintInfo("getTermAtOccInCleanForm", fmt.Sprintf("Child: %v", f.GetChildFormulas().At(int(occurrence.At(0))).ToString()))
 		return getTermAtOcc(
 			f.GetChildFormulas().At(int(occurrence.At(0))),
 			occurrence.Slice(1, occurrence.Len()),
@@ -334,8 +337,14 @@ func getFunctionalOcc(
 		}
 	}
 
-	offset := tys.Len()
+	offset := 0
+	if Glob.GetTypeProof() {
+		offset = tys.Len()
+	}
+	Glob.PrintInfo("getFunctionalOcc", fmt.Sprintf("Offset: %v", offset))
+
 	for i, trm := range terms.GetSlice() {
+		Glob.PrintInfo("getFunctionalOcc", fmt.Sprintf("trm: %v", trm.ToString()))
 		local_occ := appCopy(Lib.MkInt(i+offset), occurrence)
 		occ := getOneOccInTrm(trm, v, local_occ)
 
@@ -358,6 +367,12 @@ func getFunctionalTermAtOcc(
 
 	index := int(occurrence.At(0))
 	next_occ := occurrence.Slice(1, occurrence.Len())
+
+	Glob.PrintInfo("getFunctionalTermAtOcc", fmt.Sprintf("occs: %v", Lib.ListToString(occurrence, ", ", "")))
+	Glob.PrintInfo("getFunctionalTermAtOcc", fmt.Sprintf("tys: %v", Lib.ListToString(tys, ", ", "")))
+	Glob.PrintInfo("getFunctionalTermAtOcc", fmt.Sprintf("terms: %v", Lib.ListToString(terms, ", ", "")))
+	Glob.PrintInfo("getFunctionalTermAtOcc", fmt.Sprintf("index: %v", index))
+
 
 	if index < tys.Len() {
 		return Lib.MkLeft[AST.Ty, AST.Term](getTermInTy(tys.At(index), next_occ))
@@ -434,6 +449,7 @@ func getOneOccInTrm(
 	switch t := trm.(type) {
 	case AST.Var:
 		if t.Equals(v.ToBoundVar()) {
+			Glob.PrintInfo("getOneOccInTrm", fmt.Sprintf("Match! Return occ = %v", Lib.ListToString(occurrence, ", ", "")))
 			return Lib.MkSome(occurrence)
 		}
 		return Lib.MkNone[Lib.List[Lib.Int]]()
