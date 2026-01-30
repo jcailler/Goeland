@@ -363,7 +363,7 @@ func getFunctionalTermAtOcc(
 	index := int(occurrence.At(0))
 	next_occ := occurrence.Slice(1, occurrence.Len())
 
-	if index < tys.Len() {
+	if Glob.GetTypeProof() && index < tys.Len() {
 		return Lib.MkLeft[AST.Ty, AST.Term](getTermInTy(tys.At(index), next_occ))
 	} else {
 		if index-tys.Len() >= terms.Len() {

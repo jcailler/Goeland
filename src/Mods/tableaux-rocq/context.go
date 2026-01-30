@@ -87,7 +87,7 @@ func makeContextTreeEnd() string {
 }
 
 func makeContextProofBegin(axioms Lib.List[AST.Form]) string {
-	resultingString := "Theorem hasTableau_T_proof :\n"
+	resultingString := "Theorem hasTableau_T_Proof :\n"
 	skolemization := "OuterSkolemization"
 	if (Glob.IsInnerSko()) {
 		skolemization = "InnerSkolemization"
@@ -98,11 +98,11 @@ func makeContextProofBegin(axioms Lib.List[AST.Form]) string {
 		axioms_string += fmt.Sprintf(" [[ Axiom%v ]] ; ", i)
 	}
 
-	resultingString += fmt.Sprintf("	GuidedTableauSearch %v [ %v Neg [[ T ]] ]\nsubst T_Proof = ret true.\n", skolemization, axioms_string)
+	resultingString += fmt.Sprintf("	hasTableau %v [ %v Neg (translate_EForm T) ] subst.\n", skolemization, axioms_string)
 	resultingString += "Proof.\n"
 	return resultingString
 }
 
 func makeContextProofEnd() string {
-	return "now native_compute.\nQed."
+	return "tableaux T_Proof.\nQed."
 }
