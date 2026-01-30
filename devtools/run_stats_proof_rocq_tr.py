@@ -67,7 +67,7 @@ def rocq_check_time(path, timeout=300):
 
 # ---- Normalize filenames to problem name
 def problem_name(filename):
-    for suffix in [".proof", "_rocq.v", "_tableauxrocq.v"]:
+    for suffix in ["_rocq.v", "_tableauxrocq.v"]:
         if filename.endswith(suffix):
             return filename[:-len(suffix)]
     return filename
@@ -95,10 +95,7 @@ for file in os.listdir(folder):
     path = os.path.join(folder, file)
     key = problem_name(file)
 
-    if file.endswith(".proof"):
-        data[key]["normal"] = count_branches(path)
-
-    elif file.endswith("_rocq.v"):
+    if file.endswith("_rocq.v"):
         data[key]["rocq"] = count_branches(path)
         data[key]["rocq_check_time"] = rocq_check_time(path)
 
@@ -111,25 +108,21 @@ with open(outfile, "w", newline="") as csvfile:
     writer = csv.writer(csvfile)
     writer.writerow([
         "problem",
-        "branches_normal",
         "branches_rocq",
         "branches_tableauxrocq",
         "rocq_ratio",
-        "gs3_time",
         "rocq_check_time",
         "tableauxrocq_check_time",
     ])
 
     for k, v in sorted(data.items()):
-        bn = v.get("normal", "")
         br = v.get("rocq", "")
         bt = v.get("tableauxrocq", "")
-        gs3 = v.get("gs3", "")
         rt = v.get("rocq_check_time", "")
         tt = v.get("tableauxrocq_check_time", "")
 
         ratio = ""
-        if bn != "" and br != "":
-            ratio = float(br) / float(bn)
+        if bt != "" and br != "":
+            ratio = float(br) / float(bt)
 
-        writer.writerow([k, bn, br, bt, ratio, gs3, rt, tt])
+        writer.writerow([k, br, bt, ratio, rt, tt])
