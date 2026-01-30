@@ -577,7 +577,7 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 
 func makeProof(prf Search.IProof, sub Unif.Substitutions, form_list Lib.List[AST.Form]) string {
 	new_form_list := Lib.NewList[AST.Form]()
-	for _, f := range new_form_list.GetSlice() {
+	for _, f := range form_list.GetSlice() {
 		new_form_list = AppendIfLit(new_form_list, f)
 	}
 	return makeProofAux(prf, sub, new_form_list)
