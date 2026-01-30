@@ -221,7 +221,7 @@ func (c PrinterConnective) DefaultOnFunctionalArgs(
 	is_infix := Lib.ListMem(id, infix)
 	types := strings.Join(tys.GetSlice(), c.StrConn(SepTyArgs))
 	arguments := strings.Join(args.GetSlice(), c.StrConn(SepArgs))
-
+	
 	if is_infix {
 		if args.Len() != 2 {
 			Glob.Anomaly("Printer", fmt.Sprintf(

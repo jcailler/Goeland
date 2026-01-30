@@ -50,6 +50,8 @@ import (
 	"github.com/GoelandProver/Goeland/Unif"
 )
 
+var dummy_FV = AST.MakerMeta("Goeland_I", -1, AST.TIndividual())
+
 /************ Axiom and Conjecture ************/
 // Processes the formula that was proven by Goéland.
 func processMainFormula(form AST.Form) (Lib.List[AST.Form], AST.Form) {
@@ -155,18 +157,75 @@ func findIndexClosureRule(index_f int, sub Unif.Substitutions, f AST.Form, form_
 	return f_pos, f_neg
 }
 
+
+func findComplementaryLiteral(f AST.Form, form_list Lib.List[AST.Form], sub Unif.Substitutions) (AST.Form, AST.Form) {
+	var other_form AST.Form
+	Glob.PrintInfo("findComplementaryLiteral", fmt.Sprintf("f: %v", f.ToString()))
+	new_f := Core.ApplySubstitutionsOnFormula(Unif.FromSubstitutions(sub), f)
+	Glob.PrintInfo("findComplementaryLiteral", fmt.Sprintf("S(f): %v", new_f.ToString()))
+	new_form_list := Lib.NewList[AST.Form]()
+	
+	for _, form := range form_list.GetSlice() {
+		new_form_list.Append(Core.ApplySubstitutionsOnFormula(Unif.FromSubstitutions(sub), form))
+	}
+
+	for _, form := range new_form_list.GetSlice() {
+		Glob.PrintInfo("findComplementaryLiteral", fmt.Sprintf("\t%v", form.ToString()))
+	}
+
+	switch f_t := new_f.(type) {
+		case AST.Pred:
+			other_form = AST.MakerNot(f_t)
+			for index_other_f, f_candidate := range new_form_list.GetSlice() {
+				if f_candidate.Equals(other_form) {
+					other_form = form_list.At(index_other_f)
+					return f, other_form
+				}
+		}
+		case AST.Not:
+			other_form = f_t.GetForm()
+			for index_other_f, f_candidate := range new_form_list.GetSlice() {
+				if f_candidate.Equals(other_form) {
+					other_form = form_list.At(index_other_f)
+					return f, other_form
+				}
+		}
+	}
+
+	Glob.Anomaly("findIndexClosureRule", "Complementary literal not found")
+	return f, other_form
+}
+
+func isLit(f AST.Form) bool {
+	switch f_t := f.(type) {
+		case AST.Pred:
+			return true
+		case AST.Not:
+			return isLit(f_t.GetForm())
+		}
+	return false
+}
+
+func AppendIfLit(l Lib.List[AST.Form], f AST.Form) Lib.List[AST.Form] {
+	if isLit(f){
+		l.Append(f)
+	}
+	return l
+}
+
 func getRealGeneratedTerm(s Search.IProof) AST.Term {
 	var real_generated_term AST.Term
 	switch generated_term_t := s.TermGenerated().(type) {
 		case Lib.Some[Lib.Either[AST.Ty, AST.Term]]:
 			switch generated_term_t2 := generated_term_t.Val.(type) {
 				case Lib.Left[AST.Ty, AST.Term]:
-					Glob.Fatal("MakeStep", "Not implemented yet")
+					Glob.Fatal("getRealGeneratedTerm", "Not implemented yet")
 				case Lib.Right[AST.Ty, AST.Term]:
 					real_generated_term = generated_term_t2.Val
 				}
 		case Lib.None[AST.Term]:
-			Glob.Anomaly("MakeStep", "Generated term not found")
+			// Glob.Anomaly("getRealGeneratedTerm", "Generated term not found")
+			return dummy_FV
 	}
 	return real_generated_term
 }
@@ -238,199 +297,292 @@ func printSkosAndMetas(metas, skos Lib.Set[AST.Term]) {
 	Glob.PrintWarn("MakeStep", "")
 }
 
-func makeProofAux(s Search.IProof, sub Unif.Substitutions) string {
+func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AST.Form]) string {
+
+	// List of formula (for each branch)
+	l1 := form_list.Copy(func(i AST.Form) AST.Form {return i})
+	l2 := form_list.Copy(func(i AST.Form) AST.Form {return i})
 
 	// Debug
-	// Glob.PrintInfo("MakeStep", "-----------------------------")
-	// Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v][%v] : %v", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().GetIndex(), s.AppliedOn().ToString()))
-	// Glob.PrintInfo("MakeStep", " ")
-	// Glob.PrintInfo("MakeStep", "Form list: ")
-	// for _, v := range form_list.GetSlice() {
-    //     Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v ",v.GetIndex(), v.ToString()))
-    // }
-	// Glob.PrintInfo("MakeStep", "")
-	// Glob.PrintInfo("MakeStep", fmt.Sprintf("Real index: %v", index))
-	// Glob.PrintInfo("MakeStep"," ")
-	// Glob.PrintInfo("MakeStep", fmt.Sprintf(fmt.Sprintf("Children: %v", s.Children().Len())))
-	// if s.Children().Len() > 0 {
-	// 	for i, branch := range s.Children().GetSlice() {
-	// 		Glob.PrintInfo("MakeStep", fmt.Sprintf("Child %v: %v", i, branch.AppliedOn().ToString()))
-	// 	}
-	// 	Glob.PrintInfo("MakeStep"," ")
-	// 	Glob.PrintInfo("MakeStep","Result Forms:")
-	// 	for i, rfl := range s.ResultFormulas().GetSlice() {
-	// 		Glob.PrintInfo("MakeStep", fmt.Sprintf("Rf %v:", i))
-	// 		for _, rf := range rfl.GetSlice() {
-	// 			Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v", rf.GetIndex(), rf.ToString()))
-	// 		}
-	// 	}
-	// }
+	Glob.PrintInfo("MakeStep", "-----------------------------")
+	Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v][%v] : %v", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().GetIndex(), s.AppliedOn().ToString()))
+	Glob.PrintInfo("MakeStep", " ")
+	Glob.PrintInfo("MakeStep", "Form list: ")
+	for _, v := range form_list.GetSlice() {
+        Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v ",v.GetIndex(), v.ToString()))
+    }
+	Glob.PrintInfo("MakeStep", "")
+	Glob.PrintInfo("MakeStep"," ")
+	Glob.PrintInfo("MakeStep", fmt.Sprintf(fmt.Sprintf("Children: %v", s.Children().Len())))
+	if s.Children().Len() > 0 {
+		for i, branch := range s.Children().GetSlice() {
+			Glob.PrintInfo("MakeStep", fmt.Sprintf("Child %v: %v", i, branch.AppliedOn().ToString()))
+		}
+		Glob.PrintInfo("MakeStep"," ")
+		Glob.PrintInfo("MakeStep","Result Forms:")
+		for i, rfl := range s.ResultFormulas().GetSlice() {
+			Glob.PrintInfo("MakeStep", fmt.Sprintf("Rf %v:", i))
+			for _, rf := range rfl.GetSlice() {
+				Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v", rf.GetIndex(), rf.ToString()))
+			}
+		}
+	}
 
 	switch s.RuleApplied()  {
 	case Search.RuleClosure: 
-		return "exact Leaf.\n"
-	case Search.RuleNotNot:  // OK -> to test
+		if _, ok :=  s.AppliedOn().(AST.Bot); ok {
+			return "exact mkTrivialClosure.\n"
+		} 
+
+		if s2, ok :=  s.AppliedOn().(AST.Not); ok {
+			if _, ok2 :=  s2.GetForm().(AST.Top); ok2 {
+				return "exact mkTrivialClosure.\n"
+			} 
+		} 
+	
+		f, comp_f := findComplementaryLiteral(s.AppliedOn(), form_list, sub)
+		return fmt.Sprintf("exact (mkClosure [[ %v ]] [[ %v ]]).\n", FormToTR(f), FormToTR(comp_f))
+	case Search.RuleNotNot:  
 		rule_name := "AlphaNegNeg"
 		current_form_TR := FormToTR(s.AppliedOn().(AST.Not).GetForm().(AST.Not).GetForm())
-		
-		next_res := makeProofAux(s.Children().At(0), sub)
+
+		f := s.ResultFormulas().At(0).At(0)
+		l1 = AppendIfLit(l1, f)
+		next_res := makeProofAux(s.Children().At(0), sub, l1)
 
 		res := contextUnaryNode(fmt.Sprintf("%v (Neg (Neg [[ %v ]]))", rule_name, current_form_TR))
 		res += next_res 
 	
 		return res
-	case Search.RuleNotOr: // OK -> to test
+	case Search.RuleNotOr: 
 		rule_name := "AlphaNegOr"
 		current_form_TR := FormToTR(s.AppliedOn().(AST.Not).GetForm())
-		
-		next_res := makeProofAux(s.Children().At(0), sub)
+
+		idx_b1 := 0
+		idx_neg_f := 0
+		idx_neg_g := 1
+		neg_f := s.ResultFormulas().At(idx_b1).At(idx_neg_f)
+		neg_g := s.ResultFormulas().At(idx_b1).At(idx_neg_g)
+		l1 = AppendIfLit(l1, neg_f)
+		l1 = AppendIfLit(l1, neg_g)
+		next_res := makeProofAux(s.Children().At(0), sub, l1)
 
 		res := contextUnaryNode(fmt.Sprintf("%v (Neg [[ %v ]])", rule_name, current_form_TR))
 		res += next_res 
 	
 		return res
-	case Search.RuleNotImp: // OK
+	case Search.RuleNotImp:
 		rule_name := "AlphaNegImp"
 		current_form_TR := FormToTR(s.AppliedOn().(AST.Not).GetForm())
+
+		idx_b1 := 0
+		idx_f := 0
+		idx_neg_g := 1
+		f := s.ResultFormulas().At(idx_b1).At(idx_f)
+		neg_g := s.ResultFormulas().At(idx_b1).At(idx_neg_g)
+		l1 = AppendIfLit(l1, f)
+		l1 = AppendIfLit(l1, neg_g)
 		
-		next_res := makeProofAux(s.Children().At(0), sub)
+		next_res := makeProofAux(s.Children().At(0), sub, l1)
 
 		res := contextUnaryNode(fmt.Sprintf("%v (Neg [[ %v ]])", rule_name, current_form_TR))
 		res += next_res 
 	
 		return res
-	case Search.RuleAnd: // Ok -> to test
+	case Search.RuleAnd: 
 		rule_name := "AlphaAnd"
 		current_form_TR := FormToTR(s.AppliedOn())
-		
-		next_res := makeProofAux(s.Children().At(0), sub)
+
+		idx_b1 := 0
+		idx_f := 0
+		idx_g := 1
+		f := s.ResultFormulas().At(idx_b1).At(idx_f)
+		g := s.ResultFormulas().At(idx_b1).At(idx_g)
+		l1 = AppendIfLit(l1, f)
+		l1 = AppendIfLit(l1, g)
+		next_res := makeProofAux(s.Children().At(0), sub, l1)
 
 		res := contextUnaryNode(fmt.Sprintf("%v [[ %v ]]", rule_name, current_form_TR))
 		res += next_res 
 	
 		return res
-	case Search.RuleNotAnd: // Ok
+	case Search.RuleNotAnd:
 		rule_name := "BetaNegAnd"
 		current_form_TR := FormToTR(s.AppliedOn().(AST.Not).GetForm())
-		
+
 		idx_b1 := 1
 		idx_b2 := 0
-		next_res1 := makeProofAux(s.Children().At(idx_b1), sub)
-		next_res2 := makeProofAux(s.Children().At(idx_b2), sub)
+		idx_neg_f := 0
+		idx_neg_g := 0
+		neg_f := s.ResultFormulas().At(idx_b1).At(idx_neg_f)
+		neg_g := s.ResultFormulas().At(idx_b2).At(idx_neg_g)
+		l1 = AppendIfLit(l1, neg_f)
+		l1 = AppendIfLit(l1, neg_g)
+		next_res1 := makeProofAux(s.Children().At(idx_b1), sub, l1)
+		next_res2 := makeProofAux(s.Children().At(idx_b2), sub, l2)
 
 		res := contextBinaryNode(fmt.Sprintf("%v (Neg [[ %v ]])", rule_name, current_form_TR))
 		res += fmt.Sprintf("{\n%v}\n", next_res2)
 		res += fmt.Sprintf("{\n%v}\n", next_res1)
 
 		return res
-	case Search.RuleNotEqu: // OK -> to test
+	case Search.RuleNotEqu: 
 		rule_name := "BetaNegEqu"
 		current_form_TR := FormToTR(s.AppliedOn().(AST.Not).GetForm())
 		
 		idx_b1 := 1
 		idx_b2 := 0
-		next_res1 := makeProofAux(s.Children().At(idx_b1), sub)
-		next_res2 := makeProofAux(s.Children().At(idx_b2), sub)
+		idx_f := 1
+		idx_g := 0
+		idx_neg_f := 1
+		idx_neg_g := 0
+
+		neg_f := s.ResultFormulas().At(idx_b1).At(idx_neg_f)
+		g := s.ResultFormulas().At(idx_b1).At(idx_g)
+		f := s.ResultFormulas().At(idx_b2).At(idx_f)
+		neg_g := s.ResultFormulas().At(idx_b2).At(idx_neg_g)
+		l1 = AppendIfLit(l1, f)
+		l1 = AppendIfLit(l1, neg_g)
+		l2 = AppendIfLit(l2, g)
+		l2 = AppendIfLit(l2, neg_f)
+
+		next_res1 := makeProofAux(s.Children().At(idx_b1), sub, l2)
+		next_res2 := makeProofAux(s.Children().At(idx_b2), sub, l1)
 
 		res := contextBinaryNode(fmt.Sprintf("%v (Neg [[ %v ]])", rule_name, current_form_TR))
 		res += fmt.Sprintf("{\n%v}\n", next_res1)
 		res += fmt.Sprintf("{\n%v}\n", next_res2)
 
 		return res
-	case Search.RuleOr: // Ok
+	case Search.RuleOr: 
 		rule_name := "BetaOr"
 		current_form_TR := FormToTR(s.AppliedOn())
 		
 		idx_b1 := 0
 		idx_b2 := 1
-		next_res1 := makeProofAux(s.Children().At(idx_b1), sub)
-		next_res2 := makeProofAux(s.Children().At(idx_b2), sub)
+		idx_f := 0
+		idx_g := 0
+		f := s.ResultFormulas().At(idx_b1).At(idx_f)
+		g := s.ResultFormulas().At(idx_b2).At(idx_g)
+		l1 = AppendIfLit(l1, f)
+		l2 = AppendIfLit(l2, g)
+		next_res1 := makeProofAux(s.Children().At(idx_b1), sub, l1)
+		next_res2 := makeProofAux(s.Children().At(idx_b2), sub, l2)
 
 		res := contextBinaryNode(fmt.Sprintf("%v [[ %v ]]", rule_name, current_form_TR))
 		res += fmt.Sprintf("{\n%v}\n", next_res1)
 		res += fmt.Sprintf("{\n%v}\n", next_res2)
 
 		return res
-	case Search.RuleImp: // Ok _> to test
+	case Search.RuleImp:
 		rule_name := "BetaImp"
 		current_form_TR := FormToTR(s.AppliedOn())
 		
 		idx_b1 := 0
 		idx_b2 := 1
-		next_res1 := makeProofAux(s.Children().At(idx_b1), sub)
-		next_res2 := makeProofAux(s.Children().At(idx_b2), sub)
+		idx_neg_f := 0
+		idx_g := 0
+		neg_f := s.ResultFormulas().At(idx_b1).At(idx_neg_f)
+		g := s.ResultFormulas().At(idx_b2).At(idx_g)
+		l1 = AppendIfLit(l1, neg_f)
+		l2 = AppendIfLit(l2, g)
+		next_res1 := makeProofAux(s.Children().At(idx_b1), sub, l1)
+		next_res2 := makeProofAux(s.Children().At(idx_b2), sub, l2)
 
 		res := contextBinaryNode(fmt.Sprintf("%v [[ %v ]]", rule_name, current_form_TR))
 		res += fmt.Sprintf("{\n%v}\n", next_res1)
 		res += fmt.Sprintf("{\n%v}\n", next_res2)
 
 		return res
-	case Search.RuleEqu: // OK -> to test
+	case Search.RuleEqu: 
 		rule_name := "BetaEqu"
 		current_form_TR := FormToTR(s.AppliedOn())
 		
 		idx_b1 := 0
 		idx_b2 := 1
-		next_res1 := makeProofAux(s.Children().At(idx_b1), sub)
-		next_res2 := makeProofAux(s.Children().At(idx_b2), sub)
+		idx_f := 0
+		idx_g := 1
+		idx_neg_f := 0
+		idx_neg_g := 1
+
+		neg_f := s.ResultFormulas().At(idx_b1).At(idx_neg_f)
+		neg_g := s.ResultFormulas().At(idx_b1).At(idx_neg_g)
+		f := s.ResultFormulas().At(idx_b2).At(idx_f)
+		g := s.ResultFormulas().At(idx_b2).At(idx_g)
+		l1 = AppendIfLit(l1, neg_f)
+		l1 = AppendIfLit(l1, neg_g)
+		l2 = AppendIfLit(l2, f)
+		l2 = AppendIfLit(l2, g)
+
+		next_res1 := makeProofAux(s.Children().At(idx_b1), sub, l1)
+		next_res2 := makeProofAux(s.Children().At(idx_b2), sub, l2)
 
 		res := contextBinaryNode(fmt.Sprintf("%v [[ %v ]]", rule_name, current_form_TR))
 		res += fmt.Sprintf("{\n%v}\n", next_res1)
 		res += fmt.Sprintf("{\n%v}\n", next_res2)
 
 		return res
-	case Search.RuleNotEx: // OK
+	case Search.RuleNotEx: 
 		rule_name := "GammaNegEx"
 		current_form_TR := FormToTR(s.AppliedOn().(AST.Not).GetForm())
 		generated_term := getRealGeneratedTerm(s)
 		
-		next_res := makeProofAux(s.Children().At(0), sub)
+		f := s.ResultFormulas().At(0).At(0)
+		l1 = AppendIfLit(l1, f)
+		next_res := makeProofAux(s.Children().At(0), sub, l1)
 
 		res := contextUnaryNode(fmt.Sprintf("%v (Neg [[ %v ]]) \"%v\"", rule_name, current_form_TR, generated_term.ToString()))
 		res += next_res 
 	
 		return res
-	case Search.RuleAll: // OK -> to test
+	case Search.RuleAll: 
 		rule_name := "GammaAll"
 		current_form_TR := FormToTR(s.AppliedOn())
 		generated_term := getRealGeneratedTerm(s)
 		
-		next_res := makeProofAux(s.Children().At(0), sub)
+		f := s.ResultFormulas().At(0).At(0)
+		l1 = AppendIfLit(l1, f)
+		next_res := makeProofAux(s.Children().At(0), sub, l1)
 
 		res := contextUnaryNode(fmt.Sprintf("%v [[ %v ]] \"%v\"", rule_name, current_form_TR, generated_term.ToString()))
 		res += next_res 
 	
 		return res
-	case Search.RuleNotAll: // OK
+	case Search.RuleNotAll: 
 		rule_name := "DeltaNegAll"
 		current_form_TR := FormToTR(s.AppliedOn().(AST.Not).GetForm())
 		generated_term := TermToTR(getRealGeneratedTerm(s))
 		
-		next_res := makeProofAux(s.Children().At(0), sub)
+		f := s.ResultFormulas().At(0).At(0)
+		l1 = AppendIfLit(l1, f)
+		next_res := makeProofAux(s.Children().At(0), sub, l1)
 
 		res := contextUnaryNode(fmt.Sprintf("%v (Neg [[ %v ]]) [[ %v ]]", rule_name, current_form_TR, generated_term))
 		res += next_res 
 	
 		return res
-	case Search.RuleEx: // OK -> to test
+	case Search.RuleEx: 
 		rule_name := "DeltaEx"
 		current_form_TR := FormToTR(s.AppliedOn())
 		generated_term := TermToTR(getRealGeneratedTerm(s))
 		
-		next_res := makeProofAux(s.Children().At(0), sub)
+		f := s.ResultFormulas().At(0).At(0)
+		l1 = AppendIfLit(l1, f)
+		next_res := makeProofAux(s.Children().At(0), sub, l1)
 
 		res := contextUnaryNode(fmt.Sprintf("%v [[ %v ]] [[ %v ]]", rule_name, current_form_TR, generated_term))
 		res += next_res 
 	
 		return res
 	case Search.RuleReintro: 
-		return makeProofAux(s.Children().At(0), sub)
+		return makeProofAux(s.Children().At(0), sub, form_list)
 	default:
 		return "Error Admit."
-	}
+	}	
 }
 
-func makeProof(prf Search.IProof, sub Unif.Substitutions) string {
-	return makeProofAux(prf, sub)
+func makeProof(prf Search.IProof, sub Unif.Substitutions, form_list Lib.List[AST.Form]) string {
+	new_form_list := Lib.ListAdd(form_list, prf.AppliedOn())
+	return makeProofAux(prf, sub, new_form_list)
 }
 
