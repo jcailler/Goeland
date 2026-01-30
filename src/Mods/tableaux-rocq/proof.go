@@ -160,17 +160,11 @@ func findIndexClosureRule(index_f int, sub Unif.Substitutions, f AST.Form, form_
 
 func findComplementaryLiteral(f AST.Form, form_list Lib.List[AST.Form], sub Unif.Substitutions) (AST.Form, AST.Form) {
 	var other_form AST.Form
-	Glob.PrintInfo("findComplementaryLiteral", fmt.Sprintf("f: %v", f.ToString()))
 	new_f := Core.ApplySubstitutionsOnFormula(Unif.FromSubstitutions(sub), f)
-	Glob.PrintInfo("findComplementaryLiteral", fmt.Sprintf("S(f): %v", new_f.ToString()))
 	new_form_list := Lib.NewList[AST.Form]()
 	
 	for _, form := range form_list.GetSlice() {
 		new_form_list.Append(Core.ApplySubstitutionsOnFormula(Unif.FromSubstitutions(sub), form))
-	}
-
-	for _, form := range new_form_list.GetSlice() {
-		Glob.PrintInfo("findComplementaryLiteral", fmt.Sprintf("\t%v", form.ToString()))
 	}
 
 	switch f_t := new_f.(type) {
@@ -304,29 +298,29 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 	l2 := form_list.Copy(func(i AST.Form) AST.Form {return i})
 
 	// Debug
-	Glob.PrintInfo("MakeStep", "-----------------------------")
-	Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v][%v] : %v", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().GetIndex(), s.AppliedOn().ToString()))
-	Glob.PrintInfo("MakeStep", " ")
-	Glob.PrintInfo("MakeStep", "Form list: ")
-	for _, v := range form_list.GetSlice() {
-        Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v ",v.GetIndex(), v.ToString()))
-    }
-	Glob.PrintInfo("MakeStep", "")
-	Glob.PrintInfo("MakeStep"," ")
-	Glob.PrintInfo("MakeStep", fmt.Sprintf(fmt.Sprintf("Children: %v", s.Children().Len())))
-	if s.Children().Len() > 0 {
-		for i, branch := range s.Children().GetSlice() {
-			Glob.PrintInfo("MakeStep", fmt.Sprintf("Child %v: %v", i, branch.AppliedOn().ToString()))
-		}
-		Glob.PrintInfo("MakeStep"," ")
-		Glob.PrintInfo("MakeStep","Result Forms:")
-		for i, rfl := range s.ResultFormulas().GetSlice() {
-			Glob.PrintInfo("MakeStep", fmt.Sprintf("Rf %v:", i))
-			for _, rf := range rfl.GetSlice() {
-				Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v", rf.GetIndex(), rf.ToString()))
-			}
-		}
-	}
+	// Glob.PrintInfo("MakeStep", "-----------------------------")
+	// Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v][%v] : %v", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().GetIndex(), s.AppliedOn().ToString()))
+	// Glob.PrintInfo("MakeStep", " ")
+	// Glob.PrintInfo("MakeStep", "Form list: ")
+	// for _, v := range form_list.GetSlice() {
+    //     Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v ",v.GetIndex(), v.ToString()))
+    // }
+	// Glob.PrintInfo("MakeStep", "")
+	// Glob.PrintInfo("MakeStep"," ")
+	// Glob.PrintInfo("MakeStep", fmt.Sprintf(fmt.Sprintf("Children: %v", s.Children().Len())))
+	// if s.Children().Len() > 0 {
+	// 	for i, branch := range s.Children().GetSlice() {
+	// 		Glob.PrintInfo("MakeStep", fmt.Sprintf("Child %v: %v", i, branch.AppliedOn().ToString()))
+	// 	}
+	// 	Glob.PrintInfo("MakeStep"," ")
+	// 	Glob.PrintInfo("MakeStep","Result Forms:")
+	// 	for i, rfl := range s.ResultFormulas().GetSlice() {
+	// 		Glob.PrintInfo("MakeStep", fmt.Sprintf("Rf %v:", i))
+	// 		for _, rf := range rfl.GetSlice() {
+	// 			Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v", rf.GetIndex(), rf.ToString()))
+	// 		}
+	// 	}
+	// }
 
 	switch s.RuleApplied()  {
 	case Search.RuleClosure: 
@@ -417,7 +411,7 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 		neg_f := s.ResultFormulas().At(idx_b1).At(idx_neg_f)
 		neg_g := s.ResultFormulas().At(idx_b2).At(idx_neg_g)
 		l1 = AppendIfLit(l1, neg_f)
-		l1 = AppendIfLit(l1, neg_g)
+		l2 = AppendIfLit(l2, neg_g)
 		next_res1 := makeProofAux(s.Children().At(idx_b1), sub, l1)
 		next_res2 := makeProofAux(s.Children().At(idx_b2), sub, l2)
 
@@ -582,7 +576,10 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 }
 
 func makeProof(prf Search.IProof, sub Unif.Substitutions, form_list Lib.List[AST.Form]) string {
-	new_form_list := Lib.ListAdd(form_list, prf.AppliedOn())
+	new_form_list := Lib.NewList[AST.Form]()
+	for _, f := range new_form_list.GetSlice() {
+		new_form_list = AppendIfLit(new_form_list, f)
+	}
 	return makeProofAux(prf, sub, new_form_list)
 }
 
