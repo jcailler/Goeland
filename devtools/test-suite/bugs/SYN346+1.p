@@ -1,4 +1,5 @@
 % Bug Rocq output
+% Bug TR output because of dummy skolem symbol/FV
 %--------------------------------------------------------------------------
 % File     : SYN346+1 : TPTP v9.2.1. Released v2.0.0.
 % Domain   : Syntactic
