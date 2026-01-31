@@ -14,7 +14,7 @@ def run_goeland(problem_path, mode):
     if mode == "rocq":
         opts = "-context -orocq"
     elif mode == "tableauxRocq":
-        opts = "-otableauxrocq"
+        opts = "-otableauxrocq -inner"
     else:
         raise ValueError(f"Unknown mode: {mode}")
 

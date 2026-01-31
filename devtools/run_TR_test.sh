@@ -42,7 +42,7 @@ if [[ "$QUIET" -eq 1 ]]; then
     > "$OUTPUT_PATH"
 else
   # Stdout = filtered-out lines only
-  # ./_build/goeland -context -orocq -noeq "$INPUT_PATH" \
+  # ../src/_build/goeland -context -orocq -noeq "$INPUT_PATH" \
   ../src/_build/goeland -otableauxrocq -inner -noeq "$INPUT_PATH" \
     | tee >(
         grep -v '^%' \
