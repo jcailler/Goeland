@@ -28,7 +28,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 INPUT_PATH="$1"
-OUTPUT_PATH="../benchs/proof.v"
+OUTPUT_PATH="../benchs/proof2.v"
 
 cd ../src/ && make
 
@@ -43,7 +43,7 @@ if [[ "$QUIET" -eq 1 ]]; then
 else
   # Stdout = filtered-out lines only
   # ../src/_build/goeland -context -orocq -noeq "$INPUT_PATH" \
-  ../src/_build/goeland -otableauxrocq -inner -noeq "$INPUT_PATH" \
+  ../src/_build/goeland -otableauxrocq -noeq "$INPUT_PATH" \
     | tee >(
         grep -v '^%' \
         | sed 's/\x1b\[[0-9;]*m//g' \

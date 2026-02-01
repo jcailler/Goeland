@@ -2,6 +2,7 @@
 
 import os
 import sys
+import csv
 from subprocess import run, PIPE, TimeoutExpired
 
 TIMEOUT = 3000  # seconds
@@ -12,12 +13,12 @@ TIMEOUT = 3000  # seconds
 # ============================================================
 def run_goeland(problem_path, mode):
     if mode == "rocq":
-        opts = "-context -orocq"
+        opts = "-context -orocq -inner -chrono"
     elif mode == "tableauxRocq":
         opts = "-otableauxrocq -inner"
     else:
         raise ValueError(f"Unknown mode: {mode}")
-
+    
     # cmd = f"../src/_build/goeland -noeq {opts} {problem_path}"
     cmd = f"../tool/goeland -noeq {opts} {problem_path}"
 
@@ -62,6 +63,24 @@ def extract_proof(text):
 
 
 # ============================================================
+# Extract GS3 chrono
+# ============================================================
+def extract_gs3_chrono(text):
+    """
+    Extracts '% Chrono - GS3 - <time>' from Goéland output.
+    Returns int or None.
+    """
+    for line in text.splitlines():
+        line = line.strip()
+        if line.startswith("% Chrono - GS3 -"):
+            try:
+                return int(line.split("-")[-1].strip())
+            except ValueError:
+                return None
+    return None
+
+
+# ============================================================
 # Main
 # ============================================================
 def main():
@@ -74,6 +93,16 @@ def main():
 
     os.makedirs(outdir, exist_ok=True)
 
+    # CSV setup
+    csv_path = os.path.join(outdir, "gs3_chrono.csv")
+    csv_exists = os.path.exists(csv_path)
+
+    csvfile = open(csv_path, "a", newline="")
+    writer = csv.writer(csvfile)
+
+    if not csv_exists:
+        writer.writerow(["problem", "gs3_time"])
+
     problems = sorted(f for f in os.listdir(problem_dir) if f.endswith(".p"))
 
     for prob in problems:
@@ -85,6 +114,7 @@ def main():
         # Rocq
         rocq_out = run_goeland(prob_path, "rocq")
         rocq_proof = extract_proof(rocq_out)
+        gs3_time = extract_gs3_chrono(rocq_out)
 
         if rocq_proof:
             with open(os.path.join(outdir, f"{base}_rocq.v"), "w") as f:
@@ -92,6 +122,8 @@ def main():
             print("  ✓ Rocq proof written")
         else:
             print("  [NO ROCQ PROOF]")
+
+        writer.writerow([prob, gs3_time if gs3_time is not None else ""])
 
         # Tableaux Rocq
         tab_out = run_goeland(prob_path, "tableauxRocq")
@@ -103,6 +135,8 @@ def main():
             print("  ✓ Tableaux Rocq proof written")
         else:
             print("  [NO TABLEAUX PROOF]")
+
+    csvfile.close()
 
 
 if __name__ == "__main__":

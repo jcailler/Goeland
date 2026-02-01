@@ -15,7 +15,7 @@ def count_branches(path):
             if (
                 "auto." in line
                 or "congruence." in line
-                or "Leaf." in line
+                or "mkClosure" in line
             ):
                 count += 1
     return count
@@ -81,14 +81,6 @@ if len(sys.argv) != 2:
 folder = sys.argv[1]
 outfile = folder + "/stats.csv"
 data = collections.defaultdict(dict)
-
-# ---- GS3 times
-gs3_path = os.path.join(folder, "gs3_times.csv")
-if os.path.exists(gs3_path):
-    with open(gs3_path) as f:
-        for line in f:
-            prob, t = line.strip().split(",")
-            data[prob]["gs3"] = t
 
 # ---- Scan proof files
 for file in os.listdir(folder):
