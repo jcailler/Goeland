@@ -18,8 +18,8 @@ def run_goeland(problem_path, mode):
     else:
         raise ValueError(f"Unknown mode: {mode}")
 
-    # cmd = f"../src/_build/goeland -noeq {opts} {problem_path}"
-    cmd = f"../tool/goeland -noeq {opts} {problem_path}"
+    cmd = f"../src/_build/goeland -noeq {opts} {problem_path}"
+    # cmd = f"../tool/goeland -noeq {opts} {problem_path}"
 
     try:
         print(f"  → {mode}: {cmd}")

@@ -5,7 +5,7 @@ import sys
 import csv
 from subprocess import run, PIPE, TimeoutExpired
 
-TIMEOUT = 3000  # seconds
+TIMEOUT = 30000  # seconds
 
 
 # ============================================================
