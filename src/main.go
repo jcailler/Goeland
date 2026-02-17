@@ -31,7 +31,7 @@
 **/
 
 /**
-* This file provides the main function for lanche the program.
+* This file provides the main function to launch the program.
 **/
 
 package main

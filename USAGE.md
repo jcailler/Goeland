@@ -11,11 +11,11 @@
   * [Proof Outputs](#proof-outputs)
   * [Developer Options](#developer-options)
 
-## Recommanded Options
+## Recommended Options
 
 If you want to have the fastest version of Goéland, you can launch it with the following options:
 ```
--dmt -flatten -preinner
+goeland -preinner -dmt problem.p
 ```
 See the next section to understand what these options do.
 
@@ -31,7 +31,7 @@ The most commonly used options of Goéland are the following ones.
 | -dmt | Enables deduction modulo theory. |
 | -dmt_before_eq | Enables dmt rewriting-steps before equality. |
 | -eagereq | Run equality reasoning every time a new (in)equality is added to the branch. |
-| -flatten | Flattens AND and OR formulas. Incompatible with `-orocq`, `-osctptp`, `-olp`. |
+| -flatten | Flattens AND and OR formulas. Incompatible with `-orocq`, `-osctptp`, `-otableauxrocq`, `-olp`. |
 | -h | Displays the help text with all the options. |
 | -incr | Enables the incremental search algorithm. |
 | -increq | Run equality reasoning incrementally. |
@@ -53,6 +53,7 @@ Goéland has multiple proof outputs:
 | -chrono | Should only be used with the `-orocq` or the `-olp` parameters. Enables the chronometer for deskolemization and proof translation. |
 | -context | Get the current proof system prelude. Only outputs something if paired with the `-orocq` or the `-olp` parameters. |
 | -orocq | Enables the Rocq format for proofs instead of text. |
+| -otableauxrocq | Enables the TableauxRocq format for proofs instead of text. |
 | -olp | Enables the Lambdapi format for proofs instead of text. |
 | -otptp | Enables the TPTP format for proofs instead of text. |
 | -osctptp | Enables the SC-TPTP format for proofs instead of text. |
