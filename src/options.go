@@ -375,6 +375,7 @@ func buildOptions() {
 		false,
 		"Run equality reasoning incrementally",
 		func(bool) {
+			Glob.SetEqReasoning(true)
 			Glob.IncrEq = true
 		},
 		func(bool) {})

@@ -70,14 +70,16 @@ func ApplyClosureRules(form AST.Form, state *State) (bool, Lib.List[Lib.List[Uni
 
 	f := form.Copy()
 
-	substFound, substs := searchInequalities(form)
-	if substFound {
-		result = true
-		mixed_substs := Lib.NewList[Unif.MixedSubstitution]()
-		for _, subst := range substs {
-			mixed_substs.Append(Unif.MkMixedFromSubst(subst))
+	if Glob.IsEqReasoning() {
+		substFound, substs := searchInequalities(form)
+		if substFound {
+			result = true
+			mixed_substs := Lib.NewList[Unif.MixedSubstitution]()
+			for _, subst := range substs {
+				mixed_substs.Append(Unif.MkMixedFromSubst(subst))
+			}
+			substitutions.Append(mixed_substs)
 		}
-		substitutions.Append(mixed_substs)
 	}
 
 	substFound, matchSubsts := searchClosureRule(f, *state)

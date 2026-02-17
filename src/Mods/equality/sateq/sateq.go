@@ -31,9 +31,13 @@
 **/
 package sateq
 
-import "github.com/GoelandProver/Goeland/Mods/equality/eqStruct"
+import (
+	"github.com/GoelandProver/Goeland/Mods/equality/eqStruct"
+	"github.com/GoelandProver/Goeland/Glob"
+)
 
 func Enable() {
+	Glob.SetEqReasoning(true)
 	eqStruct.NewEqStruct = NewEqStruct
 }
 

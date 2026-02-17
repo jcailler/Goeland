@@ -83,6 +83,7 @@ var printVersion = false
 var allowFlattening = false
 var type_check = true
 
+var eqReasoning = false
 var IncrEq = false
 
 var debug = Lib.EmptySet[Lib.String]()
@@ -287,6 +288,10 @@ func NoTypeCheck() bool {
 	return !type_check
 }
 
+func IsEqReasoning() bool {
+	return eqReasoning
+}
+
 /* Setters */
 func SetDebug(debug_list string) {
 	if debug_list == "none" {
@@ -442,3 +447,8 @@ func SetFlatteningAllowed() {
 func SetNoTypeCheck() {
 	type_check = false
 }
+
+func SetEqReasoning(eqr bool) {
+	eqReasoning = eqr
+}
+

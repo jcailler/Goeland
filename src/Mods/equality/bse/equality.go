@@ -53,6 +53,7 @@ func InitDebugger() {
 }
 
 func Enable() {
+	Glob.SetEqReasoning(true)
 	SetTryEquality()
 	eqStruct.NewEqStruct = NewBasicEqualityStruct
 }

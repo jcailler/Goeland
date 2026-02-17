@@ -1,7 +1,7 @@
 import sys
 
 if len(sys.argv) != 2:
-    print("Usage: python remove_error_lines.py <input.csv>")
+    print("Usage: python remove_error_in_csv.py <input.csv>")
     sys.exit(1)
 
 input_file = sys.argv[1]
