@@ -301,29 +301,29 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 	l2 := form_list.Copy(func(i AST.Form) AST.Form {return i})
 
 	// Debug
-	// Glob.PrintInfo("MakeStep", "-----------------------------")
-	// Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v][%v] : %v", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().GetIndex(), s.AppliedOn().ToString()))
-	// Glob.PrintInfo("MakeStep", " ")
-	// Glob.PrintInfo("MakeStep", "Form list: ")
-	// for _, v := range form_list.GetSlice() {
-    //     Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v ",v.GetIndex(), v.ToString()))
-    // }
-	// Glob.PrintInfo("MakeStep", "")
-	// Glob.PrintInfo("MakeStep"," ")
-	// Glob.PrintInfo("MakeStep", fmt.Sprintf(fmt.Sprintf("Children: %v", s.Children().Len())))
-	// if s.Children().Len() > 0 {
-	// 	for i, branch := range s.Children().GetSlice() {
-	// 		Glob.PrintInfo("MakeStep", fmt.Sprintf("Child %v: %v", i, branch.AppliedOn().ToString()))
-	// 	}
-	// 	Glob.PrintInfo("MakeStep"," ")
-	// 	Glob.PrintInfo("MakeStep","Result Forms:")
-	// 	for i, rfl := range s.ResultFormulas().GetSlice() {
-	// 		Glob.PrintInfo("MakeStep", fmt.Sprintf("Rf %v:", i))
-	// 		for _, rf := range rfl.GetSlice() {
-	// 			Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v", rf.GetIndex(), rf.ToString()))
-	// 		}
-	// 	}
-	// }
+	Glob.PrintInfo("MakeStep", "-----------------------------")
+	Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v][%v] : %v", s.(Search.TableauxProof)[0].Rule_name, s.AppliedOn().GetIndex(), s.AppliedOn().ToString()))
+	Glob.PrintInfo("MakeStep", " ")
+	Glob.PrintInfo("MakeStep", "Form list: ")
+	for _, v := range form_list.GetSlice() {
+        Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v ",v.GetIndex(), v.ToString()))
+    }
+	Glob.PrintInfo("MakeStep", "")
+	Glob.PrintInfo("MakeStep"," ")
+	Glob.PrintInfo("MakeStep", fmt.Sprintf(fmt.Sprintf("Children: %v", s.Children().Len())))
+	if s.Children().Len() > 0 {
+		for i, branch := range s.Children().GetSlice() {
+			Glob.PrintInfo("MakeStep", fmt.Sprintf("Child %v: %v", i, branch.AppliedOn().ToString()))
+		}
+		Glob.PrintInfo("MakeStep"," ")
+		Glob.PrintInfo("MakeStep","Result Forms:")
+		for i, rfl := range s.ResultFormulas().GetSlice() {
+			Glob.PrintInfo("MakeStep", fmt.Sprintf("Rf %v:", i))
+			for _, rf := range rfl.GetSlice() {
+				Glob.PrintInfo("MakeStep", fmt.Sprintf("[%v] %v", rf.GetIndex(), rf.ToString()))
+			}
+		}
+	}
 
 	switch s.RuleApplied()  {
 	case Search.RuleClosure: 
@@ -407,8 +407,8 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 		rule_name := "BetaNegAnd"
 		current_form_TR := FormToTR(s.AppliedOn().(AST.Not).GetForm())
 
-		idx_b1 := 1
-		idx_b2 := 0
+		idx_b1 := 0
+		idx_b2 := 1
 		idx_neg_f := 0
 		idx_neg_g := 0
 		neg_f := s.ResultFormulas().At(idx_b1).At(idx_neg_f)
@@ -418,37 +418,40 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 		next_res1 := makeProofAux(s.Children().At(idx_b1), sub, l1)
 		next_res2 := makeProofAux(s.Children().At(idx_b2), sub, l2)
 
+
+
 		res := contextBinaryNode(fmt.Sprintf("%v (Neg [[ %v ]])", rule_name, current_form_TR))
-		res += fmt.Sprintf("{\n%v}\n", next_res2)
 		res += fmt.Sprintf("{\n%v}\n", next_res1)
+		res += fmt.Sprintf("{\n%v}\n", next_res2)
 
 		return res
 	case Search.RuleNotEqu: 
 		rule_name := "BetaNegEqu"
 		current_form_TR := FormToTR(s.AppliedOn().(AST.Not).GetForm())
 		
-		idx_b1 := 1
-		idx_b2 := 0
-		idx_f := 1
-		idx_g := 0
-		idx_neg_f := 1
-		idx_neg_g := 0
+		idx_b1 := 0
+		idx_b2 := 1
+		idx_f := 0
+		idx_g := 1
+		idx_neg_f := 0
+		idx_neg_g := 1
 
 		neg_f := s.ResultFormulas().At(idx_b1).At(idx_neg_f)
 		g := s.ResultFormulas().At(idx_b1).At(idx_g)
 		f := s.ResultFormulas().At(idx_b2).At(idx_f)
 		neg_g := s.ResultFormulas().At(idx_b2).At(idx_neg_g)
-		l1 = AppendIfLit(l1, f)
-		l1 = AppendIfLit(l1, neg_g)
-		l2 = AppendIfLit(l2, g)
-		l2 = AppendIfLit(l2, neg_f)
+		l1 = AppendIfLit(l1, neg_f)
+		l1 = AppendIfLit(l1, g)
+		l2 = AppendIfLit(l2, f)
+		l2 = AppendIfLit(l2, neg_g)
 
-		next_res1 := makeProofAux(s.Children().At(idx_b1), sub, l2)
-		next_res2 := makeProofAux(s.Children().At(idx_b2), sub, l1)
+
+		next_res1 := makeProofAux(s.Children().At(idx_b1), sub, l1)
+		next_res2 := makeProofAux(s.Children().At(idx_b2), sub, l2)
 
 		res := contextBinaryNode(fmt.Sprintf("%v (Neg [[ %v ]])", rule_name, current_form_TR))
-		res += fmt.Sprintf("{\n%v}\n", next_res1)
 		res += fmt.Sprintf("{\n%v}\n", next_res2)
+		res += fmt.Sprintf("{\n%v}\n", next_res1)
 
 		return res
 	case Search.RuleOr: 
