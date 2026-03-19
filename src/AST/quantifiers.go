@@ -185,6 +185,9 @@ func (q quantifier) renameVariables() quantifier {
 }
 
 func (q quantifier) substituteVarByMeta(old Var, new Meta) quantifier {
+	if Lib.ListMem(old, Lib.ListMap(q.varList, func (x TypedVar) Var { return x.ToBoundVar() })) {
+		return q
+	}
 	newForm := q.GetForm().SubstituteVarByMeta(old, new)
 	return makeQuantifier(
 		q.GetVarList(),

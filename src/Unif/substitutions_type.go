@@ -135,8 +135,32 @@ func (s *Substitutions) Set(key AST.Meta, value AST.Term) {
 }
 
 func (s Substitutions) Get(key AST.Meta) (AST.Term, int) {
-	if key.GetFormula() != -1 {
+	// TO REMOVE
+	debug(
+		Lib.MkLazy(func() string {
+			return fmt.Sprintf(
+				"Substitution: %v ", s.ToString())
+		}),
+	)
+
+	debug(
+		Lib.MkLazy(func() string {
+			return fmt.Sprintf(
+				"Meta: %v ", key.ToString())
+		}),
+	)
+
+	// TO REMOVE
+	if key.GetFormula() != -99 {
 		for i, subst := range s {
+		debug(
+			Lib.MkLazy(func() string {
+				return fmt.Sprintf(
+					"Compare: %v --- %v: %v", key.ToString(), subst.Key().ToString(), subst.Key().Equals(key))
+			}),
+		)
+	
+
 			if subst.Key().Equals(key) {
 				return subst.Value(), i
 			}
@@ -392,6 +416,14 @@ func EliminateMeta(subst *Substitutions) {
 
 	for _, t := range *subst {
 		k, v := t.Get()
+		// To REMOVE
+		debug(
+				Lib.MkLazy(func() string {
+			return fmt.Sprintf(
+				"Selected subst: (%v, %v)", k.ToString(), v.ToString())
+		}),
+	)
+		
 		v_meta := v.ToMeta()
 		v_key, index := (*subst).Get(v_meta)
 		if !(v.IsMeta() && HasSubst(*subst, v_meta) && HasSubst(meta, v_meta) && (index != -1) && v_key.Equals(k)) {

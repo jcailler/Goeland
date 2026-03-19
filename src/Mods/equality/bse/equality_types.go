@@ -37,6 +37,7 @@
 package equality
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/GoelandProver/Goeland/AST"
@@ -119,54 +120,123 @@ func (equs Equalities) removeHalf() Equalities {
 
 /* Retrieve equalities from a datastructure */
 func retrieveEqualities(dt Unif.DataStructure) Equalities {
+	debug(
+		Lib.MkLazy(func() string { return fmt.Sprintf("Retrieve equalities") }),
+	)
 	res := Equalities{}
-	meta_ty := AST.MkTyMeta("META_TY_EQ", -1)
-	MetaEQ1 := AST.MakerMeta("METAEQ1", -1, meta_ty)
-	MetaEQ2 := AST.MakerMeta("METAEQ2", -1, meta_ty)
+	meta_eq_ty := AST.MkTyMeta("META_TY_EQ", -99)
+	MetaEQ1 := AST.MakerMeta("METAEQ1", -90, meta_eq_ty)
+	MetaEQ2 := AST.MakerMeta("METAEQ2", -90, meta_eq_ty)
 
 	eq_pred := AST.MakerPred(AST.Id_eq, Lib.NewList[AST.Ty](), Lib.NewList[AST.Term]())
+
 	eq_pred = AST.MakePred(
 		AST.Id_eq,
-		Lib.MkListV[AST.Ty](meta_ty),
+		Lib.MkListV[AST.Ty](meta_eq_ty),
 		Lib.MkListV[AST.Term](MetaEQ1, MetaEQ2),
+	)
+
+	debug(
+		Lib.MkLazy(func() string { return fmt.Sprintf("Unify to find suitable candidates") }),
 	)
 	_, eq_list := dt.Unify(eq_pred)
 
+	debug(
+		Lib.MkLazy(func() string { return fmt.Sprintf("Candidates list:") }),
+	)
+
 	for _, ms := range eq_list {
+		debug(
+			Lib.MkLazy(func() string { return fmt.Sprintf("%v",ms.ToString()) }),
+		)
+	}
+	
+	for _, ms := range eq_list {
+		debug(
+			Lib.MkLazy(func() string {
+				return fmt.Sprintf(
+					"Reorder substitution: %v", ms.ToString())
+			}),
+		)
 		ms_ordered := orderSubstForRetrieve(ms.MatchingSubstitutions().GetSubst(), MetaEQ1, MetaEQ2)
+		debug(
+			Lib.MkLazy(func() string {
+				return fmt.Sprintf(
+					"Substitution found for equalities: %v", ms_ordered.ToString())
+			}),
+		)
+
 		eq1_term, ok_t1 := ms_ordered.Get(MetaEQ1)
 		if ok_t1 == -1 {
-			Glob.PrintError("RI", "Meta_eq_1 not found in map")
+			Glob.PrintError("RE", "Meta_eq_1 not found in map")
 		}
 		eq2_term, ok_t2 := ms_ordered.Get(MetaEQ2)
 		if ok_t2 == -1 {
-			Glob.PrintError("RI", "Meta_eq_2 not found in map")
+			Glob.PrintError("RE", "Meta_eq_2 not found in map")
 		}
 		res = append(res, eqStruct.MakeTermPair(eq1_term, eq2_term))
 	}
+
+	debug(
+		Lib.MkLazy(func() string { return fmt.Sprintf("Final set of equalities: %v", res.ToString()) }),
+	)
+
 	return res
 }
 
 /* Retrieve inequalities from a datastructure */
 func retrieveInequalities(dt Unif.DataStructure) Inequalities {
+	debug(
+		Lib.MkLazy(func() string { return fmt.Sprintf("Retrieve inequalities") }),
+	)
 	res := Inequalities{}
-	meta_ty := AST.MkTyMeta("META_TY_NEQ", -1)
-	MetaNEQ1 := AST.MakerMeta("META_NEQ_1", -1, meta_ty)
-	MetaNEQ2 := AST.MakerMeta("META_NEQ_2", -1, meta_ty)
+	meta_neq_ty := AST.MkTyMeta("META_TY_NEQ", -99)
+	MetaNEQ1 := AST.MakerMeta("META_NEQ_1", -90, meta_neq_ty)
+	MetaNEQ2 := AST.MakerMeta("META_NEQ_2", -90, meta_neq_ty)
 
 	neq_pred := AST.MakerPred(AST.Id_eq, Lib.NewList[AST.Ty](), Lib.NewList[AST.Term]())
 	neq_pred = AST.MakePred(
 		AST.Id_eq,
-		Lib.MkListV(meta_ty),
+		Lib.MkListV(meta_neq_ty),
 		Lib.MkListV[AST.Term](MetaNEQ1, MetaNEQ2),
 	)
+
+
+	debug(
+		Lib.MkLazy(func() string { return fmt.Sprintf("Unify to find suitable candidates") }),
+	)
+
 	_, neq_list := dt.Unify(neq_pred)
 
+	debug(
+		Lib.MkLazy(func() string { return fmt.Sprintf("Candidates list:") }),
+	)
+
 	for _, ms := range neq_list {
+		debug(
+			Lib.MkLazy(func() string { return fmt.Sprintf("%v",ms.ToString()) }),
+		)
+	}
+
+	for _, ms := range neq_list {
+				debug(
+			Lib.MkLazy(func() string {
+				return fmt.Sprintf(
+					"Reorder substitution: %v", ms.ToString())
+			}),
+		)
+
 		ms_ordered := orderSubstForRetrieve(
 			ms.MatchingSubstitutions().GetSubst(),
 			MetaNEQ1,
 			MetaNEQ2,
+		)
+
+		debug(
+			Lib.MkLazy(func() string {
+				return fmt.Sprintf(
+					"Substitution found for inequalities: %v", ms_ordered.ToString())
+			}),
 		)
 		neq1_term, ok_t1 := ms_ordered.Get(MetaNEQ1)
 		if ok_t1 == -1 {
@@ -174,10 +244,16 @@ func retrieveInequalities(dt Unif.DataStructure) Inequalities {
 		}
 		neq2_term, ok_t2 := ms_ordered.Get(MetaNEQ2)
 		if ok_t2 == -1 {
-			Glob.PrintError("RI", "Meta_eq_1 not found in map")
+			Glob.PrintError("RI", "Meta_eq_2 not found in map")
 		}
 		res = append(res, eqStruct.MakeTermPair(neq1_term, neq2_term))
 	}
+
+
+	debug(
+		Lib.MkLazy(func() string { return fmt.Sprintf("Final set of inequalities: %v", res.ToString()) }),
+	)
+
 	return res
 }
 

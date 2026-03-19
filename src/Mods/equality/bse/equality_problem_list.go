@@ -260,6 +260,9 @@ func buildEqualityProblemMultiListFromFormList(fl Lib.List[AST.Form], tn Unif.Da
 * Retun a lis of independent problem list (from predicate and negation) + a boolean, true if there is equality in the formula list, false otherwise
 **/
 func buildEqualityProblemMultiList(fl Lib.List[AST.Form], tp, tn Unif.DataStructure) (EqualityProblemMultiList, bool) {
+		debug(
+			Lib.MkLazy(func() string { return fmt.Sprintf("Build equality problem multilist") }),
+		)
 	res := makeEmptyEqualityProblemMultiList()
 	eq := retrieveEqualities(tp.Copy())
 	if len(eq) == 0 {

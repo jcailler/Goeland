@@ -159,6 +159,9 @@ func (m *Machine) trySubstituteMeta(i AST.Term, j AST.Term) Status {
 		return Status(ERROR)
 	}
 	m.meta = new_meta
+	debug(
+		Lib.MkLazy(func() string { return fmt.Sprintf("New subst: %v", new_meta.ToString()) }),
+	)
 	return Status(SUCCESS)
 }
 
@@ -183,21 +186,45 @@ func AddUnification(term1, term2 AST.Term, subst Substitutions) Substitutions {
 		if m.addUnifications(term1, term2) == SUCCESS {
 			return m.meta
 		} else {
+							debug(
+		Lib.MkLazy(func() string {
+			return fmt.Sprintf(
+				"Failure: no unification found between %v and %v", term1.ToString(), term2.ToString())
+		}),
+	)
 			return Failure()
 		}
 	} else {
 		switch {
 		case term1.IsMeta():
+							debug(
+		Lib.MkLazy(func() string {
+			return fmt.Sprintf(
+				"%v is a meta", term1.ToString())
+		}),
+	)
 			subst.Set(term1.ToMeta(), term2)
 			EliminateMeta(&subst)
 			Eliminate(&subst)
 			return subst
 		case term2.IsMeta():
+										debug(
+		Lib.MkLazy(func() string {
+			return fmt.Sprintf(
+				"%v is a meta", term2.ToString())
+		}),
+	)
 			subst.Set(term2.ToMeta(), term1)
 			EliminateMeta(&subst)
 			Eliminate(&subst)
 			return subst
 		default:
+				debug(
+		Lib.MkLazy(func() string {
+			return fmt.Sprintf(
+				"Failure: neither %v or %v is a meta", term1.ToString(), term2.ToString())
+		}),
+	)
 			return Failure()
 		}
 	}

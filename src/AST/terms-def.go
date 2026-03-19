@@ -38,6 +38,7 @@ package AST
 
 import (
 	"strings"
+	"fmt"
 
 	"github.com/GoelandProver/Goeland/Lib"
 )
@@ -324,7 +325,9 @@ type Meta struct {
 	ty        Ty
 }
 
-func (m Meta) ToString() string { return printer.StrMeta(m.name, m.index) }
+func (m Meta) ToString() string { return m.name }
+// TO REMOVE
+// func (m Meta) ToString() string { return printer.StrMeta(m.name, m.index) }
 func (m Meta) GetFormula() int  { return m.formula }
 
 func (m Meta) GetName() string             { return m.name }
@@ -339,6 +342,30 @@ func (m Meta) GetTy() Ty                   { return m.ty }
 
 func (m Meta) Equals(t any) bool {
 	if typed, ok := t.(Meta); ok {
+		// TO REMOVE
+		debug(
+		Lib.MkLazy(func() string {
+			return fmt.Sprintf(
+				"First element : %v - %v - %v - %v", m.index, m.occurence, m.name, m.formula)
+		}),
+	)
+
+	debug(
+		Lib.MkLazy(func() string {
+			return fmt.Sprintf(
+				"Second element : %v - %v - %v - %v", typed.index, typed.occurence, typed.name, typed.formula)
+		}),
+	)
+
+	debug(
+		Lib.MkLazy(func() string {
+			return fmt.Sprintf(
+				"Res : %v ", m.index == typed.index &&
+			m.occurence == typed.occurence &&
+			m.name == typed.name &&
+			m.formula == typed.formula)
+		}),
+	)
 		return m.index == typed.index &&
 			m.occurence == typed.occurence &&
 			m.name == typed.name &&

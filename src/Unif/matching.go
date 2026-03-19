@@ -103,43 +103,43 @@ func (m *Machine) unify(node Node, formula AST.Form) []MatchingSubstitutions {
 func (m *Machine) unifyAux(node Node) []MatchingSubstitutions {
 	for _, instr := range node.value {
 
-		debug(Lib.MkLazy(func() string { return "------------------------" }))
-		debug(Lib.MkLazy(func() string { return fmt.Sprintf("Instr: %v", instr.ToString()) }))
-		debug(Lib.MkLazy(func() string { return fmt.Sprintf("Meta : %v", m.meta.ToString()) }))
-		debug(Lib.MkLazy(func() string { return fmt.Sprintf("Subst : %v", SubstPairListToString(m.subst)) }))
-		debug(Lib.MkLazy(func() string { return fmt.Sprintf("Post : %v", IntPairistToString(m.post)) }))
-		debug(Lib.MkLazy(func() string { return fmt.Sprintf("IsLocked : %v", m.isLocked()) }))
-		debug(Lib.MkLazy(func() string { return fmt.Sprintf("HasPushed : %v", m.hasPushed) }))
-		debug(Lib.MkLazy(func() string { return fmt.Sprintf("HasPoped : %v", m.hasPoped) }))
-		debug(
-			Lib.MkLazy(func() string {
-				return fmt.Sprintf(
-					"m.beginCount: %v - m.beginLock : %v",
-					m.beginCount,
-					m.beginLock)
-			}),
-		)
-		debug(
-			Lib.MkLazy(func() string {
-				return fmt.Sprintf(
-					"m.TopLevelCount: %v - m.TopLevelTot : %v",
-					m.topLevelCount,
-					m.topLevelTot)
-			}),
-		)
-		debug(
-			Lib.MkLazy(func() string { return fmt.Sprintf("Cursor: %v/%v", m.q, m.terms.Len()) }),
-		)
-		debug(
-			Lib.MkLazy(func() string { return fmt.Sprintf("m.terms[cursor] : %v", m.terms.At(m.q).ToString()) }),
-		)
-		debug(
-			Lib.MkLazy(func() string {
-				return fmt.Sprintf(
-					"m.terms : %v",
-					m.terms.ToString(AST.Term.ToString, ",", "{}"))
-			}),
-		)
+		// debug(Lib.MkLazy(func() string { return "------------------------" }))
+		// debug(Lib.MkLazy(func() string { return fmt.Sprintf("Instr: %v", instr.ToString()) }))
+		// debug(Lib.MkLazy(func() string { return fmt.Sprintf("Meta : %v", m.meta.ToString()) }))
+		// debug(Lib.MkLazy(func() string { return fmt.Sprintf("Subst : %v", SubstPairListToString(m.subst)) }))
+		// debug(Lib.MkLazy(func() string { return fmt.Sprintf("Post : %v", IntPairistToString(m.post)) }))
+		// debug(Lib.MkLazy(func() string { return fmt.Sprintf("IsLocked : %v", m.isLocked()) }))
+		// debug(Lib.MkLazy(func() string { return fmt.Sprintf("HasPushed : %v", m.hasPushed) }))
+		// debug(Lib.MkLazy(func() string { return fmt.Sprintf("HasPoped : %v", m.hasPoped) }))
+		// debug(
+		// 	Lib.MkLazy(func() string {
+		// 		return fmt.Sprintf(
+		// 			"m.beginCount: %v - m.beginLock : %v",
+		// 			m.beginCount,
+		// 			m.beginLock)
+		// 	}),
+		// )
+		// debug(
+		// 	Lib.MkLazy(func() string {
+		// 		return fmt.Sprintf(
+		// 			"m.TopLevelCount: %v - m.TopLevelTot : %v",
+		// 			m.topLevelCount,
+		// 			m.topLevelTot)
+		// 	}),
+		// )
+		// debug(
+		// 	Lib.MkLazy(func() string { return fmt.Sprintf("Cursor: %v/%v", m.q, m.terms.Len()) }),
+		// )
+		// debug(
+		// 	Lib.MkLazy(func() string { return fmt.Sprintf("m.terms[cursor] : %v", m.terms.At(m.q).ToString()) }),
+		// )
+		// debug(
+		// 	Lib.MkLazy(func() string {
+		// 		return fmt.Sprintf(
+		// 			"m.terms : %v",
+		// 			m.terms.ToString(AST.Term.ToString, ",", "{}"))
+		// 	}),
+		// )
 
 		switch instr := instr.(type) {
 		case Begin:
@@ -206,7 +206,7 @@ func (m *Machine) launchChildrenSearch(node Node) []MatchingSubstitutions {
 	channels := []chan []MatchingSubstitutions{}
 	for _, c := range node.children {
 		debug(
-			Lib.MkLazy(func() string { return fmt.Sprintf("Next symbol = %v", c.getValue()[0].ToString()) }),
+			Lib.MkLazy(func() string { return fmt.Sprintf("Next symbol: %v", c.getValue()[0].ToString()) }),
 		)
 		channels = append(channels, make(chan []MatchingSubstitutions))
 	}

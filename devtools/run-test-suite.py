@@ -36,7 +36,7 @@ class Parser:
         arguments = self.parameters["args"] + checker_args
         timeout = ""
         try:
-            timeout = f"timeout {int(self.parameters["timeout"])} "
+            timeout = f"timeout {int(self.parameters['timeout'])} "
         except ValueError:
             pass
 
@@ -169,7 +169,7 @@ def runWithExpected(f, parser, checker_args, check_fun):
 
     if parser.parameters["exit"] != '':
         if int(parser.parameters["exit"]) != exit_code:
-            print(f"Error: expected exit code '{parser.parameters["exit"]}', got: '{exit_code}'")
+            print(f"Error: expected exit code '{parser.parameters['exit']}', got: '{exit_code}'")
             exit(1)
         else: return
 
