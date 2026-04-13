@@ -1,3 +1,7 @@
+% Dreadbury Mansion's problem
+% result: VALID
+
+
 %------------------------------------------------------------------------------
 % File     : PUZ001+1 : TPTP v9.0.0. Released v2.0.0.
 % Domain   : Puzzles

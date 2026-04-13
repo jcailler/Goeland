@@ -1,0 +1,4 @@
+[[32minfo[0m] [0.000227s][preloader] You are running problem PUZ001.p on Goeland v.1.2-dev.r9d5ef810e8abe22653696ee9ee2036b883e6d0ee
+[[32minfo[0m] [0.002235s][search] Launching destructive search with reintroduction limit set to 15.
+[[31merror[0m] [0.019128s][Anomaly] In OSFR: Meta EQ/NEQ not found.
+Please report at https://github.com/GoelandProver/Goeland/issues

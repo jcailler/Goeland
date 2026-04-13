@@ -1,0 +1,338 @@
+[[32minfo[0m] [0.000172s][preloader] You are running problem PUZ001.p on Goeland v.1.2-dev.r9d5ef810e8abe22653696ee9ee2036b883e6d0ee
+[[32minfo[0m] [0.001205s][search] Launching destructive search with reintroduction limit set to 10.
+[[32minfo[0m] [1.346302s][Res] 21288 goroutines created
+[[32minfo[0m] [1.346344s][Res] ==== Result ====
+[[32minfo[0m] [1.346350s][MAIN] % RES : VALID
+% SZS status Theorem for PUZ001.p
+% SZS output start Proof for PUZ001.p
+
+[0] ALPHA_AND : (∃ [X10]: lives(X10) ∧ killed(X10, agatha)) ∧ lives(agatha) ∧ lives(butler) ∧ lives(charles) ∧ (∀ [X12]: lives(X12) ⇒ (((X12 = agatha) ∨ (X12 = butler)) ∨ (X12 = charles))) ∧ (∀ [X14, Y16]: killed(X14, Y16) ⇒ hates(X14, Y16)) ∧ (∀ [X18, Y20]: killed(X18, Y20) ⇒ ¬richer(X18, Y20)) ∧ (∀ [X22]: hates(agatha, X22) ⇒ ¬hates(charles, X22)) ∧ (∀ [X24]: ¬(X24 = butler) ⇒ hates(agatha, X24)) ∧ (∀ [X26]: ¬richer(X26, agatha) ⇒ hates(butler, X26)) ∧ (∀ [X28]: hates(agatha, X28) ⇒ hates(butler, X28)) ∧ (∀ [X32]: ∃ [Y30]: ¬hates(X32, Y30)) ∧ ¬(agatha = butler) ∧ ¬killed(agatha, charles)
+	-> [1] ∃ [X10]: lives(X10) ∧ killed(X10, agatha), lives(agatha), lives(butler), lives(charles), ∀ [X12]: lives(X12) ⇒ (((X12 = agatha) ∨ (X12 = butler)) ∨ (X12 = charles)), ∀ [X14, Y16]: killed(X14, Y16) ⇒ hates(X14, Y16), ∀ [X18, Y20]: killed(X18, Y20) ⇒ ¬richer(X18, Y20), ∀ [X22]: hates(agatha, X22) ⇒ ¬hates(charles, X22), ∀ [X24]: ¬(X24 = butler) ⇒ hates(agatha, X24), ∀ [X26]: ¬richer(X26, agatha) ⇒ hates(butler, X26), ∀ [X28]: hates(agatha, X28) ⇒ hates(butler, X28), ∀ [X32]: ∃ [Y30]: ¬hates(X32, Y30), ¬(agatha = butler), ¬killed(agatha, charles)
+
+[1] DELTA_EXISTS : ∃ [X10]: lives(X10) ∧ killed(X10, agatha)
+	-> [2] lives(skolem@X10@0) ∧ killed(skolem@X10@0, agatha)
+
+[2] ALPHA_AND : lives(skolem@X10@0) ∧ killed(skolem@X10@0, agatha)
+	-> [3] lives(skolem@X10@0), killed(skolem@X10@0, agatha)
+
+[3] GAMMA_FORALL : ∀ [X12]: lives(X12) ⇒ (((X12 = agatha) ∨ (X12 = butler)) ∨ (X12 = charles))
+	-> [4] lives(skolem@X10@0) ⇒ (((skolem@X10@0 = agatha) ∨ (skolem@X10@0 = butler)) ∨ (skolem@X10@0 = charles))
+
+[4] BETA_IMPLY : lives(skolem@X10@0) ⇒ (((skolem@X10@0 = agatha) ∨ (skolem@X10@0 = butler)) ∨ (skolem@X10@0 = charles))
+	-> [5] ¬lives(skolem@X10@0)
+	-> [6] ((skolem@X10@0 = agatha) ∨ (skolem@X10@0 = butler)) ∨ (skolem@X10@0 = charles)
+
+[5] CLOSURE : ¬lives(skolem@X10@0)
+
+[6] BETA_OR : ((skolem@X10@0 = agatha) ∨ (skolem@X10@0 = butler)) ∨ (skolem@X10@0 = charles)
+	-> [7] (skolem@X10@0 = agatha) ∨ (skolem@X10@0 = butler)
+	-> [8] skolem@X10@0 = charles
+
+[7] BETA_OR : (skolem@X10@0 = agatha) ∨ (skolem@X10@0 = butler)
+	-> [137] skolem@X10@0 = agatha
+	-> [138] skolem@X10@0 = butler
+
+[137] GAMMA_FORALL : ∀ [X14, Y16]: killed(X14, Y16) ⇒ hates(X14, Y16)
+	-> [139] ∀ [Y16]: killed(skolem@X10@0, Y16) ⇒ hates(skolem@X10@0, Y16)
+
+[139] GAMMA_FORALL : ∀ [X18, Y20]: killed(X18, Y20) ⇒ ¬richer(X18, Y20)
+	-> [140] ∀ [Y20]: killed(X18, Y20) ⇒ ¬richer(X18, Y20)
+
+[140] GAMMA_FORALL : ∀ [X22]: hates(agatha, X22) ⇒ ¬hates(charles, X22)
+	-> [142] hates(agatha, agatha) ⇒ ¬hates(charles, agatha)
+
+[142] BETA_IMPLY : hates(agatha, agatha) ⇒ ¬hates(charles, agatha)
+	-> [143] ¬hates(agatha, agatha)
+	-> [144] ¬hates(charles, agatha)
+
+[143] GAMMA_FORALL : ∀ [X24]: ¬(X24 = butler) ⇒ hates(agatha, X24)
+	-> [150] ¬(agatha = butler) ⇒ hates(agatha, agatha)
+
+[150] BETA_IMPLY : ¬(agatha = butler) ⇒ hates(agatha, agatha)
+	-> [153] ¬¬(agatha = butler)
+	-> [154] hates(agatha, agatha)
+
+[153] ALPHA_NOT_NOT : ¬¬(agatha = butler)
+	-> [155] agatha = butler
+
+[155] CLOSURE : ¬(agatha = butler)
+
+[154] CLOSURE : hates(agatha, agatha)
+
+[144] GAMMA_FORALL : ∀ [X24]: ¬(X24 = butler) ⇒ hates(agatha, X24)
+	-> [149] ¬(agatha = butler) ⇒ hates(agatha, agatha)
+
+[149] BETA_IMPLY : ¬(agatha = butler) ⇒ hates(agatha, agatha)
+	-> [273] ¬¬(agatha = butler)
+	-> [274] hates(agatha, agatha)
+
+[273] ALPHA_NOT_NOT : ¬¬(agatha = butler)
+	-> [277] agatha = butler
+
+[277] CLOSURE : ¬(agatha = butler)
+
+[274] GAMMA_FORALL : ∀ [X26]: ¬richer(X26, agatha) ⇒ hates(butler, X26)
+	-> [281] ¬richer(X26, agatha) ⇒ hates(butler, X26)
+
+[281] BETA_IMPLY : ¬richer(X26, agatha) ⇒ hates(butler, X26)
+	-> [282] ¬¬richer(X26, agatha)
+	-> [283] hates(butler, X26)
+
+[282] ALPHA_NOT_NOT : ¬¬richer(X26, agatha)
+	-> [284] richer(X26, agatha)
+
+[284] GAMMA_FORALL : ∀ [X28]: hates(agatha, X28) ⇒ hates(butler, X28)
+	-> [289] hates(agatha, agatha) ⇒ hates(butler, agatha)
+
+[289] BETA_IMPLY : hates(agatha, agatha) ⇒ hates(butler, agatha)
+	-> [290] ¬hates(agatha, agatha)
+	-> [291] hates(butler, agatha)
+
+[290] CLOSURE : ¬hates(agatha, agatha)
+
+[291] GAMMA_FORALL : ∀ [X32]: ∃ [Y30]: ¬hates(X32, Y30)
+	-> [298] ∃ [Y30]: ¬hates(skolem@X10@0, Y30)
+
+[298] DELTA_EXISTS : ∃ [Y30]: ¬hates(skolem@X10@0, Y30)
+	-> [299] ¬hates(skolem@X10@0, skolem@Y30@18(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+
+[299] GAMMA_FORALL : ∀ [Y16]: killed(skolem@X10@0, Y16) ⇒ hates(skolem@X10@0, Y16)
+	-> [305] killed(skolem@X10@0, skolem@Y30@18(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26)) ⇒ hates(skolem@X10@0, skolem@Y30@18(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+
+[305] BETA_IMPLY : killed(skolem@X10@0, skolem@Y30@18(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26)) ⇒ hates(skolem@X10@0, skolem@Y30@18(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+	-> [319] ¬killed(skolem@X10@0, skolem@Y30@18(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+	-> [320] hates(skolem@X10@0, skolem@Y30@18(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+
+[319] CLOSURE : =
+
+[320] CLOSURE : hates(skolem@X10@0, skolem@Y30@18(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+
+[283] GAMMA_FORALL : ∀ [X28]: hates(agatha, X28) ⇒ hates(butler, X28)
+	-> [292] hates(agatha, agatha) ⇒ hates(butler, agatha)
+
+[292] BETA_IMPLY : hates(agatha, agatha) ⇒ hates(butler, agatha)
+	-> [293] ¬hates(agatha, agatha)
+	-> [294] hates(butler, agatha)
+
+[293] CLOSURE : ¬hates(agatha, agatha)
+
+[294] GAMMA_FORALL : ∀ [X32]: ∃ [Y30]: ¬hates(X32, Y30)
+	-> [300] ∃ [Y30]: ¬hates(skolem@X10@0, Y30)
+
+[300] DELTA_EXISTS : ∃ [Y30]: ¬hates(skolem@X10@0, Y30)
+	-> [301] ¬hates(skolem@X10@0, skolem@Y30@19(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+
+[301] GAMMA_FORALL : ∀ [Y16]: killed(skolem@X10@0, Y16) ⇒ hates(skolem@X10@0, Y16)
+	-> [308] killed(skolem@X10@0, skolem@Y30@19(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26)) ⇒ hates(skolem@X10@0, skolem@Y30@19(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+
+[308] BETA_IMPLY : killed(skolem@X10@0, skolem@Y30@19(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26)) ⇒ hates(skolem@X10@0, skolem@Y30@19(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+	-> [321] ¬killed(skolem@X10@0, skolem@Y30@19(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+	-> [322] hates(skolem@X10@0, skolem@Y30@19(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+
+[321] CLOSURE : =
+
+[322] CLOSURE : hates(skolem@X10@0, skolem@Y30@19(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+
+[138] GAMMA_FORALL : ∀ [X14, Y16]: killed(X14, Y16) ⇒ hates(X14, Y16)
+	-> [141] ∀ [Y16]: killed(skolem@X10@0, Y16) ⇒ hates(skolem@X10@0, Y16)
+
+[141] GAMMA_FORALL : ∀ [X18, Y20]: killed(X18, Y20) ⇒ ¬richer(X18, Y20)
+	-> [145] ∀ [Y20]: killed(X18, Y20) ⇒ ¬richer(X18, Y20)
+
+[145] GAMMA_FORALL : ∀ [X22]: hates(agatha, X22) ⇒ ¬hates(charles, X22)
+	-> [146] hates(agatha, agatha) ⇒ ¬hates(charles, agatha)
+
+[146] BETA_IMPLY : hates(agatha, agatha) ⇒ ¬hates(charles, agatha)
+	-> [147] ¬hates(agatha, agatha)
+	-> [148] ¬hates(charles, agatha)
+
+[147] GAMMA_FORALL : ∀ [X24]: ¬(X24 = butler) ⇒ hates(agatha, X24)
+	-> [158] ¬(agatha = butler) ⇒ hates(agatha, agatha)
+
+[158] BETA_IMPLY : ¬(agatha = butler) ⇒ hates(agatha, agatha)
+	-> [161] ¬¬(agatha = butler)
+	-> [162] hates(agatha, agatha)
+
+[161] ALPHA_NOT_NOT : ¬¬(agatha = butler)
+	-> [164] agatha = butler
+
+[164] CLOSURE : agatha = butler
+
+[162] CLOSURE : ¬hates(agatha, agatha)
+
+[148] GAMMA_FORALL : ∀ [X24]: ¬(X24 = butler) ⇒ hates(agatha, X24)
+	-> [157] ¬(agatha = butler) ⇒ hates(agatha, agatha)
+
+[157] BETA_IMPLY : ¬(agatha = butler) ⇒ hates(agatha, agatha)
+	-> [265] ¬¬(agatha = butler)
+	-> [266] hates(agatha, agatha)
+
+[265] ALPHA_NOT_NOT : ¬¬(agatha = butler)
+	-> [267] agatha = butler
+
+[267] CLOSURE : agatha = butler
+
+[266] GAMMA_FORALL : ∀ [X26]: ¬richer(X26, agatha) ⇒ hates(butler, X26)
+	-> [268] ¬richer(X26, agatha) ⇒ hates(butler, X26)
+
+[268] BETA_IMPLY : ¬richer(X26, agatha) ⇒ hates(butler, X26)
+	-> [325] ¬¬richer(X26, agatha)
+	-> [326] hates(butler, X26)
+
+[325] ALPHA_NOT_NOT : ¬¬richer(X26, agatha)
+	-> [327] richer(X26, agatha)
+
+[327] GAMMA_FORALL : ∀ [X28]: hates(agatha, X28) ⇒ hates(butler, X28)
+	-> [328] hates(agatha, agatha) ⇒ hates(butler, agatha)
+
+[328] BETA_IMPLY : hates(agatha, agatha) ⇒ hates(butler, agatha)
+	-> [329] ¬hates(agatha, agatha)
+	-> [330] hates(butler, agatha)
+
+[329] CLOSURE : ¬hates(agatha, agatha)
+
+[330] GAMMA_FORALL : ∀ [X32]: ∃ [Y30]: ¬hates(X32, Y30)
+	-> [334] ∃ [Y30]: ¬hates(skolem@X10@0, Y30)
+
+[334] DELTA_EXISTS : ∃ [Y30]: ¬hates(skolem@X10@0, Y30)
+	-> [335] ¬hates(skolem@X10@0, skolem@Y30@20(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+
+[335] GAMMA_FORALL : ∀ [Y16]: killed(skolem@X10@0, Y16) ⇒ hates(skolem@X10@0, Y16)
+	-> [338] killed(skolem@X10@0, skolem@Y30@20(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26)) ⇒ hates(skolem@X10@0, skolem@Y30@20(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+
+[338] BETA_IMPLY : killed(skolem@X10@0, skolem@Y30@20(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26)) ⇒ hates(skolem@X10@0, skolem@Y30@20(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+	-> [347] ¬killed(skolem@X10@0, skolem@Y30@20(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+	-> [348] hates(skolem@X10@0, skolem@Y30@20(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+
+[347] CLOSURE : =
+
+[348] CLOSURE : hates(skolem@X10@0, skolem@Y30@20(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+
+[326] GAMMA_FORALL : ∀ [X28]: hates(agatha, X28) ⇒ hates(butler, X28)
+	-> [331] hates(agatha, agatha) ⇒ hates(butler, agatha)
+
+[331] BETA_IMPLY : hates(agatha, agatha) ⇒ hates(butler, agatha)
+	-> [332] ¬hates(agatha, agatha)
+	-> [333] hates(butler, agatha)
+
+[332] CLOSURE : ¬hates(agatha, agatha)
+
+[333] GAMMA_FORALL : ∀ [X32]: ∃ [Y30]: ¬hates(X32, Y30)
+	-> [336] ∃ [Y30]: ¬hates(skolem@X10@0, Y30)
+
+[336] DELTA_EXISTS : ∃ [Y30]: ¬hates(skolem@X10@0, Y30)
+	-> [337] ¬hates(skolem@X10@0, skolem@Y30@21(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+
+[337] GAMMA_FORALL : ∀ [Y16]: killed(skolem@X10@0, Y16) ⇒ hates(skolem@X10@0, Y16)
+	-> [341] killed(skolem@X10@0, agatha) ⇒ hates(skolem@X10@0, agatha)
+
+[341] BETA_IMPLY : killed(skolem@X10@0, agatha) ⇒ hates(skolem@X10@0, agatha)
+	-> [349] ¬killed(skolem@X10@0, agatha)
+	-> [350] hates(skolem@X10@0, agatha)
+
+[349] CLOSURE : killed(skolem@X10@0, agatha)
+
+[350] CLOSURE : =
+
+[8] GAMMA_FORALL : ∀ [X14, Y16]: killed(X14, Y16) ⇒ hates(X14, Y16)
+	-> [11] ∀ [Y16]: killed(skolem@X10@0, Y16) ⇒ hates(skolem@X10@0, Y16)
+
+[11] GAMMA_FORALL : ∀ [X18, Y20]: killed(X18, Y20) ⇒ ¬richer(X18, Y20)
+	-> [12] ∀ [Y20]: killed(X18, Y20) ⇒ ¬richer(X18, Y20)
+
+[12] GAMMA_FORALL : ∀ [X22]: hates(agatha, X22) ⇒ ¬hates(charles, X22)
+	-> [13] hates(agatha, agatha) ⇒ ¬hates(charles, agatha)
+
+[13] BETA_IMPLY : hates(agatha, agatha) ⇒ ¬hates(charles, agatha)
+	-> [14] ¬hates(agatha, agatha)
+	-> [15] ¬hates(charles, agatha)
+
+[14] GAMMA_FORALL : ∀ [X24]: ¬(X24 = butler) ⇒ hates(agatha, X24)
+	-> [22] ¬(agatha = butler) ⇒ hates(agatha, agatha)
+
+[22] BETA_IMPLY : ¬(agatha = butler) ⇒ hates(agatha, agatha)
+	-> [23] ¬¬(agatha = butler)
+	-> [24] hates(agatha, agatha)
+
+[23] ALPHA_NOT_NOT : ¬¬(agatha = butler)
+	-> [27] agatha = butler
+
+[27] CLOSURE : ¬(agatha = butler)
+
+[24] CLOSURE : hates(agatha, agatha)
+
+[15] GAMMA_FORALL : ∀ [X24]: ¬(X24 = butler) ⇒ hates(agatha, X24)
+	-> [21] ¬(agatha = butler) ⇒ hates(agatha, agatha)
+
+[21] BETA_IMPLY : ¬(agatha = butler) ⇒ hates(agatha, agatha)
+	-> [103] ¬¬(agatha = butler)
+	-> [104] hates(agatha, agatha)
+
+[103] ALPHA_NOT_NOT : ¬¬(agatha = butler)
+	-> [105] agatha = butler
+
+[105] CLOSURE : ¬(agatha = butler)
+
+[104] GAMMA_FORALL : ∀ [X26]: ¬richer(X26, agatha) ⇒ hates(butler, X26)
+	-> [106] ¬richer(X26, agatha) ⇒ hates(butler, X26)
+
+[106] BETA_IMPLY : ¬richer(X26, agatha) ⇒ hates(butler, X26)
+	-> [107] ¬¬richer(X26, agatha)
+	-> [108] hates(butler, X26)
+
+[107] ALPHA_NOT_NOT : ¬¬richer(X26, agatha)
+	-> [109] richer(X26, agatha)
+
+[109] GAMMA_FORALL : ∀ [X28]: hates(agatha, X28) ⇒ hates(butler, X28)
+	-> [113] hates(agatha, agatha) ⇒ hates(butler, agatha)
+
+[113] BETA_IMPLY : hates(agatha, agatha) ⇒ hates(butler, agatha)
+	-> [114] ¬hates(agatha, agatha)
+	-> [115] hates(butler, agatha)
+
+[114] CLOSURE : ¬hates(agatha, agatha)
+
+[115] GAMMA_FORALL : ∀ [X32]: ∃ [Y30]: ¬hates(X32, Y30)
+	-> [116] ∃ [Y30]: ¬hates(agatha, Y30)
+
+[116] DELTA_EXISTS : ∃ [Y30]: ¬hates(agatha, Y30)
+	-> [118] ¬hates(agatha, skolem@Y30@5(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, agatha, agatha, X26))
+
+[118] GAMMA_FORALL : ∀ [Y16]: killed(skolem@X10@0, Y16) ⇒ hates(skolem@X10@0, Y16)
+	-> [120] killed(skolem@X10@0, agatha) ⇒ hates(skolem@X10@0, agatha)
+
+[120] BETA_IMPLY : killed(skolem@X10@0, agatha) ⇒ hates(skolem@X10@0, agatha)
+	-> [128] ¬killed(skolem@X10@0, agatha)
+	-> [129] hates(skolem@X10@0, agatha)
+
+[128] CLOSURE : ¬killed(skolem@X10@0, agatha)
+
+[129] CLOSURE : =
+
+[108] GAMMA_FORALL : ∀ [X28]: hates(agatha, X28) ⇒ hates(butler, X28)
+	-> [110] hates(agatha, agatha) ⇒ hates(butler, agatha)
+
+[110] BETA_IMPLY : hates(agatha, agatha) ⇒ hates(butler, agatha)
+	-> [130] ¬hates(agatha, agatha)
+	-> [131] hates(butler, agatha)
+
+[130] CLOSURE : ¬hates(agatha, agatha)
+
+[131] GAMMA_FORALL : ∀ [X32]: ∃ [Y30]: ¬hates(X32, Y30)
+	-> [132] ∃ [Y30]: ¬hates(skolem@X10@0, Y30)
+
+[132] DELTA_EXISTS : ∃ [Y30]: ¬hates(skolem@X10@0, Y30)
+	-> [133] ¬hates(skolem@X10@0, skolem@Y30@7(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+
+[133] GAMMA_FORALL : ∀ [Y16]: killed(skolem@X10@0, Y16) ⇒ hates(skolem@X10@0, Y16)
+	-> [134] killed(skolem@X10@0, skolem@Y30@7(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26)) ⇒ hates(skolem@X10@0, skolem@Y30@7(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+
+[134] BETA_IMPLY : killed(skolem@X10@0, skolem@Y30@7(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26)) ⇒ hates(skolem@X10@0, skolem@Y30@7(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+	-> [135] ¬killed(skolem@X10@0, skolem@Y30@7(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+	-> [136] hates(skolem@X10@0, skolem@Y30@7(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+
+[135] CLOSURE : =
+
+[136] CLOSURE : hates(skolem@X10@0, skolem@Y30@7(skolem@X10@0, X18, skolem@X10@0, agatha, agatha, skolem@X10@0, agatha, X26))
+
+% SZS output end Proof for PUZ001.p

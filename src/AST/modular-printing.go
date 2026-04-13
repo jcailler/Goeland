@@ -195,17 +195,10 @@ func (p Printer) OnFunctionalArgs(i Id, tys, con string, args Lib.List[Term]) st
 	arguments := Lib.ListToString(args, Lib.WithSep(p.StrConn(SepArgs)), Lib.WithEmpty(""))
 
 	if is_infix {
-		// We expect to have between two and three arguments in an infix function
-		// as it might have a type argument.
-		if args.Len() < 2 || args.Len() > 3 {
-			Glob.Anomaly("Printer", fmt.Sprintf(
-				"invalid number of infix arguments: expected 2 or 3, got %d (in %s)",
-				args.Len(),
-				arguments,
-			))
-		}
-		st := args.Len() - 2
-		return fmt.Sprintf("%s %s %s", args.At(st).ToString(), i.ToString(), args.At(st+1).ToString())
+        if args.Len() == 2 {
+            return fmt.Sprintf("%s %s %s", args.At(0).ToString(), i.ToString(), args.At(1).ToString())
+        }
+        return i.ToString()
 	} else {
 		if len(tys) > 0 {
 			arguments = tys + con + arguments

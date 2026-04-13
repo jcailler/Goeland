@@ -1,0 +1,17 @@
+[[32minfo[0m] [0.000070s][preloader] You are running problem PUZ001.p on Goeland v.1.2-dev.r9d5ef810e8abe22653696ee9ee2036b883e6d0ee
+[[32minfo[0m] [0.000459s][search] Launching destructive search with reintroduction limit set to 15.
+[[32minfo[0m] [1.446334s][Res] 46155 goroutines created
+[[32minfo[0m] [1.446379s][Res] ==== Result ====
+[[32minfo[0m] [1.446383s][MAIN] % RES : NOT VALID
+% SZS status CounterSatisfiable for PUZ001.p
+
+Here is the rocq proof of the trace I have you earlier. Can this help you to find the bug ?
+
+Also, when I make the changes you've made, the proover
+
+
+[[32minfo[0m] [0.000475s][search] Launching destructive search with reintroduction limit set to 12.
+
+[[31merror[0m] [0.013441s][Anomaly] In OSFR: Meta EQ/NEQ not found.
+
+Please report at https://github.com/GoelandProver/Goeland/issues

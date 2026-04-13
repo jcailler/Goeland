@@ -119,7 +119,7 @@ func tryApplyRuleCompute(s, t AST.Term, ep EqualityProblem, type_rule int) ruleS
 	)
 
 	// for each l' substerm of s, return a list (l', l) unifiable
-	list_l_prime_l := searchUnifBewteenListAndEq(subterms_of_s, ep.getETree())
+	list_l_prime_l := searchUnifBetweenListAndEq(subterms_of_s, ep.getETree())
 	debug(
 		Lib.MkLazy(func() string { return fmt.Sprintf("len unifiable subterms found : %v", len(list_l_prime_l)) }),
 	)
@@ -158,11 +158,15 @@ func connectLAndR(list_l_prime_l []eqStruct.TermPair, ep EqualityProblem, s AST.
 			s_t := eqStruct.MakeTermPair(s, t)
 			l_r := eqStruct.MakeTermPair(l_prime_l_pair.GetT2(), r)
 
-			// if s = t is not l = r OR, if they are, the rule's type is right, so it's ok
 			if !s_t.EqualsModulo(l_r) || type_rule == RIGHT {
+				if ok, _ := tryUnifySAndT(l_prime_l_pair.GetT1(), l_prime_l_pair.GetT2()); !ok {
+    				continue
+				}
+
 				debug(
 					Lib.MkLazy(func() string { return "Try apply rule ok !" }),
 				)
+				
 				res = append(res, makeRuleStruct(type_rule, l_prime_l_pair.GetT2(), r.Copy(), l_prime_l_pair.GetT1(), s.Copy(), t.Copy()))
 			} else {
 				debug(
@@ -175,7 +179,7 @@ func connectLAndR(list_l_prime_l []eqStruct.TermPair, ep EqualityProblem, s AST.
 }
 
 /* return all the pair (l, l') unifiable */
-func searchUnifBewteenListAndEq(tl Lib.List[AST.Term], tree Unif.DataStructure) []eqStruct.TermPair {
+func searchUnifBetweenListAndEq(tl Lib.List[AST.Term], tree Unif.DataStructure) []eqStruct.TermPair {
 	debug(Lib.MkLazy(func() string {
 		return fmt.Sprintf(
 			"Searching unfication between %v and the eq tree",

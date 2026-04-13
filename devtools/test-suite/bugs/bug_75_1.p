@@ -85,7 +85,7 @@ fof(l9, hypothesis,
 fof(a13, hypothesis, 
     ! [E] :
     (environment(E)
-     => greater(appear(efficient_producers, e), appear(first_movers, E)))).
+     => greater(appear(efficient_producers, E), appear(first_movers, E)))).
 
 %----GOAL: T7. First movers disappear past a certain time after their
 %----appearence in stable environments.

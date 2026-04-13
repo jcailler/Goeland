@@ -43,6 +43,7 @@ import (
 	"github.com/GoelandProver/Goeland/Lib"
 	"github.com/GoelandProver/Goeland/Mods/equality/eqStruct"
 	"github.com/GoelandProver/Goeland/Unif"
+	"github.com/GoelandProver/Goeland/AST"
 )
 
 type BasicEqualityStruct struct {
@@ -123,8 +124,38 @@ func (bes *BasicEqualityStruct) Copy() eqStruct.EqualityStruct {
 
 // Add the new equality problems to the EqualityStruct and run the equality reasoning.
 func RunEqualityReasoning(es eqStruct.EqualityStruct, epml EqualityProblemMultiList) (bool, []Unif.Substitutions) {
+	
+	// for _, eq := range epml[0][0].GetE() {
+	// 	es.AddAssumption(eq)
+	// }
+	// Collect all metavariables that appear in the goals.
+	// An equality assumption whose metas are not all present in the goals
+	// contains free metas introduced by a gamma-instantiation whose
+	// preconditions have not been discharged on this branch. Admitting such
+	// an equality as an assumption would allow superposition to instantiate
+	// those free metas arbitrarily, closing branches that should remain open.
+	goalMetas := Lib.EmptySet[AST.Meta]()
+	for _, epl := range epml {
+		for _, ep := range epl {
+			goalMetas = goalMetas.Union(ep.GetS().GetMetas())
+			goalMetas = goalMetas.Union(ep.GetT().GetMetas())
+		}
+	}
+ 
 	for _, eq := range epml[0][0].GetE() {
-		es.AddAssumption(eq)
+		eqMetas := eq.GetMetas()
+		// Accept the equality iff it is ground OR every meta it contains
+		// also appears in a goal (so superposition cannot invent new bindings).
+		safe := true
+		for _, m := range eqMetas.Elements().GetSlice() {
+			if !goalMetas.Contains(m) {
+				safe = false
+				break
+			}
+		}
+		if safe {
+			es.AddAssumption(eq)
+		}
 	}
 
 	for _, epl := range epml {

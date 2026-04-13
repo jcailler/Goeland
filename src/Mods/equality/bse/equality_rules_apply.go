@@ -108,9 +108,12 @@ func applyRightRule(rs ruleStruct, ep EqualityProblem, father_chan chan answerEP
 			Lib.MkLazy(func() string { return fmt.Sprintf("New term : %v", new_term.ToString()) }),
 		)
 		if rs.getIsSModified() {
-			tryEqualityReasoningProblem(makeEqualityProblem(ep.copy().GetE(), new_term.Copy(), rs.getT(), new_cl), father_chan, rs.getIndexEQList(), RIGHT, father_id)
+			// s was rewritten: new EP has modified s, original ep.t.
+			tryEqualityReasoningProblem(makeEqualityProblem(ep.copy().GetE(), new_term.Copy(), ep.GetT(), new_cl), father_chan, rs.getIndexEQList(), RIGHT, father_id)
 		} else {
-			tryEqualityReasoningProblem(makeEqualityProblem(ep.copy().GetE(), rs.getS(), new_term.Copy(), new_cl), father_chan, rs.getIndexEQList(), RIGHT, father_id)
+			// t was rewritten (tryApplyRuleAux swapped s and t, so rs.getS()==ep.GetT()):
+			// new EP must keep original ep.s, not the swapped rs.getS().
+			tryEqualityReasoningProblem(makeEqualityProblem(ep.copy().GetE(), ep.GetS(), new_term.Copy(), new_cl), father_chan, rs.getIndexEQList(), RIGHT, father_id)
 		}
 	} else {
 		debug(
