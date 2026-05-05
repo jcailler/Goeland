@@ -38,7 +38,7 @@ def main():
         sys.exit(1)
 
     input_root = sys.argv[1].rstrip("/")
-    axioms_path = os.path.join(os.path.dirname(input_root), "../Axioms")
+    axioms_path = os.path.join(os.path.dirname(input_root), "./Axioms")
     output_root = input_root + "_INCLUDE"
 
     if not os.path.isdir(axioms_path):

@@ -12,14 +12,14 @@ TIMEOUT = 3000  # seconds
 # ============================================================
 def run_goeland(problem_path, mode):
     if mode == "rocq":
-        opts = "-context -orocq"
+        opts = "-context -orocq -inner"
     elif mode == "tableauxRocq":
         opts = "-otableauxrocq -inner"
     else:
         raise ValueError(f"Unknown mode: {mode}")
 
-    cmd = f"../src/_build/goeland -noeq {opts} {problem_path}"
-    # cmd = f"../tool/goeland -noeq {opts} {problem_path}"
+    # cmd = f"../src/_build/goeland -noeq {opts} {problem_path}"
+    cmd = f"../tool/goeland -noeq {opts} {problem_path}"
 
     try:
         print(f"  → {mode}: {cmd}")
@@ -82,16 +82,16 @@ def main():
 
         print(f"\n=== Processing {prob} ===")
 
-        # Rocq
-        rocq_out = run_goeland(prob_path, "rocq")
-        rocq_proof = extract_proof(rocq_out)
-
-        if rocq_proof:
-            with open(os.path.join(outdir, f"{base}_rocq.v"), "w") as f:
-                f.write(rocq_proof + "\n")
-            print("  ✓ Rocq proof written")
-        else:
-            print("  [NO ROCQ PROOF]")
+#         # Rocq
+#         rocq_out = run_goeland(prob_path, "rocq")
+#         rocq_proof = extract_proof(rocq_out)
+# 
+#         if rocq_proof:
+#             with open(os.path.join(outdir, f"{base}_rocq.v"), "w") as f:
+#                 f.write(rocq_proof + "\n")
+#             print("  ✓ Rocq proof written")
+#         else:
+#             print("  [NO ROCQ PROOF]")
 
         # Tableaux Rocq
         tab_out = run_goeland(prob_path, "tableauxRocq")
