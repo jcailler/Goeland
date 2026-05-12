@@ -114,7 +114,7 @@ with open(outfile, "w", newline="") as csvfile:
         tt = v.get("tableauxrocq_check_time", "")
 
         ratio = ""
-        if bt != "" and br != "":
+        if bt != "" and br != "" and float(bt)!= 0:
             ratio = float(br) / float(bt)
 
         writer.writerow([k, br, bt, ratio, rt, tt])
