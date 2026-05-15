@@ -11,7 +11,8 @@ source_folder = sys.argv[2]
 destination_folder = sys.argv[3]
 
 # Create destination folder if it doesn't exist
-os.makedirs(destination_folder, exist_ok=True)
+os.makedirs(destination_folder+"_problems", exist_ok=True)
+os.makedirs(destination_folder+"_proofs", exist_ok=True)
 
 valid_files = []
 
@@ -30,31 +31,19 @@ copied = 0
 missing = 0
 
 for filename in valid_files:
-    src_path1 = os.path.join(source_folder, filename+"_rocq.v")
-    src_path2 = os.path.join(source_folder, filename+"_tableauxrocq.v")
-    dst_path1 = os.path.join(destination_folder, filename+"_rocq.v")
-    dst_path2 = os.path.join(destination_folder, filename+"_tableauxrocq.v")
+    src_path1 = os.path.join(source_folder+"_proofs", filename+"_rocq.v")
+    src_path2 = os.path.join(source_folder+"_proofs", filename+"_tableauxrocq.v")
+    dst_path1 = os.path.join(destination_folder+"_proofs", filename+"_rocq.v")
+    dst_path2 = os.path.join(destination_folder+"_proofs", filename+"_tableauxrocq.v")
     
     transformed_name = filename.replace("_", "+") + ".p"
-    src_path3 = os.path.join(source_folder, transformed_name)
-    dst_path3 = os.path.join(destination_folder, transformed_name)
+    src_path3 = os.path.join(source_folder+"_problems", transformed_name)
+    dst_path3 = os.path.join(destination_folder+"_problems", transformed_name)
 
-#     if os.path.isfile(src_path1):
-#         shutil.copy2(src_path1, dst_path1)
-#         copied += 1    
-#     else:
-#         print(f"File not found: {filename}")
-#         missing += 1
-# 
-#     if os.path.isfile(src_path2):
-#         shutil.copy2(src_path2, dst_path2)
-#         copied += 1    
-#     else:
-#         print(f"File not found: {filename}")
-#         missing += 1
-
-    if os.path.isfile(src_path3):
-        shutil.copy2(src_path3, dst_path3)
+    if os.path.isfile(src_path1) and os.path.isfile(src_path2): # and os.path.isfile(src_path3):
+        shutil.copy2(src_path1, dst_path1)
+        shutil.copy2(src_path2, dst_path2)
+        # shutil.copy2(src_path3, dst_path3)
         copied += 1    
     else:
         print(f"File not found: {filename}")

@@ -13,7 +13,7 @@ TIMEOUT = 300 # seconds
 # ============================================================
 def run_goeland(problem_path, mode):
     if mode == "rocq":
-        cmd = f"../tool/goeland -context -orocq -chrono -noeq {problem_path}"
+        cmd = f"../tool/goeland -context -orocq -noeq {problem_path}"
     elif mode == "tableauxRocq":
         cmd = f"../tool/goeland -noeq -otableauxrocq {problem_path}"
     else:

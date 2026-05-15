@@ -15,7 +15,7 @@ def count_branches(path):
     with open(path) as f:
         for line in f:
             if (
-                "auto." in line
+                ("auto." in line and "tauto." not in line)
                 or "congruence." in line
                 or "mkClosure" in line
             ):

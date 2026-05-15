@@ -5,7 +5,7 @@ import sys
 import csv
 from subprocess import run, PIPE, TimeoutExpired
 
-TIMEOUT = 300 # seconds
+TIMEOUT = 3000 # seconds
 
 
 # ============================================================
@@ -13,9 +13,9 @@ TIMEOUT = 300 # seconds
 # ============================================================
 def run_goeland(problem_path, mode):
     if mode == "rocq":
-        cmd = f"../tool/goeland -context -orocq -chrono -noeq {problem_path}"
+        cmd = f"../src/_build/goeland -context -orocq -chrono -noeq -inner {problem_path}"
     elif mode == "tableauxRocq":
-        cmd = f"../tool/goeland -noeq -otableauxrocq {problem_path}"
+        cmd = f"../src/_build/goeland -noeq -otableauxrocq -inner {problem_path}"
     else:
         raise ValueError(f"Unknown mode: {mode}")
 
@@ -109,18 +109,18 @@ def main():
         print(f"\n=== Processing {prob} ===")
 
         # Rocq
-        rocq_out = run_goeland(prob_path, "rocq")
-        rocq_proof = extract_proof(rocq_out)
-        gs3_time = extract_gs3_chrono(rocq_out)
-
-        if rocq_proof:
-            with open(os.path.join(outdir, f"{base}_rocq.v"), "w") as f:
-                f.write(rocq_proof + "\n")
-            print("  ✓ Rocq proof written")
-        else:
-            print("  [NO ROCQ PROOF]")
-
-        writer.writerow([prob, gs3_time if gs3_time is not None else ""])
+#         rocq_out = run_goeland(prob_path, "rocq")
+#         rocq_proof = extract_proof(rocq_out)
+#         gs3_time = extract_gs3_chrono(rocq_out)
+# 
+#         if rocq_proof:
+#             with open(os.path.join(outdir, f"{base}_rocq.v"), "w") as f:
+#                 f.write(rocq_proof + "\n")
+#             print("  ✓ Rocq proof written")
+#         else:
+#             print("  [NO ROCQ PROOF]")
+# 
+#         writer.writerow([prob, gs3_time if gs3_time is not None else ""])
 
         # Tableaux Rocq
         tab_out = run_goeland(prob_path, "tableauxRocq")
