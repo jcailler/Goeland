@@ -128,7 +128,7 @@ func retrieveEqualities(dt Unif.DataStructure) Equalities {
 	eq_pred = AST.MakePred(
 		eq_pred.GetIndex(),
 		AST.Id_eq,
-		Lib.MkListV[AST.Ty](meta_ty),
+		Lib.NewList[AST.Ty](),
 		Lib.MkListV[AST.Term](MetaEQ1, MetaEQ2),
 	)
 	_, eq_list := dt.Unify(eq_pred)
