@@ -19,6 +19,7 @@ import (
 	"github.com/GoelandProver/Goeland/Mods/rocq"
 	"github.com/GoelandProver/Goeland/Mods/tptp"
 	"github.com/GoelandProver/Goeland/Mods/tableaux-rocq"
+	"github.com/GoelandProver/Goeland/Mods/poulet"
 	"github.com/GoelandProver/Goeland/Search"
 	"github.com/GoelandProver/Goeland/Search/incremental"
 )
@@ -315,6 +316,17 @@ func buildOptions() {
 			Glob.OutputTR()
 			Glob.SetProof(true)
 			Search.AddPrintProofAlgorithm(tableauxrocq.TROutputProofStruct)
+
+		},
+		func(bool) {})
+	(&option[bool]{}).init(
+		"opoulet",
+		false,
+		"Enables the poulet format for proofs instead of text",
+		func(bool) {
+			Glob.OutputTR()
+			Glob.SetProof(true)
+			Search.AddPrintProofAlgorithm(poulet.TROutputProofStruct)
 
 		},
 		func(bool) {})

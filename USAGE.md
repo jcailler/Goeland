@@ -54,6 +54,7 @@ Goéland has multiple proof outputs:
 | -context | Get the current proof system prelude. Only outputs something if paired with the `-orocq` or the `-olp` parameters. |
 | -orocq | Enables the Rocq format for proofs instead of text. |
 | -otableauxrocq | Enables the TableauxRocq format for proofs instead of text. |
+| -opoulet | Enables the Poulet format for proofs instead of text. |
 | -olp | Enables the Lambdapi format for proofs instead of text. |
 | -otptp | Enables the TPTP format for proofs instead of text. |
 | -osctptp | Enables the SC-TPTP format for proofs instead of text. |

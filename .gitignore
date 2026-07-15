@@ -116,4 +116,5 @@ flycheck_*.el
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode
 
 /benchs/
-/devtools/job.py
+/devtools/scripts/job.py
+src/test.p
