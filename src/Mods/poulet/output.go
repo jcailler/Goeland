@@ -47,26 +47,26 @@ import (
 	"github.com/GoelandProver/Goeland/Unif"
 )
 
-var TROutputProofStruct = &Search.OutputProofStruct{ProofOutput: MakeTableauxRocqOutput, Name: "Poulet", Extension: ".p"}
+var PouletOutputProofStruct = &Search.OutputProofStruct{ProofOutput: MakePouletOutput, Name: "Poulet", Extension: ".p"}
 
 // ----------------------------------------------------------------------------
 // Plugin initialisation and main function to call.
 
-func MakeTableauxRocqOutput(prf Search.IProof, meta Lib.List[AST.Meta], sub Unif.Substitutions) string {
+func MakePouletOutput(prf Search.IProof, meta Lib.List[AST.Meta], sub Unif.Substitutions) string {
 
-	// Setup TableauxRocq printer
-	connectives := TableauxRocqPrinterConnectives()
-	printer := AST.Printer{PrinterAction: TableauxRocqPrinterAction(), PrinterConnective: &connectives}
+	// Setup Poulet printer
+	connectives := PouletPrinterConnectives()
+	printer := AST.Printer{PrinterAction: PouletPrinterAction(), PrinterConnective: &connectives}
 	AST.SetPrinter(printer)
 
 	// Transform tableaux's proof in GS3 proof
-	return MakeTableauxRocqProof(prf, meta, sub)
+	return MakePouletProof(prf, meta, sub)
 }
 
 
-func TableauxRocqPrinterConnectives() AST.PrinterConnective {
+func PouletPrinterConnectives() AST.PrinterConnective {
 	return AST.MkPrinterConnective(
-		"TableauxRocqPrinterConnective",
+		"PouletPrinterConnective",
 		map[AST.Connective]string{
 			AST.ConnAll: "!",
 			AST.ConnEx:  "?",
@@ -92,8 +92,8 @@ func TableauxRocqPrinterConnectives() AST.PrinterConnective {
 	)
 }
 
-func TableauxRocqPrinterAction() AST.PrinterAction {
-	connectives := TableauxRocqPrinterConnectives()
+func PouletPrinterAction() AST.PrinterAction {
+	connectives := PouletPrinterConnectives()
 
 	sanitize_type := func(ty_str string) string {
 		replace := map[string]string{
@@ -124,9 +124,8 @@ func TableauxRocqPrinterAction() AST.PrinterAction {
 
 
 
-var MakeTableauxRocqProof = func(prf Search.IProof, meta Lib.List[AST.Meta], sub Unif.Substitutions) string {
-	res := "Set Warnings \"-native-compiler\".\n"
-	res += makeContext()
+var MakePouletProof = func(prf Search.IProof, meta Lib.List[AST.Meta], sub Unif.Substitutions) string {
+	res := ""
 
 	axioms, conjecture := processMainFormula(prf.AppliedOn())
 
@@ -141,17 +140,11 @@ var MakeTableauxRocqProof = func(prf Search.IProof, meta Lib.List[AST.Meta], sub
 	res += makeGlobalSubst(sub)
 	res += makeContextSubstEnd()
 
-	res += makeContextTreeBegin()
 	if axioms.Len() > 1 {
 		res += makeProof(prf.Children().At(0), sub, axioms)
 	} else {
 		res += makeProof(prf, sub, axioms)
 	}
-	res += makeContextTreeEnd()
-
-	res += makeContextProofBegin(axioms)
-	res += makeContextProofEnd()
-
 	res += "\n\n"
 	return res
 }
@@ -168,7 +161,7 @@ func TermToTR(t AST.Term) string {
 		case AST.Fun: 
 			return fmt.Sprintf("(EFun \"%v\" [%v])", tt.GetName(), TermListToTR(tt.GetArgs()))
 		default:
-			Glob.PrintError("TableauxRocq", "Error in TermToTR")
+			Glob.PrintError("Poulet", "Error in TermToTR")
 			return ""
 	}
 }
@@ -190,10 +183,11 @@ func TermListToTR(tl Lib.List[AST.Term]) string {
 func FormToTR(f AST.Form) string {
 	switch ft := f.(type) {
 		case AST.Top:
-			return "ETop"
+			return "$true"
 		case AST.Bot:
-			return "EBot"
+			return "$false"
 		case AST.Pred:
+			return ft.ToString()
 			return fmt.Sprintf("EPred \"%v\" [%v]", ft.GetID().ToString(), TermListToTR(ft.GetArgs()))
 		case AST.Not:
 			return fmt.Sprintf("ENeg (%v)", FormToTR(ft.GetChildFormulas().At(0)))

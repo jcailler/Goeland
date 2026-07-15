@@ -326,7 +326,7 @@ func buildOptions() {
 		func(bool) {
 			Glob.OutputTR()
 			Glob.SetProof(true)
-			Search.AddPrintProofAlgorithm(poulet.TROutputProofStruct)
+			Search.AddPrintProofAlgorithm(poulet.PouletOutputProofStruct)
 
 		},
 		func(bool) {})

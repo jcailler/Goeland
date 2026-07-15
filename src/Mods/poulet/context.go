@@ -44,28 +44,20 @@ import (
 	"github.com/GoelandProver/Goeland/AST"
 )
 
-var contextEnabled bool = false
-
-func makeContext() string {
-	resultingString := "From Tableaux Require Import All.\n\n"
-
-	return resultingString
-}
-
 func makeContextAxiomBegin(i int) string {
-	return fmt.Sprintf("Definition Axiom%v : EForm :=\n", i)
+	return fmt.Sprintf("fof(a%v, axiom, ", i)
 }
 
 func makeContextAxiomEnd() string {
-	return ".\n\n"
+	return ").\n"
 }
 
 func makeContextConjectureBegin() string {
-	return "Definition T : EForm :=\n"
+	return "fof(c, conjecture, "
 }
 
 func makeContextConjectureEnd() string {
-	return ".\n\n"
+	return ").\n\n"
 }
 
 func makeContextSubstBegin() string {
@@ -76,15 +68,6 @@ func makeContextSubstEnd() string {
 	return "\n\n"
 }
 
-func makeContextTreeBegin() string {
-	resultingString := "Definition T_Proof : ExtendedRuleTree.\n"
-	resultingString += "Proof.\n"
-	return resultingString
-}
-
-func makeContextTreeEnd() string {
-	return "Defined.\n\n"
-}
 
 func makeContextProofBegin(axioms Lib.List[AST.Form]) string {
 	resultingString := "Theorem hasTableau_T_Proof :\n"

@@ -71,14 +71,14 @@ func makeAxioms(axioms Lib.List[AST.Form]) string {
 	res := ""
 	for i, ax := range axioms.GetSlice() {
 		res += makeContextAxiomBegin(i)
-		res += fmt.Sprintf("	%v \n", FormToTR(ax))
+		res += FormToTR(ax)
 		res += makeContextAxiomEnd()
 	}
 	return res
 }
 
 func makeConjecture(f AST.Form) string {
-	return fmt.Sprintf("	%v \n", FormToTR(f))
+	return FormToTR(f)
 }
 
 
