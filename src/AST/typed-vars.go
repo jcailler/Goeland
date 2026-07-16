@@ -62,6 +62,9 @@ func (v TypedVar) ToString() string {
 	return printer.StrTyVar(Lib.MkPair(v.name, v.ty))
 }
 
+func (v TypedVar) ToStringWithoutTypes() string {return printer.StrBound(v.name, v.index)}
+
+
 func (v TypedVar) GetName() string {
 	return v.name
 }

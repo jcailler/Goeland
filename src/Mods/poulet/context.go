@@ -60,15 +60,6 @@ func makeContextConjectureEnd() string {
 	return ").\n\n"
 }
 
-func makeContextSubstBegin() string {
-	return "Definition subst := translate_substitution "
-}
-
-func makeContextSubstEnd() string {
-	return "\n\n"
-}
-
-
 func makeContextProofBegin(axioms Lib.List[AST.Form]) string {
 	resultingString := "Theorem hasTableau_T_Proof :\n"
 	skolemization := "OuterSkolemization"

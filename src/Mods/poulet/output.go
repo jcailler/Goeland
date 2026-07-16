@@ -53,7 +53,6 @@ var PouletOutputProofStruct = &Search.OutputProofStruct{ProofOutput: MakePouletO
 // Plugin initialisation and main function to call.
 
 func MakePouletOutput(prf Search.IProof, meta Lib.List[AST.Meta], sub Unif.Substitutions) string {
-
 	// Setup Poulet printer
 	connectives := PouletPrinterConnectives()
 	printer := AST.Printer{PrinterAction: PouletPrinterAction(), PrinterConnective: &connectives}
@@ -62,7 +61,6 @@ func MakePouletOutput(prf Search.IProof, meta Lib.List[AST.Meta], sub Unif.Subst
 	// Transform tableaux's proof in GS3 proof
 	return MakePouletProof(prf, meta, sub)
 }
-
 
 func PouletPrinterConnectives() AST.PrinterConnective {
 	return AST.MkPrinterConnective(
@@ -122,8 +120,6 @@ func PouletPrinterAction() AST.PrinterAction {
 	return tr_action.Compose(AST.RemoveSuperfluousParenthesesAction(connectives))
 }
 
-
-
 var MakePouletProof = func(prf Search.IProof, meta Lib.List[AST.Meta], sub Unif.Substitutions) string {
 	res := ""
 
@@ -136,9 +132,7 @@ var MakePouletProof = func(prf Search.IProof, meta Lib.List[AST.Meta], sub Unif.
 	res += makeConjecture(conjecture)
 	res += makeContextConjectureEnd()
 
-	res += makeContextSubstBegin()
 	res += makeGlobalSubst(sub)
-	res += makeContextSubstEnd()
 
 	if axioms.Len() > 1 {
 		res += makeProof(prf.Children().At(0), sub, axioms)
@@ -149,71 +143,64 @@ var MakePouletProof = func(prf Search.IProof, meta Lib.List[AST.Meta], sub Unif.
 	return res
 }
 
-
 /************ Term to TR ************/
 
-func TermToTR(t AST.Term) string {
+func TermToPoulet(t AST.Term) string {
 	switch tt := t.(type) {
-		case AST.Meta:
-			return  fmt.Sprintf("(EVar \"%v\")", tt.ToString())
-		case AST.Var:
-			return  fmt.Sprintf("(EVar \"%v\")", tt.ToString())
-		case AST.Fun: 
-			return fmt.Sprintf("(EFun \"%v\" [%v])", tt.GetName(), TermListToTR(tt.GetArgs()))
-		default:
-			Glob.PrintError("Poulet", "Error in TermToTR")
-			return ""
+	case AST.Meta:
+		return fmt.Sprintf("%v", tt.ToString())
+	case AST.Var:
+		return fmt.Sprintf("%v", tt.ToString())
+	case AST.Fun:
+		return fmt.Sprintf("%v", tt.ToString())
+	default:
+		Glob.PrintError("Poulet", "Error in TermToTR")
+		return ""
 	}
 }
 
-func TermListToTR(tl Lib.List[AST.Term]) string {
+func TermListToPoulet(tl Lib.List[AST.Term]) string {
 	var res strings.Builder
 	for i, t := range tl.GetSlice() {
-		res.WriteString(TermToTR(t))
-		if (i < tl.Len()-1) {
+		res.WriteString(TermToPoulet(t))
+		if i < tl.Len()-1 {
 			res.WriteString(" ; ")
 		}
 	}
 	return res.String()
 }
 
-
 /************ Formula to TR ************/
 
-func FormToTR(f AST.Form) string {
+func FormToPoulet(f AST.Form) string {
 	switch ft := f.(type) {
-		case AST.Top:
-			return "$true"
-		case AST.Bot:
-			return "$false"
-		case AST.Pred:
-			return ft.ToString()
-			return fmt.Sprintf("EPred \"%v\" [%v]", ft.GetID().ToString(), TermListToTR(ft.GetArgs()))
-		case AST.Not:
-			return fmt.Sprintf("ENeg (%v)", FormToTR(ft.GetChildFormulas().At(0)))
-		case AST.And:
-			return fmt.Sprintf("EAnd (%v) (%v)", FormToTR(ft.GetChildFormulas().At(0)), FormToTR(ft.GetChildFormulas().At(1)))
-		case AST.Or:
-			return fmt.Sprintf("EOr (%v) (%v)", FormToTR(ft.GetChildFormulas().At(0)), FormToTR(ft.GetChildFormulas().At(1)))
-		case AST.Imp:
-			return fmt.Sprintf("EImp (%v) (%v)", FormToTR(ft.GetF1()), FormToTR(ft.GetF2()))
-		case AST.Equ:
-			return fmt.Sprintf("EEqu (%v) (%v)", FormToTR(ft.GetF1()), FormToTR(ft.GetF2()))
-		case AST.Ex: // extend E x, y, z -> ex x, ex y, ex z
-				res:= ""
-				for _, v := range ft.GetVarList().GetSlice() {
-					res += fmt.Sprintf("EEx \"%v\" (", v.ToBoundVar().ToString() )
-				}
-				res += fmt.Sprintf("%v", FormToTR(ft.GetChildFormulas().At(0))) 
-				return res + strings.Repeat(")", ft.GetVarList().Len())
-		case AST.All: //extend V x, y, x -> V x V y V z
-				res:= ""
-				for _, v := range ft.GetVarList().GetSlice() {
-					res += fmt.Sprintf("EAll \"%v\" (", v.ToBoundVar().ToString())
-				}
-			res += fmt.Sprintf("%v", FormToTR(ft.GetChildFormulas().At(0))) 
-			return res + strings.Repeat(")", ft.GetVarList().Len())
+	case AST.Top:
+		return "$true"
+	case AST.Bot:
+		return "$false"
+	case AST.Pred:
+		return ft.ToString()
+	case AST.Not:
+		return fmt.Sprintf("~%v", FormToPoulet(ft.GetChildFormulas().At(0)))
+	case AST.And:
+		return fmt.Sprintf("(%v & %v)", FormToPoulet(ft.GetChildFormulas().At(0)), FormToPoulet(ft.GetChildFormulas().At(1)))
+	case AST.Or:
+		return fmt.Sprintf("(%v | %v)", FormToPoulet(ft.GetChildFormulas().At(0)), FormToPoulet(ft.GetChildFormulas().At(1)))
+	case AST.Imp:
+		return fmt.Sprintf("(%v -> %v)", FormToPoulet(ft.GetF1()), FormToPoulet(ft.GetF2()))
+	case AST.Equ:
+		return fmt.Sprintf("(%v <-> %v)", FormToPoulet(ft.GetF1()), FormToPoulet(ft.GetF2()))
+	case AST.Ex: 
+		res := "(? ["
+		res += ft.GetVarList().ToString(AST.TypedVar.ToStringWithoutTypes, ", ", "")
+		res += fmt.Sprintf("] : %v)", FormToPoulet(ft.GetChildFormulas().At(0)))
+		return res
+	case AST.All: 
+		res := "(! ["
+		res += ft.GetVarList().ToString(AST.TypedVar.ToStringWithoutTypes, ", ", "")
+		res += fmt.Sprintf("] : %v)", FormToPoulet(ft.GetChildFormulas().At(0)))
+		return res 
 	}
-	Glob.Anomaly("FormToTR", "Formula type unknown")
+	Glob.Anomaly("FormToPoulet", "Formula type unknown")
 	return ""
 }

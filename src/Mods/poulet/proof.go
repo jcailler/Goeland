@@ -71,26 +71,26 @@ func makeAxioms(axioms Lib.List[AST.Form]) string {
 	res := ""
 	for i, ax := range axioms.GetSlice() {
 		res += makeContextAxiomBegin(i)
-		res += FormToTR(ax)
+		res += FormToPoulet(ax)
 		res += makeContextAxiomEnd()
 	}
 	return res
 }
 
 func makeConjecture(f AST.Form) string {
-	return FormToTR(f)
+	return FormToPoulet(f)
 }
 
 
 
 /************ Substitution ************/
 func makeSubst(m AST.Meta, t AST.Term) string {
-	return fmt.Sprintf("(\"%v\", %v)", m.ToString(), TermToTR(t))
+	return fmt.Sprintf("%v -> %v", m.ToString(), TermToPoulet(t))
 }
 
 func makeGlobalSubst(sub Unif.Substitutions) string {
 	var res strings.Builder
-	res.WriteString("[")
+	res.WriteString("fof(s, substitution, {")
 
 	for i, s := range sub {
 		res.WriteString(makeSubst(s.Get()))
@@ -99,7 +99,7 @@ func makeGlobalSubst(sub Unif.Substitutions) string {
 		}
 	}
 
-	res.WriteString("].\n")
+	res.WriteString("}).\n\n")
 	return res.String()
 }
 
@@ -338,10 +338,10 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 		} 
 	
 		f, comp_f := findComplementaryLiteral(s.AppliedOn(), form_list, sub)
-		return fmt.Sprintf("exact (mkClosure [[ %v ]] [[ %v ]]).\n", FormToTR(f), FormToTR(comp_f))
+		return fmt.Sprintf("exact (mkClosure [[ %v ]] [[ %v ]]).\n", FormToPoulet(f), FormToPoulet(comp_f))
 	case Search.RuleNotNot:  
 		rule_name := "AlphaNegNeg"
-		current_form_TR := FormToTR(s.AppliedOn().(AST.Not).GetForm().(AST.Not).GetForm())
+		current_form_TR := FormToPoulet(s.AppliedOn().(AST.Not).GetForm().(AST.Not).GetForm())
 
 		f := s.ResultFormulas().At(0).At(0)
 		l1 = AppendIfLit(l1, f)
@@ -353,7 +353,7 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 		return res
 	case Search.RuleNotOr: 
 		rule_name := "AlphaNegOr"
-		current_form_TR := FormToTR(s.AppliedOn().(AST.Not).GetForm())
+		current_form_TR := FormToPoulet(s.AppliedOn().(AST.Not).GetForm())
 
 		idx_b1 := 0
 		idx_neg_f := 0
@@ -370,7 +370,7 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 		return res
 	case Search.RuleNotImp:
 		rule_name := "AlphaNegImp"
-		current_form_TR := FormToTR(s.AppliedOn().(AST.Not).GetForm())
+		current_form_TR := FormToPoulet(s.AppliedOn().(AST.Not).GetForm())
 
 		idx_b1 := 0
 		idx_f := 0
@@ -388,7 +388,7 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 		return res
 	case Search.RuleAnd: 
 		rule_name := "AlphaAnd"
-		current_form_TR := FormToTR(s.AppliedOn())
+		current_form_TR := FormToPoulet(s.AppliedOn())
 
 		idx_b1 := 0
 		idx_f := 0
@@ -405,7 +405,7 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 		return res
 	case Search.RuleNotAnd:
 		rule_name := "BetaNegAnd"
-		current_form_TR := FormToTR(s.AppliedOn().(AST.Not).GetForm())
+		current_form_TR := FormToPoulet(s.AppliedOn().(AST.Not).GetForm())
 
 		idx_b1 := 0
 		idx_b2 := 1
@@ -427,7 +427,7 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 		return res
 	case Search.RuleNotEqu: 
 		rule_name := "BetaNegEqu"
-		current_form_TR := FormToTR(s.AppliedOn().(AST.Not).GetForm())
+		current_form_TR := FormToPoulet(s.AppliedOn().(AST.Not).GetForm())
 		
 		idx_b1 := 0
 		idx_b2 := 1
@@ -456,7 +456,7 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 		return res
 	case Search.RuleOr: 
 		rule_name := "BetaOr"
-		current_form_TR := FormToTR(s.AppliedOn())
+		current_form_TR := FormToPoulet(s.AppliedOn())
 		
 		idx_b1 := 0
 		idx_b2 := 1
@@ -476,7 +476,7 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 		return res
 	case Search.RuleImp:
 		rule_name := "BetaImp"
-		current_form_TR := FormToTR(s.AppliedOn())
+		current_form_TR := FormToPoulet(s.AppliedOn())
 		
 		idx_b1 := 0
 		idx_b2 := 1
@@ -496,7 +496,7 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 		return res
 	case Search.RuleEqu: 
 		rule_name := "BetaEqu"
-		current_form_TR := FormToTR(s.AppliedOn())
+		current_form_TR := FormToPoulet(s.AppliedOn())
 		
 		idx_b1 := 0
 		idx_b2 := 1
@@ -524,7 +524,7 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 		return res
 	case Search.RuleNotEx: 
 		rule_name := "GammaNegEx"
-		current_form_TR := FormToTR(s.AppliedOn().(AST.Not).GetForm())
+		current_form_TR := FormToPoulet(s.AppliedOn().(AST.Not).GetForm())
 		generated_term := getRealGeneratedTerm(s)
 		
 		f := s.ResultFormulas().At(0).At(0)
@@ -537,7 +537,7 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 		return res
 	case Search.RuleAll: 
 		rule_name := "GammaAll"
-		current_form_TR := FormToTR(s.AppliedOn())
+		current_form_TR := FormToPoulet(s.AppliedOn())
 		generated_term := getRealGeneratedTerm(s)
 		
 		f := s.ResultFormulas().At(0).At(0)
@@ -550,8 +550,8 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 		return res
 	case Search.RuleNotAll: 
 		rule_name := "DeltaNegAll"
-		current_form_TR := FormToTR(s.AppliedOn().(AST.Not).GetForm())
-		generated_term := TermToTR(getRealGeneratedTerm(s))
+		current_form_TR := FormToPoulet(s.AppliedOn().(AST.Not).GetForm())
+		generated_term := TermToPoulet(getRealGeneratedTerm(s))
 		
 		f := s.ResultFormulas().At(0).At(0)
 		l1 = AppendIfLit(l1, f)
@@ -563,8 +563,8 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 		return res
 	case Search.RuleEx: 
 		rule_name := "DeltaEx"
-		current_form_TR := FormToTR(s.AppliedOn())
-		generated_term := TermToTR(getRealGeneratedTerm(s))
+		current_form_TR := FormToPoulet(s.AppliedOn())
+		generated_term := TermToPoulet(getRealGeneratedTerm(s))
 		
 		f := s.ResultFormulas().At(0).At(0)
 		l1 = AppendIfLit(l1, f)
