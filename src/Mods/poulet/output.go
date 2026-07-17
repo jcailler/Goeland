@@ -105,7 +105,7 @@ func PouletPrinterAction() AST.PrinterAction {
 		}
 		return ty_str
 	}
-	tr_action := AST.MkPrinterAction(
+	poulet_action := AST.MkPrinterAction(
 		AST.PrinterIdentity,
 		func(i AST.Id) string { return i.GetName() },
 		AST.PrinterIdentity2[int],
@@ -116,23 +116,30 @@ func PouletPrinterAction() AST.PrinterAction {
 		},
 		connectives.DefaultOnFunctionalArgs,
 	)
-	tr_action = tr_action.Compose(AST.SanitizerAction(connectives, []string{"@"}))
-	return tr_action.Compose(AST.RemoveSuperfluousParenthesesAction(connectives))
+	poulet_action = poulet_action.Compose(AST.SanitizerAction(connectives, []string{"@"}))
+	return poulet_action.Compose(AST.RemoveSuperfluousParenthesesAction(connectives))
 }
 
 var MakePouletProof = func(prf Search.IProof, meta Lib.List[AST.Meta], sub Unif.Substitutions) string {
 	res := ""
 
 	axioms, conjecture := processMainFormula(prf.AppliedOn())
+	negated_conjecture := AST.MakerNot(conjecture)
 
 	res += makeAxioms(axioms)
-	axioms.Append(AST.MakerNot(conjecture))
+	axioms.Append(negated_conjecture)
 
 	res += makeContextConjectureBegin()
 	res += makeConjecture(conjecture)
 	res += makeContextConjectureEnd()
 
-	res += makeGlobalSubst(sub)
+	res += makeContextNegatedConjectureBegin()
+	res += makeNegatedConjecture(negated_conjecture)
+	res += makeContextNegatedConjectureEnd()
+
+	if !sub.IsEmpty(){
+		res += makeGlobalSubst(sub)
+	}
 
 	if axioms.Len() > 1 {
 		res += makeProof(prf.Children().At(0), sub, axioms)
@@ -143,7 +150,7 @@ var MakePouletProof = func(prf Search.IProof, meta Lib.List[AST.Meta], sub Unif.
 	return res
 }
 
-/************ Term to TR ************/
+/************ Term to poulet ************/
 
 func TermToPoulet(t AST.Term) string {
 	switch tt := t.(type) {
@@ -187,9 +194,9 @@ func FormToPoulet(f AST.Form) string {
 	case AST.Or:
 		return fmt.Sprintf("(%v | %v)", FormToPoulet(ft.GetChildFormulas().At(0)), FormToPoulet(ft.GetChildFormulas().At(1)))
 	case AST.Imp:
-		return fmt.Sprintf("(%v -> %v)", FormToPoulet(ft.GetF1()), FormToPoulet(ft.GetF2()))
+		return fmt.Sprintf("(%v => %v)", FormToPoulet(ft.GetF1()), FormToPoulet(ft.GetF2()))
 	case AST.Equ:
-		return fmt.Sprintf("(%v <-> %v)", FormToPoulet(ft.GetF1()), FormToPoulet(ft.GetF2()))
+		return fmt.Sprintf("(%v <=> %v)", FormToPoulet(ft.GetF1()), FormToPoulet(ft.GetF2()))
 	case AST.Ex: 
 		res := "(? ["
 		res += ft.GetVarList().ToString(AST.TypedVar.ToStringWithoutTypes, ", ", "")

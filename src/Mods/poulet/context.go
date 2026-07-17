@@ -57,7 +57,15 @@ func makeContextConjectureBegin() string {
 }
 
 func makeContextConjectureEnd() string {
-	return ").\n\n"
+	return ").\n"
+}
+
+func makeContextNegatedConjectureBegin() string {
+	return "fof(c, negated_conjecture, "
+}
+
+func makeContextNegatedConjectureEnd() string {
+	return ").\n"
 }
 
 func makeContextProofBegin(axioms Lib.List[AST.Form]) string {
