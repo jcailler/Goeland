@@ -111,13 +111,14 @@ func makeGlobalSubst(sub Unif.Substitutions) string {
 		}
 	}
 
-	res.WriteString("}).\n\n")
+	sko := "outer"
+	if Glob.IsInnerSko() {
+		sko = "inner"
+	}
+	res.WriteString(fmt.Sprintf("}, %s).\n\n", sko))
 	return res.String()
 }
 
-func extractTermsFromSubstList(sub Unif.Substitutions) (Lib.List[AST.Meta], Lib.List[AST.Term]) {
-	return sub.GetMeta(), Core.GetGeneratedSymbolSkolemization()
-}
 
 /************ Proof ************/
 
@@ -153,46 +154,6 @@ func fofClosureStep(
 		forms.ToString(FormToPoulet, ",", ""),
 		rule,
 	)
-}
-
-// Return a pair of indexes of complementary predicate (positive, negative) among a list of formulas
-func findIndexClosureRule(index_f int, sub Unif.Substitutions, f AST.Form, form_list Lib.List[AST.Form]) (int, int) {
-	f_pos := -1
-	f_neg := -1
-
-	var other_form AST.Form
-	new_f := Core.ApplySubstitutionsOnFormula(Unif.FromSubstitutions(sub), f)
-	new_form_list := Lib.NewList[AST.Form]()
-	
-	for _, form := range form_list.GetSlice() {
-		new_form_list.Append(Core.ApplySubstitutionsOnFormula(Unif.FromSubstitutions(sub), form))
-	}
-
-	switch f_t := new_f.(type) {
-		case AST.Pred:
-			f_pos = index_f
-			other_form = AST.MakerNot(f_t)
-			for index_other_f, f_candidate := range new_form_list.GetSlice() {
-			if f_candidate.Equals(other_form) {
-				f_neg = new_form_list.Len() - 1 - index_other_f
-			}
-		}
-		case AST.Not:
-			f_neg = index_f
-			other_form = f_t.GetForm()
-			for index_other_f, f_candidate := range new_form_list.GetSlice() {
-			if f_candidate.Equals(other_form) {
-				f_pos = new_form_list.Len() - 1 - index_other_f
-			}
-		}
-	}
-
-
-	if (f_pos == -1) || (f_neg == -1) {
-		Glob.Anomaly("findIndexClosureRule", "Complementary literal not found")
-	}
-
-	return f_pos, f_neg
 }
 
 
@@ -266,70 +227,6 @@ func getRealGeneratedTerm(s Search.IProof) AST.Term {
 			return dummy_FV
 	}
 	return real_generated_term
-}
-
-func getRealIndex(s Search.IProof, form_list Lib.List[AST.Form], sub Unif.Substitutions) int {
-	
-	fl_after_subst := Lib.NewList[AST.Form]()
-	for _, f := range form_list.GetSlice() {
-		fl_after_subst.Append(Core.ApplySubstitutionsOnFormula(Unif.FromSubstitutions(sub), f))
-	}
-	index := fl_after_subst.IndexOf(Core.ApplySubstitutionsOnFormula(Unif.FromSubstitutions(sub), s.AppliedOn()), func(i1, i2 AST.Form) bool {return i1.Equals(i2)})
-	real_index := -1
-
-	// Find the index of the current formula
-	switch index_t := index.(type) {
-		case Lib.Some[int]:
-			real_index = form_list.Len() - 1 - index_t.Val
-		case Lib.None[int]:
-			Glob.Anomaly("getRealIndex", "Index not found in MakeStep")
-	}
-	return real_index
-}
-
-func manageMetasFromChild(metas Lib.Set[AST.Term]) string {
-	res := "@empty_set string _"
-	if metas.Cardinal() > 0 {
-		res = "\\{"
-		for i, meta := range metas.Elements().GetSlice() {
-			res += "\"" + meta.ToString() + "\""
-			if i < (metas.Cardinal()-1) {
-				res += ", "
-			}
-		}
-		res += "\\}"
-	}
-	return res
-}
-
-func manageSkolemsFromChild(skolems Lib.Set[AST.Term]) string {
-	res := "empty_record"
-	if skolems.Cardinal() > 0 {
-		res = "\\{"
-		for i, sko := range skolems.Elements().GetSlice() {
-			res += fmt.Sprintf(" \"%v\" ", sko.GetName())
-			if i < (skolems.Cardinal()-1) {
-				res += ", "
-			}
-		}
-		res += "\\}"
-	}
-	return res
-}
-
-func printSkosAndMetas(metas, skos Lib.Set[AST.Term]) {
-
-	Glob.PrintWarn("MakeStep", "Metas: ")
-	for _, v := range metas.Elements().GetSlice() {
-        Glob.PrintWarn("MakeStep", fmt.Sprintf("%v ", v.ToString()))
-    }
-	Glob.PrintWarn("MakeStep", "")
-
-	Glob.PrintWarn("MakeStep", "Skos: ")
-	for _, v := range skos.Elements().GetSlice() {
-        Glob.PrintWarn("MakeStep", fmt.Sprintf("%v ", v.ToString()))
-    }
-	Glob.PrintWarn("MakeStep", "")
 }
 
 func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AST.Form], cpt int) string {

@@ -38,10 +38,6 @@ package poulet
 
 import (
 	"fmt"
-
-	"github.com/GoelandProver/Goeland/Glob"
-	"github.com/GoelandProver/Goeland/Lib"
-	"github.com/GoelandProver/Goeland/AST"
 )
 
 func makeContextAxiomBegin(i int) string {
@@ -68,23 +64,3 @@ func makeContextNegatedConjectureEnd() string {
 	return ").\n"
 }
 
-func makeContextProofBegin(axioms Lib.List[AST.Form]) string {
-	resultingString := "Theorem hasTableau_T_Proof :\n"
-	skolemization := "OuterSkolemization"
-	if (Glob.IsInnerSko()) {
-		skolemization = "InnerSkolemization"
-	}
-
-	axioms_string := ""
-	for i := 0; i<axioms.Len()-1; i++ {
-		axioms_string += fmt.Sprintf(" [[ Axiom%v ]] ; ", i)
-	}
-
-	resultingString += fmt.Sprintf("	hasTableau %v [ %v Neg (translate_EForm T) ] subst.\n", skolemization, axioms_string)
-	resultingString += "Proof.\n"
-	return resultingString
-}
-
-func makeContextProofEnd() string {
-	return "tableaux T_Proof.\nQed."
-}
