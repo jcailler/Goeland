@@ -13,9 +13,11 @@ TIMEOUT = 3000 # seconds
 # ============================================================
 def run_goeland(problem_path, mode):
     if mode == "rocq":
-        cmd = f"../src/_build/goeland -context -orocq -chrono -noeq -inner {problem_path}"
+        cmd = f"../../src/_build/goeland -context -inner -orocq -chrono -noeq {problem_path}"
     elif mode == "tableauxRocq":
-        cmd = f"../src/_build/goeland -noeq -otableauxrocq -inner {problem_path}"
+        cmd = f"../../src/_build/goeland -noeq -inner -otableauxrocq {problem_path}"
+    elif mode == "poulet":
+        cmd = f"../../src/_build/goeland -noeq -inner -opoulet {problem_path}"
     else:
         raise ValueError(f"Unknown mode: {mode}")
 
@@ -91,7 +93,7 @@ def main():
     os.makedirs(outdir, exist_ok=True)
 
     # CSV setup
-    csv_path = os.path.join(outdir, "gs3_chrono.csv")
+    csv_path = os.path.join(outdir, "gs3_chrono2.csv")
     csv_exists = os.path.exists(csv_path)
 
     csvfile = open(csv_path, "a", newline="")
@@ -108,7 +110,7 @@ def main():
 
         print(f"\n=== Processing {prob} ===")
 
-        # Rocq
+#         # Rocq
 #         rocq_out = run_goeland(prob_path, "rocq")
 #         rocq_proof = extract_proof(rocq_out)
 #         gs3_time = extract_gs3_chrono(rocq_out)
@@ -121,7 +123,7 @@ def main():
 #             print("  [NO ROCQ PROOF]")
 # 
 #         writer.writerow([prob, gs3_time if gs3_time is not None else ""])
-
+# 
         # Tableaux Rocq
         tab_out = run_goeland(prob_path, "tableauxRocq")
         tab_proof = extract_proof(tab_out)
@@ -132,6 +134,17 @@ def main():
             print("  ✓ Tableaux Rocq proof written")
         else:
             print("  [NO TABLEAUX PROOF]")
+
+#         # Poulet
+#         poulet_out = run_goeland(prob_path, "poulet")
+#         poulet_proof = extract_proof(poulet_out)
+# 
+#         if poulet_proof:
+#             with open(os.path.join(outdir, f"{base}_poulet.s"), "w") as f:
+#                 f.write(poulet_proof + "\n")
+#             print("  ✓ poulet proof written")
+#         else:
+#             print("  [NO POULET PROOF]")
 
     csvfile.close()
 

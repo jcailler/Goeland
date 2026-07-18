@@ -383,17 +383,17 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 		g := s.ResultFormulas().At(idx_b1).At(idx_g)
 		f := s.ResultFormulas().At(idx_b2).At(idx_f)
 		neg_g := s.ResultFormulas().At(idx_b2).At(idx_neg_g)
-		l1 = AppendIfLit(l1, f)
-		l1 = AppendIfLit(l1, neg_g)
-		l2 = AppendIfLit(l2, neg_f)
-		l2 = AppendIfLit(l2, g)
+		l1 = AppendIfLit(l1, neg_f)
+		l1 = AppendIfLit(l1, g)
+		l2 = AppendIfLit(l2, f)
+		l2 = AppendIfLit(l2, neg_g)
 
 		next_id_res1 := incrCpt()
 		next_id_res2 := incrCpt()
-		next_res1 := makeProofAux(s.Children().At(idx_b2), sub, l1, next_id_res1)
-		next_res2 := makeProofAux(s.Children().At(idx_b1), sub, l2, next_id_res2)
+		next_res1 := makeProofAux(s.Children().At(idx_b1), sub, l1, next_id_res1)
+		next_res2 := makeProofAux(s.Children().At(idx_b2), sub, l2, next_id_res2)
 
-		res := fofInference(cpt, current_form, rule_name, Lib.MkListV(next_id_res1, next_id_res2), "")
+		res := fofInference(cpt, current_form, rule_name, Lib.MkListV(next_id_res2, next_id_res1), "")
 		res += next_res1
 		res += next_res2
 

@@ -18,6 +18,9 @@ def count_branches(path):
                 ("auto." in line and "tauto." not in line)
                 or "congruence." in line
                 or "mkClosure" in line
+                or "leftHyp" in line 
+                or "leftFalse" in line
+                or "leftNotTrue" in line
             ):
                 count += 1
     return count
@@ -107,11 +110,41 @@ def rocq_check_time(path, timeout=300):
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
         cleanup_rocq_artifacts(tmp_path)
+        
+# ---- Measure Poulet check time (strips chrono headers before compiling)
+def poulet_check_time(path, timeout=300):
+
+    tmp_path = make_stripped_tempfile(path)
+    try:
+        start = time.time()
+        proc = subprocess.run(
+            ["/home/julie/Tools//TableauxRocq/checker/_build/default/bin/poulet.exe", tmp_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            timeout=timeout,
+        )
+        end = time.time()
+
+        if proc.returncode != 0:
+            print(f"ERROR while checking {path}")
+            print(proc.stderr)
+            return "ERROR"
+
+        return end - start
+
+    except subprocess.TimeoutExpired:
+        return "TIMEOUT"
+
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
 
 
 # ---- Normalize filenames to problem name
 def problem_name(filename):
-    for suffix in ["_rocq.v", "_tableauxrocq.v"]:
+    for suffix in ["_rocq.v", "_tableauxrocq.v", "_poulet.s"]:
         if filename.endswith(suffix):
             return filename[: -len(suffix)]
     return filename
@@ -123,7 +156,7 @@ if len(sys.argv) != 2:
     sys.exit(1)
 
 folder = sys.argv[1]
-outfile = os.path.join(folder, "stats.csv")
+outfile = os.path.join(folder, "stats2.csv")
 data = collections.defaultdict(dict)
 
 # ---- Scan proof files
@@ -141,6 +174,10 @@ for file in sorted(os.listdir(folder)):
     elif file.endswith("_tableauxrocq.v"):
         data[key]["tableauxrocq"] = count_branches(path)
         data[key]["tableauxrocq_check_time"] = rocq_check_time(path)
+    
+    elif file.endswith("_poulet.s"):
+        data[key]["poulet"] = count_branches(path)
+        data[key]["poulet_check_time"] = poulet_check_time(path)
 
 # ---- Write CSV
 with open(outfile, "w", newline="") as csvfile:
@@ -154,6 +191,7 @@ with open(outfile, "w", newline="") as csvfile:
         "rocq_ratio",
         "rocq_check_time",
         "tableauxrocq_check_time",
+        "poulet_check_time"
     ])
 
     for k, v in sorted(data.items()):
@@ -163,11 +201,12 @@ with open(outfile, "w", newline="") as csvfile:
         tt  = v.get("tableauxrocq_check_time", "")
         gs3 = v.get("chrono_gs3", "")
         rc  = v.get("chrono_rocq", "")
+        pt = v.get("poulet_check_time", "")
 
         ratio = ""
         if br != "" and bt != "" and float(bt)!= 0:
             ratio = float(br) / float(bt)
 
-        writer.writerow([k, gs3, rc, br, bt, ratio, rt, tt])
+        writer.writerow([k, gs3, rc, br, bt, ratio, rt, tt, pt])
 
 print(f"Stats written to {outfile}")
