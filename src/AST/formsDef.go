@@ -1047,7 +1047,7 @@ func (p Pred) ReplaceMetaByTerm(meta Meta, term Term) Form {
 		p.GetIndex(),
 		p.id,
 		p.tys,
-		Lib.ListMap(p.args, func(t Term) Term { return t.ReplaceSubTermBy(meta, term) }),
+		Lib.ListMap(p.args, func(t Term) Term { return SubstituteMeta(t, meta, term) }),
 	)
 }
 

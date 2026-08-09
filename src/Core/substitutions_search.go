@@ -276,7 +276,7 @@ func ApplySubstitutionsOnTerm(substs Lib.List[Unif.MixedSubstitution], t AST.Ter
 			t = t.SubstTy(meta, ty)
 		case Lib.Right[Unif.TySubstitution, Unif.Substitution]:
 			meta, term := s.Val.Get()
-			t = t.ReplaceSubTermBy(meta, term)
+			t = AST.SubstituteMeta(t, meta, term)
 		}
 	}
 

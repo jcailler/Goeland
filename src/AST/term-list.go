@@ -138,3 +138,29 @@ func copyVarList(tl []Var) []Var {
 	}
 	return res
 }
+
+/*
+SubstituteMeta replaces *every* occurrence of [meta] in [t] by [term].
+
+This is what applying a substitution means, and it is deliberately not
+ReplaceSubTermBy: that one keeps only the first occurrence it finds, which is
+what superposition wants when it rewrites a single position, but which silently
+loses the other occurrences of a metavariable.
+*/
+func SubstituteMeta(t Term, meta Meta, term Term) Term {
+	switch typed := t.(type) {
+	case Meta:
+		if typed.Equals(meta) {
+			return term.Copy()
+		}
+	case Fun:
+		return MakerFun(
+			typed.GetID(),
+			typed.GetTyArgs(),
+			Lib.ListMap(typed.GetArgs(), func(arg Term) Term {
+				return SubstituteMeta(arg, meta, term)
+			}),
+		)
+	}
+	return t
+}
