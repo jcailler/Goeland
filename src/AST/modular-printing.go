@@ -223,6 +223,11 @@ func (c PrinterConnective) DefaultOnFunctionalArgs(
 	arguments := strings.Join(args.GetSlice(), c.StrConn(SepArgs))
 	
 	if is_infix {
+		// [EmptyPredEq] is a nullary marker standing for "closed by equality
+		// reasoning", not a real atom: print it as its bare identifier.
+		if args.Len() == 0 {
+			return id.ToString()
+		}
 		if args.Len() != 2 {
 			Glob.Anomaly("Printer", fmt.Sprintf(
 				"invalid number of infix arguments: expected 2, got %d (in <<%s>> for %s)",
