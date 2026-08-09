@@ -122,9 +122,9 @@ func (s Substitutions) Copy() Substitutions {
 
 func (s *Substitutions) Set(key AST.Meta, value AST.Term) {
 	found := false
-	for _, subst := range *s {
-		if subst.Key().Equals(key) {
-			subst.Set(value)
+	for i := range *s {
+		if (*s)[i].Key().Equals(key) {
+			(*s)[i].Set(value)
 			found = true
 		}
 	}
