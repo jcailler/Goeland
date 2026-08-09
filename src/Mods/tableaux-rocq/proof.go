@@ -200,24 +200,42 @@ func findComplementaryLiteral(f AST.Form, form_list Lib.List[AST.Form], sub Unif
 	// 	Glob.PrintInfo("findComplementaryLiteral", fmt.Sprintf("\t%v", form.ToString()))
 	// }
 
+	// [formula_contradiction] in the Rocq development checks
+	//     Ctx.mem F Gamma && Ctx.mem G Gamma && (Neg F)@[sigma] = G@[sigma] ...
+	// so both literals have to be given *exactly as they sit in the branch*:
+	// membership is tested before the substitution is applied, complementarity
+	// after. Returning s.AppliedOn() for F is not enough, since the search may
+	// have instantiated the state after that formula entered the branch. Look
+	// both of them up in the branch, comparing modulo the substitution.
+	branchVersion := func(target AST.Form) (AST.Form, bool) {
+		for i, candidate := range new_form_list.GetSlice() {
+			if candidate.Equals(target) {
+				return form_list.At(i), true
+			}
+		}
+		return nil, false
+	}
+
 	switch f_t := new_f.(type) {
 		case AST.Pred:
 			other_form = AST.MakerNot(f_t)
-			for index_other_f, f_candidate := range new_form_list.GetSlice() {
-				if f_candidate.Equals(other_form) {
-					other_form = form_list.At(index_other_f)
-					return f, other_form
-				}
-		}
 		case AST.Not:
 			other_form = f_t.GetForm()
-			for index_other_f, f_candidate := range new_form_list.GetSlice() {
-				if f_candidate.Equals(other_form) {
-					other_form = form_list.At(index_other_f)
-					return f, other_form
-				}
-		}
+		default:
+			Glob.Anomaly("findComplementaryLiteral", "Closure on a non-literal")
+			return f, other_form
 	}
+
+	comp, found_comp := branchVersion(other_form)
+	if !found_comp {
+		Glob.Anomaly("findComplementaryLiteral", "Complementary literal not found")
+		return f, other_form
+	}
+	// F itself must be in the branch too, in the branch's own wording.
+	if self, found_self := branchVersion(new_f); found_self {
+		return self, comp
+	}
+	return f, comp
 
 	Glob.Anomaly("findComplementaryLiteral", "Complementary literal not found")
 	return f, other_form
