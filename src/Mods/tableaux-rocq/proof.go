@@ -192,7 +192,7 @@ func findComplementaryLiteral(f AST.Form, form_list Lib.List[AST.Form], sub Unif
 		}
 	}
 
-	Glob.Anomaly("findIndexClosureRule", "Complementary literal not found")
+	Glob.Anomaly("findComplementaryLiteral", "Complementary literal not found")
 	return f, other_form
 }
 
