@@ -77,10 +77,13 @@ func applyLeftRule(rs ruleStruct, ep EqualityProblem, father_chan chan answerEP,
 			Lib.MkLazy(func() string { return fmt.Sprintf("New term : %v", new_term.ToString()) }),
 		)
 		new_eq_list := ep.GetE()
+		// [rs] always stores the rewritten side as s and the untouched side as t: the
+		// rules are computed twice, once per orientation (see tryApplyLeftRules). So the
+		// side to keep is rs.getT() in both cases, never rs.getS().
 		if rs.getIsSModified() {
 			new_eq_list[rs.getIndexEQList()] = eqStruct.MakeTermPair(new_term.Copy(), rs.getT())
 		} else {
-			new_eq_list[rs.getIndexEQList()] = eqStruct.MakeTermPair(rs.getS(), new_term.Copy())
+			new_eq_list[rs.getIndexEQList()] = eqStruct.MakeTermPair(rs.getT(), new_term.Copy())
 		}
 		debug(
 			Lib.MkLazy(func() string { return fmt.Sprintf("New EQ list : %v", new_eq_list.ToString()) }),
@@ -107,10 +110,13 @@ func applyRightRule(rs ruleStruct, ep EqualityProblem, father_chan chan answerEP
 		debug(
 			Lib.MkLazy(func() string { return fmt.Sprintf("New term : %v", new_term.ToString()) }),
 		)
+		// Same orientation caveat as in applyLeftRule: when t is the rewritten side,
+		// the goal's other side is rs.getT(), not rs.getS(). Using rs.getS() here
+		// replaced s by the old t, dropping the actual goal (issue #75).
 		if rs.getIsSModified() {
 			tryEqualityReasoningProblem(makeEqualityProblem(ep.copy().GetE(), new_term.Copy(), rs.getT(), new_cl), father_chan, rs.getIndexEQList(), RIGHT, father_id)
 		} else {
-			tryEqualityReasoningProblem(makeEqualityProblem(ep.copy().GetE(), rs.getS(), new_term.Copy(), new_cl), father_chan, rs.getIndexEQList(), RIGHT, father_id)
+			tryEqualityReasoningProblem(makeEqualityProblem(ep.copy().GetE(), rs.getT(), new_term.Copy(), new_cl), father_chan, rs.getIndexEQList(), RIGHT, father_id)
 		}
 	} else {
 		debug(
