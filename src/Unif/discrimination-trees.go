@@ -314,9 +314,13 @@ func skipSubterm(query []symbol, qi int) int {
 
 var useDiscriminationTrees = false
 
-// UseDiscriminationTrees makes NewIndex hand out discrimination trees instead of
-// code trees.
-func UseDiscriminationTrees() { useDiscriminationTrees = true }
+// SetDiscriminationTrees selects the term machinery: with discrimination trees,
+// NewIndex hands out tries and AddUnification unifies the terms directly, so no
+// code tree is built anywhere.
+func SetDiscriminationTrees(b bool) { useDiscriminationTrees = b }
+
+// DiscriminationTreesEnabled reports the current selection.
+func DiscriminationTreesEnabled() bool { return useDiscriminationTrees }
 
 // NewIndex builds an empty term index of the currently selected kind. Every
 // place that needs an index should go through it rather than pick an

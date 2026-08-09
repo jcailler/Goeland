@@ -242,7 +242,7 @@ func buildOptions() {
 		"dt",
 		false,
 		"Indexes atoms with discrimination trees instead of code trees",
-		func(bool) { Unif.UseDiscriminationTrees() },
+		func(bool) { Unif.SetDiscriminationTrees(true) },
 		func(bool) {})
 	(&option[bool]{}).init(
 		"cc",

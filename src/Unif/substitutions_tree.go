@@ -172,6 +172,19 @@ func AddUnification(term1, term2 AST.Term, subst Substitutions) Substitutions {
 				subst.ToString())
 		}),
 	)
+	// A term unifies with itself and needs no binding for that. Without this,
+	// a metavariable against itself produced {X |-> X}, which Eliminate then
+	// rejected as an occur-check violation, reporting X and X as non-unifiable.
+	if term1.Equals(term2) {
+		return subst
+	}
+
+	// With discrimination trees, unification is done on the terms themselves: no
+	// code tree is built anywhere.
+	if useDiscriminationTrees {
+		return unifyDirect(term1, term2, subst)
+	}
+
 	// unify with ct only if the term already has an unification or if there is 2 fun. Just add it and eliminate otherwise.
 	t1v, _ := subst.Get(term1.ToMeta())
 	t2v, _ := subst.Get(term2.ToMeta())
