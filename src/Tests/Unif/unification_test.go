@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/GoelandProver/Goeland/AST"
+	"github.com/GoelandProver/Goeland/Glob"
+	"github.com/GoelandProver/Goeland/Lib"
 	"github.com/GoelandProver/Goeland/Unif"
 )
 
@@ -118,6 +120,52 @@ func TestDirectUnificationUnderExistingBindings(t *testing.T) {
 			t.Errorf("case %d, unifying %s with %s under %s:\n  code tree machine -> %s\n  direct            -> %s",
 				i, c.t1.ToString(), c.t2.ToString(), describe(c.start),
 				describe(fromMachine), describe(fromDirect))
+		}
+	}
+}
+
+// Type arguments are folded into the term arguments before unification (see
+// getFunctionalArguments / parseTerms), so polymorphic symbols must unify on
+// their type arguments too. Both implementations have to agree there as well.
+func TestDirectUnificationOnTypedTerms(t *testing.T) {
+	Glob.InitLogs()
+	AST.Init()
+
+	// Atomic types (TyConstr) and type metas are what can appear in a term
+	// position once type arguments are folded in; bound type variables cannot.
+	tyA, tyB := AST.TIndividual(), AST.TProp()
+	tyMeta := AST.MkTyMeta("T", 1)
+	a := cst("a")
+	x := meta("X")
+
+	typedFun := func(name string, tys []AST.Ty, args ...AST.Term) AST.Term {
+		tyList := Lib.NewList[AST.Ty]()
+		tyList.Append(tys...)
+		argList := Lib.NewList[AST.Term]()
+		argList.Append(args...)
+		return AST.MakerFun(AST.MakerId(name), tyList, argList)
+	}
+
+	cases := [][2]AST.Term{
+		{typedFun("nil", []AST.Ty{tyA}), typedFun("nil", []AST.Ty{tyA})},
+		{typedFun("nil", []AST.Ty{tyA}), typedFun("nil", []AST.Ty{tyB})},
+		{typedFun("nil", []AST.Ty{tyMeta}), typedFun("nil", []AST.Ty{tyA})},
+		{typedFun("cons", []AST.Ty{tyA}, a), typedFun("cons", []AST.Ty{tyA}, x)},
+		{typedFun("cons", []AST.Ty{tyMeta}, a), typedFun("cons", []AST.Ty{tyB}, x)},
+		{typedFun("cons", []AST.Ty{tyA}, a), typedFun("cons", []AST.Ty{tyB}, a)},
+		{typedFun("cons", []AST.Ty{tyA}, a), typedFun("nil", []AST.Ty{tyA})},
+	}
+
+	for _, c := range cases {
+		fromMachine := withDT(false, func() Unif.Substitutions {
+			return Unif.AddUnification(c[0].Copy(), c[1].Copy(), Unif.MakeEmptySubstitution())
+		})
+		fromDirect := withDT(true, func() Unif.Substitutions {
+			return Unif.AddUnification(c[0].Copy(), c[1].Copy(), Unif.MakeEmptySubstitution())
+		})
+		if describe(fromMachine) != describe(fromDirect) {
+			t.Errorf("unifying %s with %s:\n  code tree machine -> %s\n  direct            -> %s",
+				c[0].ToString(), c[1].ToString(), describe(fromMachine), describe(fromDirect))
 		}
 	}
 }

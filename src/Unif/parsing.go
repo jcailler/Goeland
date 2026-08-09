@@ -230,13 +230,16 @@ func parseTerms(
 			instructions.add(Begin{}) // TEST 33
 			instructions.add(makeCheck(t.GetID()))
 
-			if downDefined(t.GetArgs()) {
+			// Descend on the folded arguments: a symbol may carry type arguments
+			// and no term argument, in which case testing t.GetArgs() would skip
+			// the descent and the types would never be compared.
+			subTerms := getFunctionalArguments(t.GetTyArgs(), t.GetArgs())
+			if downDefined(subTerms) {
 				if rightDefined(terms, i) {
 					instructions.add(Push{*postCount})
 					*postCount++
 				}
 				instructions.add(Down{})
-				subTerms := getFunctionalArguments(t.GetTyArgs(), t.GetArgs())
 				subst = parseTerms(subTerms, instructions, subst, varCount, postCount)
 				if rightDefined(terms, i) {
 					*postCount--

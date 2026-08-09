@@ -271,7 +271,13 @@ func (m *Machine) right() Status {
 /* Algorithm for the instruction Down. */
 func (m *Machine) down() {
 	if m.isUnlocked() {
-		m.terms = m.terms.At(m.q).(AST.Fun).GetArgs()
+		// The compiled side folds the type arguments into the term arguments
+		// (see parseTerms), so the walked side has to do the same or the two
+		// disagree on arity as soon as a symbol carries types. Terms that went
+		// through getFunctionalArguments already have no type argument left, so
+		// this is a no-op for them.
+		fun := m.terms.At(m.q).(AST.Fun)
+		m.terms = getFunctionalArguments(fun.GetTyArgs(), fun.GetArgs())
 		m.q = 0
 
 		// When down, add the number of args to topLevelCount and add 1 to topLevelCount because we go straigth forward inside without rigth
