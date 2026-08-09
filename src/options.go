@@ -14,6 +14,7 @@ import (
 	"github.com/GoelandProver/Goeland/Mods/desko"
 	"github.com/GoelandProver/Goeland/Mods/dmt"
 	equality "github.com/GoelandProver/Goeland/Mods/equality/bse"
+	"github.com/GoelandProver/Goeland/Mods/equality/cc"
 	"github.com/GoelandProver/Goeland/Mods/equality/sateq"
 	"github.com/GoelandProver/Goeland/Mods/lambdapi"
 	"github.com/GoelandProver/Goeland/Mods/rocq"
@@ -236,6 +237,12 @@ func buildOptions() {
 				equality.Enable()
 			}
 		})
+	(&option[bool]{}).init(
+		"cc",
+		false,
+		"Decides the ground fragment with congruence closure before falling back to superposition",
+		func(bool) { cc.Enable() },
+		func(bool) {})
 	(&option[bool]{}).init(
 		"type_proof",
 		false,

@@ -56,6 +56,7 @@ import (
 	"github.com/GoelandProver/Goeland/Mods/desko"
 	"github.com/GoelandProver/Goeland/Mods/dmt"
 	equality "github.com/GoelandProver/Goeland/Mods/equality/bse"
+	"github.com/GoelandProver/Goeland/Mods/equality/cc"
 	"github.com/GoelandProver/Goeland/Mods/lambdapi"
 	"github.com/GoelandProver/Goeland/Mods/rocq"
 	"github.com/GoelandProver/Goeland/Parser"
@@ -214,6 +215,7 @@ func initDebuggers() {
 	Core.InitDebugger()
 	dmt.InitDebugger()
 	equality.InitDebugger()
+	cc.InitDebugger()
 	incremental.InitDebugger()
 	Search.InitDebugger()
 	Typing.InitDebugger()
