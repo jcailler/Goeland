@@ -82,8 +82,8 @@ func InitPluginTests(polarized, presko bool) {
 func initPluginGlobalVariables() {
 	positiveRewrite = make(map[string]Lib.List[AST.Form])
 	negativeRewrite = make(map[string]Lib.List[AST.Form])
-	positiveTree = Unif.NewNode()
-	negativeTree = Unif.NewNode()
+	positiveTree = Unif.NewIndex()
+	negativeTree = Unif.NewIndex()
 
 	registeredAxioms = Lib.NewList[AST.Form]()
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/GoelandProver/Goeland/Mods/tableaux-rocq"
 	"github.com/GoelandProver/Goeland/Mods/poulet"
 	"github.com/GoelandProver/Goeland/Search"
+	"github.com/GoelandProver/Goeland/Unif"
 	"github.com/GoelandProver/Goeland/Search/incremental"
 )
 
@@ -237,6 +238,12 @@ func buildOptions() {
 				equality.Enable()
 			}
 		})
+	(&option[bool]{}).init(
+		"dt",
+		false,
+		"Indexes atoms with discrimination trees instead of code trees",
+		func(bool) { Unif.UseDiscriminationTrees() },
+		func(bool) {})
 	(&option[bool]{}).init(
 		"cc",
 		false,

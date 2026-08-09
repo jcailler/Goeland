@@ -100,8 +100,8 @@ func (ds *destructiveSearch) doOneStep(limit int, formula AST.Form) (bool, int) 
 	// proof.ResetProofFile()
 	ResetExchangesFile()
 
-	tp := Unif.NewNode()
-	tn := Unif.NewNode()
+	tp := Unif.NewIndex()
+	tn := Unif.NewIndex()
 
 	state := MakeState(limit, tp, tn, formula)
 	state.SetCurrentProofNodeId(0)

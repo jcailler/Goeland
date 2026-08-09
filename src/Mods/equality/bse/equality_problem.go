@@ -140,7 +140,7 @@ func makeDataStructFromEqualities(eq Equalities) Unif.DataStructure {
 	for _, e := range eq {
 		formList.Append(Unif.MakerTermForm(e.GetT1()), Unif.MakerTermForm(e.GetT2()))
 	}
-	return Unif.NewNode().MakeDataStruct(Lib.ListCpy(formList), true)
+	return Unif.NewIndex().MakeDataStruct(Lib.ListCpy(formList), true)
 }
 
 /* Take a list of equalities and build the corresponding assocative map */
