@@ -106,8 +106,15 @@ func RemoveElementWithoutMM(
 						res.Set(meta, typedTerm)
 
 					case relevantMetas.Contains(meta) &&
-						relevantMetas.Contains(typedTerm):
+						!relevantMetas.Contains(typedTerm):
+						// A relevant meta bound to a local one passes its
+						// constraint on: the target becomes relevant too, so
+						// that whatever binds it further is reported as well.
+						// Both branches used to test the same condition, which
+						// made this one dead and dropped the binding entirely.
 						subst_to_reorganize.Set(meta, typedTerm)
+						relevantMetas = relevantMetas.Add(typedTerm)
+						hasChanged = true
 					}
 
 				default:
