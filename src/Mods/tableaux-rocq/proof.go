@@ -52,6 +52,33 @@ import (
 
 var dummy_FV = AST.MakerMeta("Goeland_I", -1, AST.TIndividual())
 
+// A vacuous quantifier leaves no occurrence of the bound variable, so the skolem
+// term cannot be read back from the result formula (see getRealGeneratedTerm).
+// The delta rule still needs a symbol, and any fresh one does: since the
+// variable does not occur, the instantiated formula is the same whatever we
+// pick, and freshness is what the rule's side condition asks for.
+var vacuousSkolemCount = 0
+
+func freshVacuousSkolem() AST.Term {
+	vacuousSkolemCount++
+	return AST.MakerFun(
+		AST.MakerId(fmt.Sprintf("skolem@vacuous@%d", vacuousSkolemCount)),
+		Lib.NewList[AST.Ty](),
+		Lib.NewList[AST.Term](),
+	)
+}
+
+// getGeneratedSkolem is getRealGeneratedTerm for the delta rules, where the
+// placeholder has to be a function symbol: dummy_FV is a metavariable and the
+// Tableaux development rejects it with "not a valid Skolem symbol".
+func getGeneratedSkolem(s Search.IProof) AST.Term {
+	term := getRealGeneratedTerm(s)
+	if term == nil || term.Equals(dummy_FV) {
+		return freshVacuousSkolem()
+	}
+	return term
+}
+
 /************ Axiom and Conjecture ************/
 // Processes the formula that was proven by Goéland.
 func processMainFormula(form AST.Form) (Lib.List[AST.Form], AST.Form) {
@@ -553,7 +580,7 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 	case Search.RuleNotAll: 
 		rule_name := "DeltaNegAll"
 		current_form_TR := FormToTR(s.AppliedOn().(AST.Not).GetForm())
-		generated_term := TermToTR(getRealGeneratedTerm(s))
+		generated_term := TermToTR(getGeneratedSkolem(s))
 		
 		f := s.ResultFormulas().At(0).At(0)
 		l1 = AppendIfLit(l1, f)
@@ -566,7 +593,7 @@ func makeProofAux(s Search.IProof, sub Unif.Substitutions, form_list Lib.List[AS
 	case Search.RuleEx: 
 		rule_name := "DeltaEx"
 		current_form_TR := FormToTR(s.AppliedOn())
-		generated_term := TermToTR(getRealGeneratedTerm(s))
+		generated_term := TermToTR(getGeneratedSkolem(s))
 		
 		f := s.ResultFormulas().At(0).At(0)
 		l1 = AppendIfLit(l1, f)
