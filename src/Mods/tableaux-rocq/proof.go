@@ -223,8 +223,10 @@ func getRealGeneratedTerm(s Search.IProof) AST.Term {
 				case Lib.Right[AST.Ty, AST.Term]:
 					real_generated_term = generated_term_t2.Val
 				}
-		case Lib.None[AST.Term]:
-			// Glob.Anomaly("getRealGeneratedTerm", "Generated term not found")
+		// [TermGenerated] is an Option[Either[Ty, Term]], so the None case has to
+		// be typed accordingly. Written Lib.None[AST.Term], it never matched and
+		// the switch fell through, returning a nil term.
+		case Lib.None[Lib.Either[AST.Ty, AST.Term]]:
 			return dummy_FV
 	}
 	return real_generated_term
