@@ -170,6 +170,7 @@ func (f Fun) Copy() Term {
 
 func (f Fun) PointerCopy() *Fun {
 	nf := MakeFun(f.GetP(), f.GetTyArgs(), f.GetArgs(), f.metas.Raw())
+	nf.origin = f.origin
 	return &nf
 }
 
@@ -219,6 +220,8 @@ func (f Fun) ReplaceSubTermBy(oldTerm, newTerm Term) Term {
 	} else {
 		tl, res := replaceFirstOccurrenceTermList(f.GetArgs(), oldTerm, newTerm)
 		nf := MakeFun(f.GetID(), f.GetTyArgs(), tl, f.metas.Raw())
+		// Rebuilding must not lose what this term replaced.
+		nf.origin = f.origin
 		if !res && !f.metas.NeedsUpd() {
 			nf.metas.AvoidUpd()
 		}
@@ -235,12 +238,14 @@ func (f Fun) SubstTy(old TyGenVar, new Ty) Term {
 		f.args,
 		func(t Term) Term { return t.SubstTy(old, new) },
 	)
-	return MakeFun(
+	nf := MakeFun(
 		f.GetID(),
 		typed_args,
 		args,
 		f.metas.Raw(),
 	)
+	nf.origin = f.origin
+	return nf
 }
 
 func (f Fun) ReplaceAllSubTerm(oldTerm, newTerm Term) Term {
@@ -249,6 +254,8 @@ func (f Fun) ReplaceAllSubTerm(oldTerm, newTerm Term) Term {
 	} else {
 		tl, res := ReplaceOccurrence(f.GetArgs(), oldTerm, newTerm)
 		nf := MakeFun(f.GetID(), f.GetTyArgs(), tl, f.metas.Raw())
+		// Rebuilding must not lose what this term replaced.
+		nf.origin = f.origin
 		if !res && !f.metas.NeedsUpd() {
 			nf.metas.AvoidUpd()
 		}

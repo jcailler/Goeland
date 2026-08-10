@@ -156,13 +156,16 @@ func SubstituteMeta(t Term, meta Meta, term Term) Term {
 			return WithOrigin(term.Copy(), typed)
 		}
 	case Fun:
-		return MakerFun(
+		rebuilt := MakerFun(
 			typed.GetID(),
 			typed.GetTyArgs(),
 			Lib.ListMap(typed.GetArgs(), func(arg Term) Term {
 				return SubstituteMeta(arg, meta, term)
 			}),
 		)
+		// Substituting inside the arguments must not lose what this term itself
+		// replaced.
+		return WithOrigin(rebuilt, typed.origin)
 	}
 	return t
 }
