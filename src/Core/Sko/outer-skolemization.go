@@ -46,13 +46,17 @@ import (
 **/
 
 type OuterSkolemization struct {
-	existingSymbols Lib.Set[AST.Id]
+	// Shared by every branch: the checker walks the whole proof tree with a
+	// single set of introduced symbols, so a symbol reused in a sibling branch
+	// is rejected.
+	existingSymbols *Lib.Set[AST.Id]
 	mu              *sync.Mutex
 }
 
 func MkOuterSkolemization() OuterSkolemization {
+	symbols := Lib.EmptySet[AST.Id]()
 	return OuterSkolemization{
-		existingSymbols: Lib.EmptySet[AST.Id](),
+		existingSymbols: &symbols,
 		mu:              &sync.Mutex{},
 	}
 }
@@ -63,7 +67,7 @@ func (sko OuterSkolemization) Skolemize(
 	fvs Lib.Set[AST.Meta],
 ) (Skolemization, AST.Form) {
 	sko.mu.Lock()
-	symbol := genFreshSymbol(&sko.existingSymbols, x)
+	symbol := genFreshSymbol(sko.existingSymbols, x)
 	sko.mu.Unlock()
 
 	metas := fvs.Elements()
@@ -83,5 +87,7 @@ func (sko OuterSkolemization) Skolemize(
 }
 
 func (sko OuterSkolemization) GetGeneratedSymbol() Lib.Set[AST.Id] {
-	return sko.existingSymbols
+	sko.mu.Lock()
+	defer sko.mu.Unlock()
+	return *sko.existingSymbols
 }

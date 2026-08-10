@@ -46,13 +46,16 @@ import (
 **/
 
 type InnerSkolemization struct {
-	existingSymbols Lib.Set[AST.Id]
+	// See [OuterSkolemization]: the symbols have to be fresh for the whole
+	// proof tree, not just for the branch.
+	existingSymbols *Lib.Set[AST.Id]
 	mu              *sync.Mutex
 }
 
 func MkInnerSkolemization() InnerSkolemization {
+	symbols := Lib.EmptySet[AST.Id]()
 	return InnerSkolemization{
-		existingSymbols: Lib.EmptySet[AST.Id](),
+		existingSymbols: &symbols,
 		mu:              &sync.Mutex{},
 	}
 }
@@ -63,11 +66,11 @@ func (sko InnerSkolemization) Skolemize(
 	_ Lib.Set[AST.Meta],
 ) (Skolemization, AST.Form) {
 	sko.mu.Lock()
-	symbol := genFreshSymbol(&sko.existingSymbols, x)
+	symbol := genFreshSymbol(sko.existingSymbols, x)
 	sko.mu.Unlock()
 
-	// The metavariables free in the branch when the symbol is created, including
-	// those a substitution has already replaced: they were free then.
+	// The metavariables free in the formula as it was worded before any
+	// substitution: those still there, and those a substitution replaced.
 	internalMetas := AST.GetMetasOriginalForm(form).Elements()
 
 	skolemFunc := AST.MakerFun(
@@ -85,5 +88,7 @@ func (sko InnerSkolemization) Skolemize(
 }
 
 func (sko InnerSkolemization) GetGeneratedSymbol() Lib.Set[AST.Id] {
-	return sko.existingSymbols
+	sko.mu.Lock()
+	defer sko.mu.Unlock()
+	return *sko.existingSymbols
 }
