@@ -84,6 +84,10 @@ var allowFlattening = false
 var type_check = true
 
 var eqReasoning = false
+
+// lazySubst keeps the proof search from instantiating its formulas: it carries
+// the substitution and applies it only where unification happens.
+var lazySubst = false
 var IncrEq = false
 
 var debug = Lib.EmptySet[Lib.String]()
@@ -290,6 +294,14 @@ func NoTypeCheck() bool {
 
 func IsEqReasoning() bool {
 	return eqReasoning
+}
+
+func IsLazySubst() bool {
+	return lazySubst
+}
+
+func SetLazySubst(b bool) {
+	lazySubst = b
 }
 
 /* Setters */

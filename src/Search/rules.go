@@ -198,15 +198,25 @@ func searchInequalities(form AST.Form) (bool, Unif.Substitutions) {
 	return false, nil
 }
 
+// substInForce is the substitution retrieval has to unify modulo. It is empty
+// unless the search runs lazily, in which case the state's formulas are not
+// instantiated and the substitution it carries has to be honoured here.
+func substInForce(st State) Unif.Substitutions {
+	if !Glob.IsLazySubst() {
+		return Unif.MakeEmptySubstitution()
+	}
+	return Unif.ToSubstitutions(st.GetAppliedSubst().GetSubst())
+}
+
 /* Search a contradiction between a formula and another in the datastructure */
 func searchClosureRule(f AST.Form, st State) (bool, []Unif.MixedSubstitutions) {
 	switch nf := f.(type) {
 	case AST.Pred:
-		return st.GetTreeNeg().Unify(f, Unif.MakeEmptySubstitution())
+		return st.GetTreeNeg().Unify(f, substInForce(st))
 	case AST.Not:
 		switch nf.GetForm().(type) {
 		case AST.Pred:
-			return st.GetTreePos().Unify(nf.GetForm(), Unif.MakeEmptySubstitution())
+			return st.GetTreePos().Unify(nf.GetForm(), substInForce(st))
 		default:
 			return false, nil
 		}

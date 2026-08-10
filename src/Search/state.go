@@ -500,6 +500,16 @@ func ApplySubstitution(st *State, saf Core.SubstAndForm) error {
 
 	st.SetAppliedSubst(ms)
 	st.SetLastAppliedSubst(saf)
+
+	// With lazy substitution the state keeps its formulas as they are and only
+	// accumulates the substitution above; retrieval applies it where unification
+	// happens. The indexes are still rebuilt, on the uninstantiated atomics.
+	if Glob.IsLazySubst() {
+		st.SetTreePos(st.GetTreePos().MakeDataStruct(st.GetAtomic().ExtractForms(), true))
+		st.SetTreeNeg(st.GetTreeNeg().MakeDataStruct(st.GetAtomic().ExtractForms(), false))
+		return nil
+	}
+
 	st.SetLF(Core.ApplySubstitutionsOnFormAndTermsList(s, st.GetLF()))
 	st.SetAtomic(Core.ApplySubstitutionsOnFormAndTermsList(s, st.GetAtomic()))
 	st.SetAlpha(Core.ApplySubstitutionsOnFormAndTermsList(s, st.GetAlpha()))
