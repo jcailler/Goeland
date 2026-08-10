@@ -47,15 +47,20 @@ import (
 **/
 
 type PreInnerSkolemization struct {
-	existingSymbols Lib.Set[AST.Id]
-	linkedSymbols   Lib.List[Glob.Pair[AST.Form, AST.Id]]
+	// See [OuterSkolemization]: both tables are shared by every branch, which
+	// is also what makes a delta formula keep the same symbol wherever it is
+	// skolemized.
+	existingSymbols *Lib.Set[AST.Id]
+	linkedSymbols   *Lib.List[Glob.Pair[AST.Form, AST.Id]]
 	mu              *sync.Mutex
 }
 
 func MkPreInnerSkolemization() PreInnerSkolemization {
+	symbols := Lib.EmptySet[AST.Id]()
+	linked := Lib.NewList[Glob.Pair[AST.Form, AST.Id]]()
 	return PreInnerSkolemization{
-		existingSymbols: Lib.EmptySet[AST.Id](),
-		linkedSymbols:   Lib.NewList[Glob.Pair[AST.Form, AST.Id]](),
+		existingSymbols: &symbols,
+		linkedSymbols:   &linked,
 		mu:              &sync.Mutex{},
 	}
 }
@@ -75,13 +80,13 @@ func (sko PreInnerSkolemization) Skolemize(
 	); ok {
 		symbol = val.Snd
 	} else {
-		symbol = genFreshSymbol(&sko.existingSymbols, x)
+		symbol = genFreshSymbol(sko.existingSymbols, x)
 		sko.linkedSymbols.Append(Glob.MakePair(realDelta, symbol))
 	}
 	sko.mu.Unlock()
 
 	// See inner-skolemization: metavariables replaced by a substitution were
-	// still free in the branch when the symbol was created.
+	// still free in the formula when the symbol was created.
 	internalMetas := AST.GetMetasOriginalForm(form).Elements()
 
 	skolemFunc := AST.MakerFun(
@@ -208,5 +213,7 @@ func alphaConvertTerm(t AST.Term, substitution map[int]AST.Var) AST.Term {
 }
 
 func (sko PreInnerSkolemization) GetGeneratedSymbol() Lib.Set[AST.Id] {
-	return sko.existingSymbols
+	sko.mu.Lock()
+	defer sko.mu.Unlock()
+	return *sko.existingSymbols
 }

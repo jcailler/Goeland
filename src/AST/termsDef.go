@@ -189,10 +189,12 @@ func (f Fun) GetMetas() Lib.Set[Meta] {
 }
 
 func (f Fun) GetMetasOriginal() Lib.Set[Meta] {
-	res := Lib.EmptySet[Meta]()
+	// A term that replaced something was not there before, so neither were its
+	// arguments: what was free is what the replaced term mentioned.
 	if f.origin != nil {
-		res = res.Union(f.origin.GetMetasOriginal())
+		return f.origin.GetMetasOriginal()
 	}
+	res := Lib.EmptySet[Meta]()
 	for _, arg := range f.GetArgs().GetSlice() {
 		res = res.Union(arg.GetMetasOriginal())
 	}
@@ -371,11 +373,10 @@ func (m Meta) ToMeta() Meta                { return m }
 func (m Meta) GetMetas() Lib.Set[Meta] { return Lib.Singleton(m) }
 
 func (m Meta) GetMetasOriginal() Lib.Set[Meta] {
-	res := Lib.Singleton(m)
 	if m.origin != nil {
-		res = res.Union(m.origin.GetMetasOriginal())
+		return m.origin.GetMetasOriginal()
 	}
-	return res
+	return Lib.Singleton(m)
 }
 func (m Meta) GetMetaList() Lib.List[Meta] { return Lib.MkListV(m) }
 func (m Meta) GetTy() Ty                   { return m.ty }

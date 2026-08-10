@@ -52,10 +52,12 @@ type Term interface {
 	IsFun() bool
 	ToMeta() Meta
 	GetMetas() Lib.Set[Meta]
-	// GetMetasOriginal also reports the metavariables a substitution replaced in
-	// this term. Skolemisation needs those: a symbol built after a metavariable
-	// was instantiated must still list it among its arguments, since it was free
-	// in the branch when the symbol was created.
+	// GetMetasOriginal reports the metavariables of the term as it was worded
+	// before any substitution, so a metavariable that was replaced counts and
+	// the term that replaced it does not. Skolemisation needs those: a symbol
+	// built after a metavariable was instantiated must still list it among its
+	// arguments, since it was free in the branch when the symbol was created.
+	// It agrees with DeepOrigin: GetMetasOriginal(t) = DeepOrigin(t).GetMetas().
 	GetMetasOriginal() Lib.Set[Meta]
 	GetMetaList() Lib.List[Meta] // Metas appearing in the term ORDERED
 	GetSubTerms() Lib.Set[Term]
@@ -171,14 +173,10 @@ func DeepOrigin(t Term) Term {
 
 
 // GetMetasOriginalForm is GetMetasOriginal for a formula: the metavariables it
-// mentions now, plus those a substitution replaced in it.
+// had before any substitution was applied to it.
 func GetMetasOriginalForm(f Form) Lib.Set[Meta] {
-	res := Lib.EmptySet[Meta]()
 	if f == nil {
-		return res
+		return Lib.EmptySet[Meta]()
 	}
-	for _, t := range f.GetSubTerms().Elements().GetSlice() {
-		res = res.Union(t.GetMetasOriginal())
-	}
-	return res
+	return DeepOriginForm(f).GetMetas()
 }
