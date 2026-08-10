@@ -146,7 +146,28 @@ func computeSubstitutions(subs []SubstPair, metasToSubs Substitutions, form AST.
 		Lib.MkLazy(func() string { return fmt.Sprintf("after eliminate : %v", res.ToString()) }),
 	)
 
+	// Every unification result funnels through here, so this is where the occur
+	// check belongs: Eliminate has composed the bindings, so a metavariable that
+	// still occurs in its own value is a genuine cycle.
+	if isCyclic(res) {
+		debug(
+			Lib.MkLazy(func() string { return fmt.Sprintf("cyclic, rejected : %v", res.ToString()) }),
+		)
+		return Failure()
+	}
+
 	return res
+}
+
+/* isCyclic reports whether a substitution binds a metavariable to a term it occurs in. */
+func isCyclic(subst Substitutions) bool {
+	for _, pair := range subst {
+		k, v := pair.Get()
+		if occurs(k, v) {
+			return true
+		}
+	}
+	return false
 }
 
 /* Call addUnification and returns a status - modify m.meta */
@@ -188,11 +209,17 @@ func AddUnification(term1, term2 AST.Term, subst Substitutions) Substitutions {
 	} else {
 		switch {
 		case term1.IsMeta():
+			if occurs(term1.ToMeta(), term2) {
+				return Failure()
+			}
 			subst.Set(term1.ToMeta(), term2)
 			EliminateMeta(&subst)
 			Eliminate(&subst)
 			return subst
 		case term2.IsMeta():
+			if occurs(term2.ToMeta(), term1) {
+				return Failure()
+			}
 			subst.Set(term2.ToMeta(), term1)
 			EliminateMeta(&subst)
 			Eliminate(&subst)
@@ -201,6 +228,18 @@ func AddUnification(term1, term2 AST.Term, subst Substitutions) Substitutions {
 			return Failure()
 		}
 	}
+}
+
+/*
+occurs is the occur check: a metavariable cannot be bound to a term it appears
+in, since no finite term satisfies X = f(X). Binding X to itself is not a cycle,
+it is the identity, and stays allowed.
+*/
+func occurs(meta AST.Meta, term AST.Term) bool {
+	if meta.Equals(term) {
+		return false
+	}
+	return term.GetMetas().Contains(meta)
 }
 
 /* Adds the unifications found to the meta substitutions from running the algorithm on term1 and term2. */
