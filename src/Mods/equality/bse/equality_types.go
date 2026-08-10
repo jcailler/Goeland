@@ -131,7 +131,7 @@ func retrieveEqualities(dt Unif.DataStructure) Equalities {
 		Lib.MkListV[AST.Ty](meta_ty),
 		Lib.MkListV[AST.Term](MetaEQ1, MetaEQ2),
 	)
-	_, eq_list := dt.Unify(eq_pred)
+	_, eq_list := dt.Unify(eq_pred, Unif.MakeEmptySubstitution())
 
 	for _, ms := range eq_list {
 		ms_ordered := orderSubstForRetrieve(ms.MatchingSubstitutions().GetSubst(), MetaEQ1, MetaEQ2)
@@ -162,7 +162,7 @@ func retrieveInequalities(dt Unif.DataStructure) Inequalities {
 		Lib.MkListV(meta_ty),
 		Lib.MkListV[AST.Term](MetaNEQ1, MetaNEQ2),
 	)
-	_, neq_list := dt.Unify(neq_pred)
+	_, neq_list := dt.Unify(neq_pred, Unif.MakeEmptySubstitution())
 
 	for _, ms := range neq_list {
 		ms_ordered := orderSubstForRetrieve(ms.MatchingSubstitutions().GetSubst(), MetaNEQ1, MetaNEQ2)

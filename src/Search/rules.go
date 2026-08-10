@@ -202,11 +202,11 @@ func searchInequalities(form AST.Form) (bool, Unif.Substitutions) {
 func searchClosureRule(f AST.Form, st State) (bool, []Unif.MixedSubstitutions) {
 	switch nf := f.(type) {
 	case AST.Pred:
-		return st.GetTreeNeg().Unify(f)
+		return st.GetTreeNeg().Unify(f, Unif.MakeEmptySubstitution())
 	case AST.Not:
 		switch nf.GetForm().(type) {
 		case AST.Pred:
-			return st.GetTreePos().Unify(nf.GetForm())
+			return st.GetTreePos().Unify(nf.GetForm(), Unif.MakeEmptySubstitution())
 		default:
 			return false, nil
 		}

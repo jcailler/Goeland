@@ -47,6 +47,10 @@ type DataStructure interface {
 	IsEmpty() bool
 	MakeDataStruct(Lib.List[AST.Form], bool) DataStructure
 	InsertFormulaListToDataStructure(Lib.List[AST.Form]) DataStructure
-	Unify(AST.Form) (bool, []MixedSubstitutions)
+	// Unify retrieves the entries unifiable with the given formula. The second
+	// argument is the substitution already in force: the proof search carries
+	// it instead of instantiating its formulas, so retrieval has to unify
+	// modulo it. Pass MakeEmptySubstitution() when there is none.
+	Unify(AST.Form, Substitutions) (bool, []MixedSubstitutions)
 	Copy() DataStructure
 }
