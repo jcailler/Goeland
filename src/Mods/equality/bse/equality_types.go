@@ -143,6 +143,12 @@ func retrieveEqualities(dt Unif.DataStructure) Equalities {
 		if ok_t2 == -1 {
 			Glob.PrintError("RI", "Meta_eq_2 not found in map")
 		}
+		// A reflexive equation carries no information: rewriting t into t never
+		// makes progress. Keeping it lets a rule instantiate the two sides of one
+		// metavariable independently, which breaks the rigidity of the branch.
+		if eq1_term.Equals(eq2_term) {
+			continue
+		}
 		res = append(res, eqStruct.MakeTermPair(eq1_term, eq2_term))
 	}
 	return res
