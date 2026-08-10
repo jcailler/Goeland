@@ -237,7 +237,7 @@ func ApplySubstitutionOnTerm(old_symbol AST.Meta, new_symbol, t AST.Term) AST.Te
 	switch nf := t.(type) {
 	case AST.Meta:
 		if nf.Equals(old_symbol) {
-			res = new_symbol.Copy()
+			res = AST.WithOrigin(new_symbol.Copy(), nf)
 		}
 	case AST.Fun:
 		res = AST.MakerFun(

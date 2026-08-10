@@ -119,6 +119,10 @@ type Fun struct {
 	tys   Lib.List[Ty]
 	args  Lib.List[Term]
 	metas Lib.Cache[Lib.Set[Meta], Fun]
+	// origin is the term this one replaced when a substitution was applied,
+	// nil when there was none. Everything but the proof output reads the
+	// substituted term, so this stays invisible unless asked for.
+	origin Term
 }
 
 func (f Fun) ToString() string {
@@ -158,7 +162,9 @@ func (f Fun) Equals(t any) bool {
 }
 
 func (f Fun) Copy() Term {
-	return MakeFun(f.GetP(), Lib.ListCpy(f.GetTyArgs()), Lib.ListCpy(f.GetArgs()), f.metas.Raw())
+	res := MakeFun(f.GetP(), Lib.ListCpy(f.GetTyArgs()), Lib.ListCpy(f.GetArgs()), f.metas.Raw())
+	res.origin = f.origin
+	return res
 }
 
 func (f Fun) PointerCopy() *Fun {
@@ -329,6 +335,8 @@ type Meta struct {
 	name      string
 	formula   int
 	ty        Ty
+	// origin: see Fun.origin. A metavariable can replace another one.
+	origin Term
 }
 
 func (m Meta) ToString() string { return printer.StrMeta(m.name, m.index) }
@@ -352,7 +360,9 @@ func (m Meta) Equals(t any) bool {
 }
 
 func (m Meta) Copy() Term {
-	return MakeMeta(m.GetIndex(), m.GetOccurence(), m.GetName(), m.GetFormula(), m.GetTy())
+	res := MakeMeta(m.GetIndex(), m.GetOccurence(), m.GetName(), m.GetFormula(), m.GetTy())
+	res.origin = m.origin
+	return res
 }
 
 func (m Meta) ReplaceSubTermBy(original_term, new_term Term) Term {

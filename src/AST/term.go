@@ -74,11 +74,11 @@ func MakeVar(i int, s string) Var {
 }
 
 func MakeMeta(index, occurence int, s string, f int, ty Ty) Meta {
-	return Meta{index, occurence, s, f, ty}
+	return Meta{index, occurence, s, f, ty, nil}
 }
 
 func MakeFun(p Id, ty_args Lib.List[Ty], args Lib.List[Term], metas Lib.Set[Meta]) Fun {
-	return Fun{p, ty_args, args, Lib.MkCache(metas, Fun.forceGetMetas)}
+	return Fun{p, ty_args, args, Lib.MkCache(metas, Fun.forceGetMetas), nil}
 }
 
 /*** Functions **/
@@ -106,4 +106,44 @@ func GetSymbol(tm Term) Lib.Option[Id] {
 		"Found a term that was neither a bound variable nor a free variable nor a function",
 	)
 	return Lib.MkNone[Id]()
+}
+
+/*** Origin of a substituted term ***/
+
+// Origin returns the term [t] replaced when a substitution was applied to it,
+// or [t] itself when it replaced nothing.
+//
+// The proof search instantiates its formulas as it goes, so by the time a proof
+// is reconstructed a formula may be worded with the substituted terms while the
+// branch it belongs to was built with the original ones. Only the proof output
+// needs the original wording; everywhere else a term is read as what it is now.
+func Origin(t Term) Term {
+	switch typed := t.(type) {
+	case Fun:
+		if typed.origin != nil {
+			return Origin(typed.origin)
+		}
+	case Meta:
+		if typed.origin != nil {
+			return Origin(typed.origin)
+		}
+	}
+	return t
+}
+
+// WithOrigin records that [t] replaced [original]. Substitutions compose, so an
+// origin that already has one keeps pointing at the earliest wording.
+func WithOrigin(t Term, original Term) Term {
+	if original == nil || t.Equals(original) {
+		return t
+	}
+	switch typed := t.(type) {
+	case Fun:
+		typed.origin = original
+		return typed
+	case Meta:
+		typed.origin = original
+		return typed
+	}
+	return t
 }

@@ -151,7 +151,9 @@ func SubstituteMeta(t Term, meta Meta, term Term) Term {
 	switch typed := t.(type) {
 	case Meta:
 		if typed.Equals(meta) {
-			return term.Copy()
+			// Record what this term replaced, so the proof output can name the
+			// formula the way the branch was built (see Origin).
+			return WithOrigin(term.Copy(), typed)
 		}
 	case Fun:
 		return MakerFun(
