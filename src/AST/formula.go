@@ -98,11 +98,14 @@ func replaceTermInTermList(
 					oldTerm,
 					newTerm,
 				)
-				newTermList.Upd(i, MakerFun(
+				// Skolemisation walks through terms a substitution has
+				// already rewritten; rebuilding must not lose what they
+				// replaced.
+				newTermList.Upd(i, WithOrigin(MakerFun(
 					nf.GetP(),
 					nf.GetTyArgs(),
 					termList,
-				))
+				), nf.origin))
 				res = res || r
 			}
 		case Meta:
