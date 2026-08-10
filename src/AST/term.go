@@ -147,3 +147,19 @@ func WithOrigin(t Term, original Term) Term {
 	}
 	return t
 }
+
+// DeepOrigin rewrites [t] the way it was worded before any substitution was
+// applied to it, recursively: a term that replaced nothing but whose arguments
+// did still has to be rebuilt, otherwise the same skolem symbol ends up written
+// with two different argument lists.
+func DeepOrigin(t Term) Term {
+	t = Origin(t)
+	if fun, ok := t.(Fun); ok {
+		return MakerFun(
+			fun.GetID(),
+			fun.GetTyArgs(),
+			Lib.ListMap(fun.GetArgs(), DeepOrigin),
+		)
+	}
+	return t
+}

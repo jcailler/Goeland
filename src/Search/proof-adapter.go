@@ -63,10 +63,14 @@ func (proof TableauxProof) Empty() bool {
 	return (len(proof) == 0)
 }
 
+// AppliedOn gives the formula the way the branch was worded when the rule fired,
+// before the search instantiated it. That is what the proof output needs: the
+// TableauxRocq checker looks the formula up in the context before applying the
+// substitution. Everything outside the proof reads terms as they are now.
 func (proof TableauxProof) AppliedOn() AST.Form {
 	proof.makeSanityCheck()
 
-	return proof[0].Formula.GetForm()
+	return AST.DeepOriginForm(proof[0].Formula.GetForm())
 }
 
 func (proof TableauxProof) RuleApplied() TableauxRule {
@@ -104,7 +108,8 @@ func (proof TableauxProof) ResultFormulas() Lib.List[Lib.List[AST.Form]] {
 
 	result_forms := Lib.MkList[Lib.List[AST.Form]](len(proof[0].Result_formulas))
 	for i, forms := range proof[0].Result_formulas {
-		result_forms.Upd(i, forms.GetForms())
+		// Same as AppliedOn: the proof is worded the way the branch was built.
+		result_forms.Upd(i, Lib.ListMap(forms.GetForms(), AST.DeepOriginForm))
 	}
 	return result_forms
 }

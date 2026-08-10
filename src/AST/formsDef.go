@@ -1114,3 +1114,32 @@ func (b Bot) GetSubFormulasRecur() Lib.List[Form]         { return Lib.MkListV[F
 func (b Bot) GetChildFormulas() Lib.List[Form]            { return Lib.NewList[Form]() }
 func (b Bot) ReplaceMetaByTerm(meta Meta, term Term) Form { return b }
 func (b Bot) Less(oth any) bool                           { return less(b, oth) }
+
+// DeepOriginForm rewrites every term of [f] the way it was worded before any
+// substitution was applied. See DeepOrigin.
+func DeepOriginForm(f Form) Form {
+	switch typed := f.(type) {
+	case Pred:
+		return MakePred(
+			typed.GetIndex(),
+			typed.GetID(),
+			typed.GetTyArgs(),
+			Lib.ListMap(typed.GetArgs(), DeepOrigin),
+		)
+	case Not:
+		return MakerNot(DeepOriginForm(typed.GetForm()))
+	case And:
+		return MakerAnd(Lib.ListMap(typed.GetChildFormulas(), DeepOriginForm))
+	case Or:
+		return MakerOr(Lib.ListMap(typed.GetChildFormulas(), DeepOriginForm))
+	case Imp:
+		return MakerImp(DeepOriginForm(typed.GetF1()), DeepOriginForm(typed.GetF2()))
+	case Equ:
+		return MakerEqu(DeepOriginForm(typed.GetF1()), DeepOriginForm(typed.GetF2()))
+	case All:
+		return MakerAll(typed.GetVarList(), DeepOriginForm(typed.GetForm()))
+	case Ex:
+		return MakerEx(typed.GetVarList(), DeepOriginForm(typed.GetForm()))
+	}
+	return f
+}
