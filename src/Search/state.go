@@ -67,6 +67,16 @@ type State struct {
 	forbidden                             Lib.List[Lib.List[Unif.MixedSubstitution]]
 	unifier                               Core.Unifier
 	eqStruct                              eqStruct.EqualityStruct
+	// pre_subst remembers how a formula read before the state was instantiated.
+	// The proof is recorded with that wording: the TableauxRocq checker tests
+	// Ctx.mem before applying the substitution, so every formula of the exported
+	// tree has to be named the way it entered the branch. Only filled when that
+	// output is requested.
+	//
+	// Kept as an association list compared with Equals rather than a map keyed
+	// by ToString: the default printer does not print metavariable indices, so
+	// X9_25 and X9_31 would share a key and be conflated.
+	pre_subst []preSubstPair
 }
 
 /***********/
@@ -203,9 +213,76 @@ func (st *State) SetCurrentProof(p ProofStruct) {
 		st.current_proof = p
 	}
 }
+// rememberBeforeSubstitution records, for every formula of the state, how it
+// reads now and how it will read once [s] is applied, so that the proof can keep
+// naming it the way it entered the branch.
+// preSubstPair associates a formula with the way it read before the state was
+// instantiated.
+type preSubstPair struct {
+	after, before AST.Form
+}
+
+func (st *State) rememberBeforeSubstitution(mixed Lib.List[Unif.MixedSubstitution]) {
+	lists := []Core.FormAndTermsList{
+		st.GetLF(), st.GetAtomic(), st.GetAlpha(),
+		st.GetBeta(), st.GetDelta(), st.GetGamma(),
+	}
+	for _, list := range lists {
+		for _, ft := range list {
+			before := ft.GetForm()
+			after := Core.ApplySubstitutionsOnFormula(mixed, before)
+			if after.Equals(before) {
+				continue
+			}
+			if _, seen := st.lookupOriginal(after); seen {
+				continue
+			}
+			// Substitutions compose: if [before] was itself the result of an
+			// earlier one, keep pointing at the original wording.
+			original := before
+			if earlier, ok := st.lookupOriginal(before); ok {
+				original = earlier
+			}
+			st.pre_subst = append(st.pre_subst, preSubstPair{after: after, before: original})
+		}
+	}
+}
+
+func (st State) lookupOriginal(f AST.Form) (AST.Form, bool) {
+	for _, pair := range st.pre_subst {
+		if pair.after.Equals(f) {
+			return pair.before, true
+		}
+	}
+	return f, false
+}
+
+func (st State) originalForm(f AST.Form) AST.Form {
+	if f == nil {
+		return f
+	}
+	original, _ := st.lookupOriginal(f)
+	return original
+}
+
+func (st State) beforeSubstitution(f Core.FormAndTerms) Core.FormAndTerms {
+	if !Glob.IsTableauxRocqOutput() || st.pre_subst == nil {
+		return f
+	}
+	orig, found := st.lookupOriginal(f.GetForm())
+	if found {
+		Glob.PrintError("MAP", "RAMENEE")
+	} else if len(st.pre_subst) > 0 {
+		Glob.PrintError("MAP", "SANS-ANTECEDENT (table non vide)")
+	} else {
+		Glob.PrintError("MAP", "TABLE-VIDE")
+	}
+	return Core.MakeFormAndTerm(orig, f.Terms)
+}
+
 func (st *State) SetCurrentProofFormula(f Core.FormAndTerms) {
 	if Glob.GetProof() {
-		st.current_proof.SetFormulaProof(f)
+		st.current_proof.SetFormulaProof(st.beforeSubstitution(f))
 	}
 }
 func (st *State) SetCurrentProofIdDMT(i int) {
@@ -217,7 +294,11 @@ func (st *State) SetCurrentProofResultFormulas(fll []IntFormAndTermsList) {
 	if Glob.GetProof() {
 		new_fll := []IntFormAndTermsList{}
 		for _, fl := range fll {
-			new_fll = append(new_fll, MakeIntFormAndTermsList(fl.GetI(), fl.GetFL()))
+			forms := Core.MakeEmptyFormAndTermsList()
+			for _, f := range fl.GetFL() {
+				forms = append(forms, st.beforeSubstitution(f))
+			}
+			new_fll = append(new_fll, MakeIntFormAndTermsList(fl.GetI(), forms))
 		}
 		st.current_proof.SetResultFormulasProof(new_fll)
 	}
@@ -287,7 +368,8 @@ func MakeState(limit int, tp, tn Unif.DataStructure, f AST.Form) State {
 		false,
 		Lib.NewList[Lib.List[Unif.MixedSubstitution]](),
 		Core.MakeUnifier(),
-		eqStruct.NewEqStruct()}
+		eqStruct.NewEqStruct(),
+		nil}
 }
 
 /* Print a state */
@@ -423,6 +505,10 @@ func (st State) Copy() State {
 		new_state.SetSubstsFound(st.GetSubstsFound())
 	}
 
+	if st.pre_subst != nil {
+		new_state.pre_subst = append([]preSubstPair{}, st.pre_subst...)
+	}
+
 	new_state.SetGlobUnifier(st.GetGlobUnifier().Copy())
 
 	// Recréer arbre
@@ -496,6 +582,10 @@ func ApplySubstitution(st *State, saf Core.SubstAndForm) error {
 	err, ms := Core.MergeSubstAndForm(st.GetAppliedSubst(), saf.Copy())
 	if err != nil {
 		return err
+	}
+
+	if Glob.IsTableauxRocqOutput() && Glob.GetProof() {
+		st.rememberBeforeSubstitution(s)
 	}
 
 	st.SetAppliedSubst(ms)
