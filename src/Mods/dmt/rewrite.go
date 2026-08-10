@@ -59,7 +59,7 @@ func rewriteGeneric(tree Unif.DataStructure, atomic AST.Form, form AST.Form, pol
 	rewritten := []Core.IntSubstAndForm{}
 
 	var err error = nil
-	if isUnified, unif := tree.Unify(form, Unif.MakeEmptySubstitution()); isUnified {
+	if isUnified, unif := tree.Unify(form); isUnified {
 		unif_substs := []Unif.MatchingSubstitutions{}
 		for _, substs := range unif {
 			unif_substs = append(unif_substs, substs.MatchingSubstitutions())

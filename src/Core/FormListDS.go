@@ -86,13 +86,10 @@ func (fl FormListDS) IsEmpty() bool {
 	return fl.GetFL().Empty()
 }
 
-// Unify only recognises syntactically equal formulas here, so the substitution
-// in force has to be applied to both sides before comparing.
-func (fl FormListDS) Unify(f AST.Form, subst Unif.Substitutions) (bool, []Unif.MixedSubstitutions) {
-	mixed := Unif.FromSubstitutions(subst)
-	target := ApplySubstitutionsOnFormula(mixed, f)
+// Unify only recognises syntactically equal formulas here.
+func (fl FormListDS) Unify(f AST.Form) (bool, []Unif.MixedSubstitutions) {
 	for _, element := range fl.GetFL().GetSlice() {
-		if ApplySubstitutionsOnFormula(mixed, element).Equals(target) {
+		if element.Equals(f) {
 			return true, []Unif.MixedSubstitutions{}
 		}
 	}

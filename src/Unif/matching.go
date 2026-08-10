@@ -54,10 +54,8 @@ func InitDebugger() {
 /*** Unify ***/
 
 /* Helper function to avoid using MakeMachine() outside of this file. */
-func (n Node) Unify(formula AST.Form, subst Substitutions) (bool, []MixedSubstitutions) {
+func (n Node) Unify(formula AST.Form) (bool, []MixedSubstitutions) {
 	machine := makeMachine()
-	// Start from the substitution already in force rather than from scratch.
-	machine.meta = subst.Copy()
 	res := machine.unify(n, formula)
 	// As we have transformed type metas to terms, we get everything in a term substitution.
 	// But externally, we want to have a substitution of both (term) metas to terms and (type) metas to types.

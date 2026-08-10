@@ -244,12 +244,6 @@ func buildOptions() {
 		func(bool) { cc.Enable() },
 		func(bool) {})
 	(&option[bool]{}).init(
-		"lazy-subst",
-		false,
-		"Carries the substitution instead of instantiating the formulas (experimental; requires -noeq and no -dmt)",
-		func(bool) { Glob.SetLazySubst(true) },
-		func(bool) {})
-	(&option[bool]{}).init(
 		"type_proof",
 		false,
 		"Enables type proof visualisation",

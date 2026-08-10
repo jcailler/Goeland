@@ -51,6 +51,6 @@ type DataStructure interface {
 	// argument is the substitution already in force: the proof search carries
 	// it instead of instantiating its formulas, so retrieval has to unify
 	// modulo it. Pass MakeEmptySubstitution() when there is none.
-	Unify(AST.Form, Substitutions) (bool, []MixedSubstitutions)
+	Unify(AST.Form) (bool, []MixedSubstitutions)
 	Copy() DataStructure
 }

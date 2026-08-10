@@ -228,7 +228,7 @@ func buildEqualityProblemMultiListFromPredList(pred AST.Pred, tn Unif.DataStruct
 		pred.GetTyArgs(),
 		AST.MetaListToTermList(metas),
 	)
-	found, complementaryPredList := tn.Unify(newTerm, Unif.MakeEmptySubstitution())
+	found, complementaryPredList := tn.Unify(newTerm)
 
 	if found {
 		for _, s := range complementaryPredList {

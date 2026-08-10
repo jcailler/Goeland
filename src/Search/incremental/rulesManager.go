@@ -192,7 +192,7 @@ func (rm *RulesManager) trySubstitutionClosureRules() (applied Rule, subs SubLis
 	substitutions := []Unif.MixedSubstitutions{}
 
 	for _, posRule := range positiveRules {
-		success, currentSubst := negTree.Unify(posRule.GetForm(), Unif.MakeEmptySubstitution())
+		success, currentSubst := negTree.Unify(posRule.GetForm())
 		if success {
 			substitutions = append(substitutions, currentSubst...)
 			applied = posRule
