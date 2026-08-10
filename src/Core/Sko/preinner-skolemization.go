@@ -80,7 +80,9 @@ func (sko PreInnerSkolemization) Skolemize(
 	}
 	sko.mu.Unlock()
 
-	internalMetas := form.GetMetas().Elements()
+	// See inner-skolemization: metavariables replaced by a substitution were
+	// still free in the branch when the symbol was created.
+	internalMetas := AST.GetMetasOriginalForm(form).Elements()
 
 	skolemFunc := AST.MakerFun(
 		symbol,

@@ -66,7 +66,9 @@ func (sko InnerSkolemization) Skolemize(
 	symbol := genFreshSymbol(&sko.existingSymbols, x)
 	sko.mu.Unlock()
 
-	internalMetas := form.GetMetas().Elements()
+	// The metavariables free in the branch when the symbol is created, including
+	// those a substitution has already replaced: they were free then.
+	internalMetas := AST.GetMetasOriginalForm(form).Elements()
 
 	skolemFunc := AST.MakerFun(
 		symbol,

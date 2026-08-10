@@ -57,7 +57,8 @@ func (i Id) IsMeta() bool              { return false }
 func (i Id) IsFun() bool               { return false }
 func (i Id) Copy() Term                { return MakeId(i.GetIndex(), i.GetName()) }
 func (Id) ToMeta() Meta                { return MakeEmptyMeta() }
-func (Id) GetMetas() Lib.Set[Meta]     { return Lib.EmptySet[Meta]() }
+func (Id) GetMetas() Lib.Set[Meta]             { return Lib.EmptySet[Meta]() }
+func (Id) GetMetasOriginal() Lib.Set[Meta]     { return Lib.EmptySet[Meta]() }
 func (Id) GetMetaList() Lib.List[Meta] { return Lib.NewList[Meta]() }
 func (i Id) ToString() string          { return printer.StrId(i) }
 
@@ -186,6 +187,17 @@ func (f Fun) GetMetas() Lib.Set[Meta] {
 	return f.metas.Get(f)
 }
 
+func (f Fun) GetMetasOriginal() Lib.Set[Meta] {
+	res := Lib.EmptySet[Meta]()
+	if f.origin != nil {
+		res = res.Union(f.origin.GetMetasOriginal())
+	}
+	for _, arg := range f.GetArgs().GetSlice() {
+		res = res.Union(arg.GetMetasOriginal())
+	}
+	return res
+}
+
 func (f Fun) GetMetaList() Lib.List[Meta] {
 	metas := Lib.NewList[Meta]()
 
@@ -289,7 +301,8 @@ func (v Var) IsMeta() bool              { return false }
 func (v Var) IsFun() bool               { return false }
 func (v Var) Copy() Term                { return MakeVar(v.GetIndex(), v.GetName()) }
 func (Var) ToMeta() Meta                { return MakeEmptyMeta() }
-func (Var) GetMetas() Lib.Set[Meta]     { return Lib.EmptySet[Meta]() }
+func (Var) GetMetas() Lib.Set[Meta]         { return Lib.EmptySet[Meta]() }
+func (Var) GetMetasOriginal() Lib.Set[Meta] { return Lib.EmptySet[Meta]() }
 func (Var) GetMetaList() Lib.List[Meta] { return Lib.NewList[Meta]() }
 
 func (v Var) Equals(t any) bool {
@@ -348,7 +361,15 @@ func (m Meta) GetOccurence() int           { return m.occurence }
 func (m Meta) IsMeta() bool                { return true }
 func (m Meta) IsFun() bool                 { return false }
 func (m Meta) ToMeta() Meta                { return m }
-func (m Meta) GetMetas() Lib.Set[Meta]     { return Lib.Singleton(m) }
+func (m Meta) GetMetas() Lib.Set[Meta] { return Lib.Singleton(m) }
+
+func (m Meta) GetMetasOriginal() Lib.Set[Meta] {
+	res := Lib.Singleton(m)
+	if m.origin != nil {
+		res = res.Union(m.origin.GetMetasOriginal())
+	}
+	return res
+}
 func (m Meta) GetMetaList() Lib.List[Meta] { return Lib.MkListV(m) }
 func (m Meta) GetTy() Ty                   { return m.ty }
 
