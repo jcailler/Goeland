@@ -148,8 +148,8 @@ func makeEQMapFromEqualities(eq Equalities) map[string]Lib.List[AST.Term] {
 	map_res := make(map[string]Lib.List[AST.Term])
 
 	for _, e := range eq {
-		key1 := e.GetT1().ToString()
-		key2 := e.GetT2().ToString()
+		key1 := equalityKey(e.GetT1())
+		key2 := equalityKey(e.GetT2())
 
 		if _, found := map_res[key1]; !found {
 			map_res[key1] = Lib.NewList[AST.Term]()
@@ -170,4 +170,31 @@ func makeEQMapFromEqualities(eq Equalities) map[string]Lib.List[AST.Term] {
 	}
 
 	return map_res
+}
+
+/*
+equalityKey renders a term for use as a key of the equation map. It has to keep
+the index of a metavariable, which the default printer leaves out: two gamma
+copies of one equation, say h(X7#20) = g(X7#20) and h(X7#26) = g(X7#26), would
+otherwise share a key, and looking one left member up would answer with both
+equations' right members. A rule then takes its left member from one equation and
+its right member from the other, and uses h(X7#26) = g(X7#20), which is not an
+equation the branch holds.
+*/
+func equalityKey(t AST.Term) string {
+	switch typed := t.(type) {
+	case AST.Meta:
+		return fmt.Sprintf("%s#%d", typed.GetName(), typed.GetIndex())
+	case AST.Fun:
+		key := typed.GetID().ToString() + "("
+		for i, arg := range typed.GetArgs().GetSlice() {
+			if i > 0 {
+				key += ","
+			}
+			key += equalityKey(arg)
+		}
+		return key + ")"
+	default:
+		return t.ToString()
+	}
 }

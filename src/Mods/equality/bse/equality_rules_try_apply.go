@@ -159,7 +159,7 @@ func connectLAndR(
 			}),
 		)
 
-		for _, r := range ep.getEMap()[l_prime_l_pair.GetT2().ToString()].GetSlice() {
+		for _, r := range ep.getEMap()[equalityKey(l_prime_l_pair.GetT2())].GetSlice() {
 			debug(
 				Lib.MkLazy(func() string {
 					return fmt.Sprintf(
