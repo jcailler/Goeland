@@ -40,8 +40,10 @@ import (
 	"fmt"
 
 	"github.com/GoelandProver/Goeland/AST"
+	"github.com/GoelandProver/Goeland/Core"
 	"github.com/GoelandProver/Goeland/Lib"
 	"github.com/GoelandProver/Goeland/Mods/equality/eqStruct"
+	"github.com/GoelandProver/Goeland/Unif"
 )
 
 /* apply a rule */
@@ -159,5 +161,27 @@ func applyEQRule(l, r, sub_term_of_s, s, t AST.Term, cs ConstraintStruct) (bool,
 	if !constraints_list.appendIfConsistant(MakeConstraint(EQ, eqStruct.MakeTermPair(l, sub_term_of_s))) {
 		return false, nil, makeEmptyConstraintStruct()
 	}
+
+	// [r] is the other side of the equation and still carries that equation's
+	// variables. The EQ constraint above has just committed the matching of [l]
+	// against the rewritten subterm, so the result has to be read under it:
+	// otherwise those variables stay free and can be bound to something else
+	// later, and the two sides of one equation end up instantiated
+	// independently. With ! [X] : g(X) = h(X), rewriting g(a) would yield h(X)
+	// rather than h(a), and h(X) then unifies with h(b).
+	new_s = substituteTerm(constraints_list.getSubst(), new_s)
+	debug(
+		Lib.MkLazy(func() string { return fmt.Sprintf("new_s under the constraints : %v", new_s.ToString()) }),
+	)
+
 	return true, new_s, constraints_list
+}
+
+/* Applies every binding of a substitution to a term. */
+func substituteTerm(s Unif.Substitutions, t AST.Term) AST.Term {
+	for _, subst := range s {
+		meta, value := subst.Get()
+		t = Core.ApplySubstitutionOnTerm(meta, value, t)
+	}
+	return t
 }

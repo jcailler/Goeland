@@ -146,7 +146,35 @@ func computeSubstitutions(subs []SubstPair, metasToSubs Substitutions, form AST.
 		Lib.MkLazy(func() string { return fmt.Sprintf("after eliminate : %v", res.ToString()) }),
 	)
 
+	// Every unification result funnels through here. Composing two substitutions
+	// can leave two entries for one metavariable when a binding already in force
+	// was not honoured while unifying; the outcome is not a substitution and must
+	// not be carried on as if it were.
+	if hasConflictingBindings(res) {
+		debug(
+			Lib.MkLazy(func() string { return fmt.Sprintf("conflicting bindings, rejected : %v", res.ToString()) }),
+		)
+		return Failure()
+	}
+
 	return res
+}
+
+/*
+hasConflictingBindings reports whether a substitution binds one metavariable to
+two terms that differ. A substitution is a function, so such a result is not one:
+accepting it lets the two sides of an equation be instantiated independently,
+which is what breaks the rigidity of a branch.
+*/
+func hasConflictingBindings(subst Substitutions) bool {
+	for i := range subst {
+		for j := i + 1; j < len(subst); j++ {
+			if subst[i].Key().Equals(subst[j].Key()) && !subst[i].Value().Equals(subst[j].Value()) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 /* Call addUnification and returns a status - modify m.meta */
@@ -162,7 +190,25 @@ func (m *Machine) trySubstituteMeta(i AST.Term, j AST.Term) Status {
 	return Status(SUCCESS)
 }
 
+/*
+AddUnification unifies two terms under a substitution already in force. Its
+contract is to return a substitution or Failure, so the result is checked before
+being handed back: composition can otherwise leave two entries for one
+metavariable, and a caller that trusts such a result lets the two sides of an
+equation be instantiated independently.
+*/
 func AddUnification(term1, term2 AST.Term, subst Substitutions) Substitutions {
+	res := addUnificationAux(term1, term2, subst)
+	if hasConflictingBindings(res) {
+		debug(
+			Lib.MkLazy(func() string { return fmt.Sprintf("conflicting bindings, rejected : %v", res.ToString()) }),
+		)
+		return Failure()
+	}
+	return res
+}
+
+func addUnificationAux(term1, term2 AST.Term, subst Substitutions) Substitutions {
 	debug(
 		Lib.MkLazy(func() string {
 			return fmt.Sprintf(
