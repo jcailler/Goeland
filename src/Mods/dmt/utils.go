@@ -37,6 +37,7 @@
 package dmt
 
 import (
+	"fmt"
 	"github.com/GoelandProver/Goeland/AST"
 	"github.com/GoelandProver/Goeland/Lib"
 )
@@ -54,6 +55,51 @@ func selectFromPolarity[T any](polarity bool, positive, negative T) T {
 		return positive
 	}
 	return negative
+}
+
+/*
+patternKey renders a rewrite rule's left-hand side for use as a key of the rewrite
+map. It has to keep the index of a metavariable, which the default printer leaves
+out: two axioms read from ! [x] : P(x) <=> ... carry different metavariables that
+both print as "P(X)", so they would share a key. Retrieval then answers with both
+consequents, and the substitution that matched one rule binds nothing in the
+other's -- the rewriting hands back a formula with a free variable that belongs to
+another rule.
+*/
+func patternKey(form AST.Form) string {
+	switch typed := form.(type) {
+	case AST.Not:
+		return "~" + patternKey(typed.GetForm())
+	case AST.Pred:
+		key := typed.GetID().ToString() + "("
+		for i, arg := range typed.GetArgs().GetSlice() {
+			if i > 0 {
+				key += ","
+			}
+			key += termKey(arg)
+		}
+		return key + ")"
+	default:
+		return form.ToString()
+	}
+}
+
+func termKey(term AST.Term) string {
+	switch typed := term.(type) {
+	case AST.Meta:
+		return fmt.Sprintf("%s#%d", typed.GetName(), typed.GetIndex())
+	case AST.Fun:
+		key := typed.GetID().ToString() + "("
+		for i, arg := range typed.GetArgs().GetSlice() {
+			if i > 0 {
+				key += ","
+			}
+			key += termKey(arg)
+		}
+		return key + ")"
+	default:
+		return term.ToString()
+	}
 }
 
 func rewriteMapInsertion(polarity bool, key string, val AST.Form) {

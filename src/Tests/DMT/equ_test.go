@@ -42,14 +42,14 @@
 package dmt_test
 
 import (
+	"fmt"
 	"github.com/GoelandProver/Goeland/AST"
 	"github.com/GoelandProver/Goeland/Core"
-	"github.com/GoelandProver/Goeland/Search"
 	"github.com/GoelandProver/Goeland/Glob"
 	"github.com/GoelandProver/Goeland/Lib"
+	"github.com/GoelandProver/Goeland/Search"
 	typing "github.com/GoelandProver/Goeland/Typing"
 	"github.com/GoelandProver/Goeland/Unif"
-	"fmt"
 	"os"
 	"testing"
 
@@ -748,8 +748,12 @@ func TestMultipleAxiomDefinition(t *testing.T) {
 		t.Fatalf("Error: more than one rewrite rule found for %s when it should have only one.", form.ToString())
 	}
 
-	forms := substs[0].GetSaf().GetForm()
-	forms.Append(substs[1].GetSaf().GetForm().GetSlice()...)
+	// The rewriting hands the substitution back beside the formula rather than
+	// applying it, so a rule read from ! [x] : P(x) <=> ... comes back with its
+	// metavariable still in place. Apply it to compare against the instance the
+	// test is about.
+	forms := instantiated(substs[0])
+	forms.Append(instantiated(substs[1]).GetSlice()...)
 
 	if forms.Len() != 2 {
 		t.Fatalf("Error: %s can be rewritten by more than two formulas when it should be rewritten by only two.", form.ToString())
@@ -798,8 +802,8 @@ func TestMultipleAxiomDefinition2(t *testing.T) {
 		t.Fatalf("Error: more than one rewrite rule found for %s when it should have only one.", form.ToString())
 	}
 
-	forms := substs[0].GetSaf().GetForm()
-	forms.Append(substs[1].GetSaf().GetForm().GetSlice()...)
+	forms := instantiated(substs[0])
+	forms.Append(instantiated(substs[1]).GetSlice()...)
 
 	if forms.Len() != 2 {
 		t.Fatalf("Error: %s can be rewritten by more than two formulas when it should be rewritten by only two.", form.ToString())
@@ -903,4 +907,14 @@ alone reads the opposite of what the test means.
 */
 func isRewriteFailure(s Lib.List[Unif.MixedSubstitution]) bool {
 	return s.Len() == 1 && s.At(0).Equals(Unif.MkMixedFromSubst(Unif.Failure()[0]))
+}
+
+/* The formulas of a rewriting, read under the substitution it came with. */
+func instantiated(isf Core.IntSubstAndForm) Lib.List[AST.Form] {
+	saf := isf.GetSaf()
+	res := Lib.NewList[AST.Form]()
+	for _, f := range saf.GetForm().GetSlice() {
+		res.Append(Core.ApplySubstitutionsOnFormula(saf.GetSubst(), f))
+	}
+	return res
 }

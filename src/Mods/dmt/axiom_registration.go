@@ -75,18 +75,35 @@ func instanciateForalls(axiom AST.Form) AST.Form {
 
 func addPosRewriteRule(axiom AST.Form, cons AST.Form) {
 	simplifiedAxiom := AST.RemoveNeg(axiom)
-	positiveTree = positiveTree.InsertFormulaListToDataStructure(
-		Lib.MkListV(simplifiedAxiom),
-	)
+	if isNewPattern(true, simplifiedAxiom) {
+		positiveTree = positiveTree.InsertFormulaListToDataStructure(
+			Lib.MkListV(simplifiedAxiom),
+		)
+	}
 	addRewriteRule(simplifiedAxiom, cons, true)
 }
 
 func addNegRewriteRule(axiom AST.Form, cons AST.Form) {
 	simplifiedAxiom := AST.RemoveNeg(axiom)
-	negativeTree = negativeTree.InsertFormulaListToDataStructure(
-		Lib.MkListV(simplifiedAxiom),
-	)
+	if isNewPattern(false, simplifiedAxiom) {
+		negativeTree = negativeTree.InsertFormulaListToDataStructure(
+			Lib.MkListV(simplifiedAxiom),
+		)
+	}
 	addRewriteRule(simplifiedAxiom, cons, false)
+}
+
+/*
+isNewPattern says whether the tree has yet to hold this left-hand side. Two axioms
+that share one, as P(a) <=> A and P(a) <=> B do, must not put it in twice:
+retrieval would answer once per copy, and every consequent of the shared entry
+would come back as many times over. The rewrite map already keys on the pattern,
+so its keys are the record of what the tree holds.
+*/
+func isNewPattern(polarity bool, pattern AST.Form) bool {
+	rewriteMap := selectFromPolarity(polarity, positiveRewrite, negativeRewrite)
+	_, alreadyThere := rewriteMap[patternKey(pattern)]
+	return !alreadyThere
 }
 
 func addRewriteRule(axiom AST.Form, cons AST.Form, polarity bool) {
@@ -94,7 +111,7 @@ func addRewriteRule(axiom AST.Form, cons AST.Form, polarity bool) {
 		cons = Core.Skolemize(cons, cons.GetMetas())
 	}
 	printDebugRewriteRule(polarity, axiom, cons)
-	rewriteMapInsertion(polarity, axiom.ToString(), cons)
+	rewriteMapInsertion(polarity, patternKey(axiom), cons)
 }
 
 func printDebugRewriteRule(polarity bool, axiom, cons AST.Form) {
@@ -202,12 +219,26 @@ func addEquRewriteRuleIfNotEquality(f1, f2 AST.Form) bool {
 
 func addEquivalenceRewriteRule(axiom, cons AST.Form) {
 	if Glob.Is[AST.Not](axiom) {
-		addPosRewriteRule(axiom, AST.MakerNot(cons))
+		addPosRewriteRule(axiom, negate(cons))
 		addNegRewriteRule(axiom, cons)
 	} else {
 		addPosRewriteRule(axiom, cons)
-		addNegRewriteRule(axiom, AST.MakerNot(cons))
+		addNegRewriteRule(axiom, negate(cons))
 	}
+}
+
+/*
+negate flips a formula's polarity without stacking negations. The axiom side is
+already read through RemoveNeg, and wrapping an already negated consequent left a
+double negation in every formula the rule produced: registering
+! [x] : ~P(x) <=> ~! [y] : Q(x, y) rewrote P(a) into ~~(! [y] : Q(a, y)). Sound,
+but the rule had no reason to hand that shape on.
+*/
+func negate(form AST.Form) AST.Form {
+	if not, isNot := form.(AST.Not); isNot {
+		return not.GetForm()
+	}
+	return AST.MakerNot(form)
 }
 
 // End rewrite rule from equivalence formula.
@@ -241,9 +272,9 @@ func makeRewriteRuleFromImplication(impForm AST.Imp) bool {
 	// an equality atom on the right-side of the formula.
 	if isAtomic(phi2) && !isEqualityPred(phi2) {
 		if Glob.Is[AST.Pred](phi2) {
-			addNegRewriteRule(phi2, AST.MakerNot(phi1))
+			addNegRewriteRule(phi2, negate(phi1))
 		} else {
-			addPosRewriteRule(predFromNegatedAtom(phi2), AST.MakerNot(phi1))
+			addPosRewriteRule(predFromNegatedAtom(phi2), negate(phi1))
 		}
 	}
 

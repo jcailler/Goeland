@@ -159,7 +159,7 @@ func sortUnifications(unifs []Unif.MatchingSubstitutions, polarity bool, atomic 
 	for _, unif := range unifs {
 		// Check if th esubstitution is a filter
 		if isFiltering(unif) {
-			str := unif.GetForm().ToString()
+			str := patternKey(unif.GetForm())
 			sortedUnifs = insert(sortedUnifs, rewriteMap[str], unif)
 		}
 	}
@@ -245,7 +245,7 @@ func getUnifiedEquivalence(atom AST.Form, subst Unif.Substitutions, polarity boo
 }
 
 func findEquivalence(atom AST.Form, polarity bool) Lib.List[AST.Form] {
-	return selectFromPolarity(polarity, positiveRewrite, negativeRewrite)[atom.ToString()]
+	return selectFromPolarity(polarity, positiveRewrite, negativeRewrite)[patternKey(atom)]
 }
 
 // End of supportive functions.
