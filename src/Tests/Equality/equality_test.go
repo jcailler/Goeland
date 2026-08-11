@@ -55,6 +55,7 @@ var tp, tn Unif.DataStructure
 
 // Id
 var p_id AST.Id
+var p2_id AST.Id
 var g_id AST.Id
 var f_id AST.Id
 var a_id AST.Id
@@ -176,6 +177,7 @@ var not_pcd AST.Form
 func initTestVariable() {
 	// Id
 	p_id = AST.MakerId("P")
+	p2_id = AST.MakerId("P2")
 	g_id = AST.MakerId("g")
 	f_id = AST.MakerId("f")
 	a_id = AST.MakerId("a")
@@ -286,14 +288,14 @@ func initTestVariable() {
 	neq_ga_a = AST.MakerNot(AST.MakerPred(AST.Id_eq, Lib.MkListV(AST.TIndividual()), Lib.MkListV[AST.Term](ga, a)))
 
 	// Predicates
-	pggab = AST.MakerPred(p_id, Lib.NewList[AST.Ty](), Lib.MkListV[AST.Term](gga, b))
-	not_pac = AST.MakerNot(AST.MakerPred(p_id, Lib.NewList[AST.Ty](), Lib.MkListV[AST.Term](a, c)))
+	pggab = AST.MakerPred(p2_id, Lib.NewList[AST.Ty](), Lib.MkListV[AST.Term](gga, b))
+	not_pac = AST.MakerNot(AST.MakerPred(p2_id, Lib.NewList[AST.Ty](), Lib.MkListV[AST.Term](a, c)))
 	pa = AST.MakerPred(p_id, Lib.NewList[AST.Ty](), Lib.MkListV[AST.Term](a))
 	pb = AST.MakerPred(p_id, Lib.NewList[AST.Ty](), Lib.MkListV[AST.Term](b))
 	not_pc = AST.MakerNot(AST.MakerPred(p_id, Lib.NewList[AST.Ty](), Lib.MkListV[AST.Term](c)))
-	pab = AST.MakerPred(p_id, Lib.NewList[AST.Ty](), Lib.MkListV[AST.Term](a, b))
-	pax = AST.MakerPred(p_id, Lib.NewList[AST.Ty](), Lib.MkListV[AST.Term](a, x))
-	not_pcd = AST.MakerNot(AST.MakerPred(p_id, Lib.NewList[AST.Ty](), Lib.MkListV[AST.Term](c, d)))
+	pab = AST.MakerPred(p2_id, Lib.NewList[AST.Ty](), Lib.MkListV[AST.Term](a, b))
+	pax = AST.MakerPred(p2_id, Lib.NewList[AST.Ty](), Lib.MkListV[AST.Term](a, x))
+	not_pcd = AST.MakerNot(AST.MakerPred(p2_id, Lib.NewList[AST.Ty](), Lib.MkListV[AST.Term](c, d)))
 }
 
 func initCodeTreesTests(lf Lib.List[AST.Form]) (Unif.DataStructure, Unif.DataStructure) {
@@ -304,7 +306,10 @@ func initCodeTreesTests(lf Lib.List[AST.Form]) (Unif.DataStructure, Unif.DataStr
 	return tp, tn
 }
 
-var eqStructure = eqStruct.NewEqStruct()
+// Built in initEqualityTest, not here: equality.Enable() installs the plugin's
+// factory into eqStruct.NewEqStruct, and a package-level initialiser would run
+// before it and capture the default structure, whose Solve finds nothing.
+var eqStructure eqStruct.EqualityStruct
 
 func initEqualityTest() {
 	Glob.SetStart(time.Now())
@@ -312,6 +317,7 @@ func initEqualityTest() {
 	AST.Init()
 	typing.Init()
 	equality.Enable()
+	eqStructure = eqStruct.NewEqStruct()
 	declareTestSymbols()
 	initTestVariable()
 	Glob.EnableDebug()
@@ -880,6 +886,7 @@ func declareTestSymbols() {
 		typing.AddToGlobalEnv(name, unary)
 	}
 	typing.AddToGlobalEnv("P", unaryProp)
+	typing.AddToGlobalEnv("P2", binaryProp)
 	typing.AddToGlobalEnv("Q", binaryProp)
 	_ = binary
 }
