@@ -186,7 +186,17 @@ func equalityKey(t AST.Term) string {
 	case AST.Meta:
 		return fmt.Sprintf("%s#%d", typed.GetName(), typed.GetIndex())
 	case AST.Fun:
-		key := typed.GetID().ToString() + "("
+		// The type arguments are part of the term's identity, and ToString prints
+		// them: leaving them out of the key would merge functions that differ only
+		// by their types.
+		key := typed.GetID().ToString() + "["
+		for i, ty := range typed.GetTyArgs().GetSlice() {
+			if i > 0 {
+				key += ","
+			}
+			key += ty.ToString()
+		}
+		key += "]("
 		for i, arg := range typed.GetArgs().GetSlice() {
 			if i > 0 {
 				key += ","
