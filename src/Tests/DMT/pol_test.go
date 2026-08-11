@@ -206,7 +206,7 @@ func TestPolarizedRewrite1(t *testing.T) {
 		t.Fatalf("Error: %s found in rewrite tree when it shouldn't be.", form2.ToString())
 	}
 
-	if len(substs) > 1 || substs[0].GetSaf().GetSubst().Len() != 0 {
+	if len(substs) > 1 || !isRewriteFailure(substs[0].GetSaf().GetSubst()) {
 		t.Fatalf("Error: error not triggered when searching for something not in the rewrite tree.")
 	}
 
@@ -219,7 +219,7 @@ func TestPolarizedRewrite1(t *testing.T) {
 		t.Fatalf("Error: %s found in rewrite tree when it shouldn't be.", form3.ToString())
 	}
 
-	if len(substs) > 1 || substs[0].GetSaf().GetSubst().Len() != 0 {
+	if len(substs) > 1 || !isRewriteFailure(substs[0].GetSaf().GetSubst()) {
 		t.Fatalf("Error: error not triggered when searching for something not in the rewrite tree.")
 	}
 }
@@ -266,7 +266,7 @@ func TestPolarizedRewrite2(t *testing.T) {
 		t.Fatalf("Error: %s found in rewrite tree when it shouldn't be.", form2.ToString())
 	}
 
-	if len(substs) > 1 || substs[0].GetSaf().GetSubst().Len() != 0 {
+	if len(substs) > 1 || !isRewriteFailure(substs[0].GetSaf().GetSubst()) {
 		t.Fatalf("Error: error not triggered when searching for something not in the rewrite tree.")
 	}
 
@@ -295,7 +295,7 @@ func TestPolarizedRewrite2(t *testing.T) {
 		t.Fatalf("Error: %s found in rewrite tree when it shouldn't be.", form4.ToString())
 	}
 
-	if len(substs) > 1 || substs[0].GetSaf().GetSubst().Len() != 0 {
+	if len(substs) > 1 || !isRewriteFailure(substs[0].GetSaf().GetSubst()) {
 		t.Fatalf("Error: error not triggered when searching for something not in the rewrite tree.")
 	}
 }
@@ -342,7 +342,7 @@ func TestPolarizedRewrite3(t *testing.T) {
 		t.Fatalf("Error: %s found in rewrite tree when it shouldn't be.", form2.ToString())
 	}
 
-	if len(substs) > 1 || substs[0].GetSaf().GetSubst().Len() != 0 {
+	if len(substs) > 1 || !isRewriteFailure(substs[0].GetSaf().GetSubst()) {
 		t.Fatalf("Error: error not triggered when searching for something not in the rewrite tree.")
 	}
 
@@ -371,7 +371,7 @@ func TestPolarizedRewrite3(t *testing.T) {
 		t.Fatalf("Error: %s found in rewrite tree when it shouldn't be.", form4.ToString())
 	}
 
-	if len(substs) > 1 || substs[0].GetSaf().GetSubst().Len() != 0 {
+	if len(substs) > 1 || !isRewriteFailure(substs[0].GetSaf().GetSubst()) {
 		t.Fatalf("Error: error not triggered when searching for something not in the rewrite tree.")
 	}
 }
@@ -402,7 +402,7 @@ func TestPolarizedRewrite4(t *testing.T) {
 		t.Fatalf("Error: %s not found in the rewrite tree when it should.", form.ToString())
 	}
 
-	if len(substs) != 1 && substs[0].GetSaf().GetSubst().Len() != 0 {
+	if len(substs) != 1 && !isRewriteFailure(substs[0].GetSaf().GetSubst()) {
 		t.Fatalf("Error: %s has not been rewritten as expected. Actual: %s - %v.", form.ToString(), substs[0].GetSaf().GetForm().At(0).ToString(), substs[0].GetSaf().GetSubst().ToString(Unif.MixedSubstitution.ToString, ", ", "{}"))
 	}
 }

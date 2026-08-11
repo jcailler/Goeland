@@ -708,7 +708,7 @@ func TestSubst3(t *testing.T) {
 		t.Fatalf("Error: %s not found in the rewrite tree when it should.", form.ToString())
 	}
 
-	if len(substs) != 1 && substs[0].GetSaf().GetSubst().Len() != 0 {
+	if len(substs) != 1 && !isRewriteFailure(substs[0].GetSaf().GetSubst()) {
 		t.Fatalf("Error: %s has not been rewritten as expected. Actual: %s - %v.", form.ToString(), substs[0].GetSaf().GetForm().At(0).ToString(), substs[0].GetSaf().GetSubst().ToString(Unif.MixedSubstitution.ToString, ", ", "{}"))
 	}
 }
@@ -823,7 +823,7 @@ func TestError(t *testing.T) {
 		t.Fatalf("Error: %s found in rewrite tree when it's empty.", form.ToString())
 	}
 
-	if len(substs) > 1 || substs[0].GetSaf().GetSubst().Len() != 0 {
+	if len(substs) > 1 || !isRewriteFailure(substs[0].GetSaf().GetSubst()) {
 		t.Fatalf("Error: error not triggered when searching for something not in the rewrite tree.")
 	}
 }
@@ -894,4 +894,13 @@ func declareDMTSymbols() {
 	typing.AddToGlobalEnv("g", unary)
 	typing.AddToGlobalEnv("P", unaryProp)
 	typing.AddToGlobalEnv("Q", binaryProp)
+}
+
+/*
+A rewrite that finds nothing does not come back with an empty substitution: it
+comes back with the failure marker, one element long. Asserting on the length
+alone reads the opposite of what the test means.
+*/
+func isRewriteFailure(s Lib.List[Unif.MixedSubstitution]) bool {
+	return s.Len() == 1 && s.At(0).Equals(Unif.MkMixedFromSubst(Unif.Failure()[0]))
 }
