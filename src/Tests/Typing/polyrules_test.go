@@ -34,7 +34,7 @@
  * This file tests the polymorphism package.
  **/
 
-package polyrules_test
+package polymorphism_test
 
 import (
 	"os"
