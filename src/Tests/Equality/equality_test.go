@@ -312,6 +312,7 @@ func initEqualityTest() {
 	AST.Init()
 	typing.Init()
 	equality.Enable()
+	declareTestSymbols()
 	initTestVariable()
 	Glob.EnableDebug()
 }
@@ -856,4 +857,29 @@ func TestTemp(t *testing.T) {
 	if res {
 		t.Fatalf("Error: %v - %v is not the expected solution. Expected no solution", res, Unif.SubstListToString(subst))
 	}
+}
+
+/*
+The equality reasoner asks the typing environment for a predicate's type before it
+builds any equation (QueryEnvInstance, in buildEqualityProblemMultiListFromPredList).
+In the prover that environment is filled while the problem is read; a test that
+builds its terms by hand has to fill it itself, or the reasoner finds no equation at
+all and returns nothing.
+*/
+func declareTestSymbols() {
+	i := AST.TIndividual()
+	unary := AST.MkTyFunc(AST.MkTyProd(Lib.MkListV(i)), i)
+	binary := AST.MkTyFunc(AST.MkTyProd(Lib.MkListV(i, i)), i)
+	unaryProp := AST.MkTyFunc(AST.MkTyProd(Lib.MkListV(i)), AST.TProp())
+	binaryProp := AST.MkTyFunc(AST.MkTyProd(Lib.MkListV(i, i)), AST.TProp())
+
+	for _, name := range []string{"a", "b", "c", "d", "e", "c1", "c2"} {
+		typing.AddToGlobalEnv(name, i)
+	}
+	for _, name := range []string{"f", "g", "h"} {
+		typing.AddToGlobalEnv(name, unary)
+	}
+	typing.AddToGlobalEnv("P", unaryProp)
+	typing.AddToGlobalEnv("Q", binaryProp)
+	_ = binary
 }
