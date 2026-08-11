@@ -481,14 +481,37 @@ func ApplyDeltaRules(fnt Core.FormAndTerms, state *State) Core.FormAndTermsList 
 		setStateRules(state, "DELTA", "EXISTS")
 	}
 
-	newMetas := state.GetMM().Copy()
-	newMetas = newMetas.Union(state.GetMC())
+	newMetas := branchMetas(state)
 	metasAsTerms := Lib.ListMap(newMetas.Elements(), Glob.To[AST.Term])
 
 	f := Core.Skolemize(fnt.GetForm(), newMetas)
 	return Core.MakeSingleElementFormAndTermList(
 		Core.MakeFormAndTerm(f, metasAsTerms),
 	)
+}
+
+/*
+branchMetas gives the free variables a Skolem symbol takes as arguments: what
+this branch introduced, mm together with mc, minus the sisters.
+
+mm also collects the metavariables of every substitution the father sends down.
+Most of those are this branch's own, and belong in the symbol. A few are foreign:
+they live in a sibling and no formula of this branch mentions them, so they never
+reach the context the checker builds. The checker asks for equality between the
+symbol's arguments and the context's free variables, and a foreign one makes that
+fail -- SYN331+1 was rejected over Y9_457, one argument too many.
+*/
+func branchMetas(state *State) Lib.Set[AST.Meta] {
+	all := state.GetMM().Copy().Union(state.GetMC())
+	sisters := state.GetMetaSisters()
+
+	res := Lib.EmptySet[AST.Meta]()
+	for _, meta := range all.Elements().GetSlice() {
+		if !sisters.Contains(meta) {
+			res = res.Add(meta)
+		}
+	}
+	return res
 }
 
 /**

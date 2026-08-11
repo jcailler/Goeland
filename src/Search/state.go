@@ -57,6 +57,11 @@ type State struct {
 	lf, atomic, alpha, beta, delta, gamma Core.FormAndTermsList
 	meta_generator                        []Core.MetaGen
 	mm, mc                                Lib.Set[AST.Meta]
+	// Metavariables that reached this branch only through a substitution the
+	// father sent down, and that neither mm nor mc already held: they live in a
+	// sibling. They belong to mm, since the substitution machinery has to know
+	// about them, but no formula of this branch mentions them.
+	meta_sisters Lib.Set[AST.Meta]
 	applied_subst                         Core.SubstAndForm
 	last_applied_subst                    Core.SubstAndForm   // For non destructive case only
 	substs_found                          []Core.SubstAndForm // Subst found with mm in d, subst for "bactrack" in nd
@@ -100,6 +105,12 @@ func (s State) GetMetaGen() []Core.MetaGen {
 }
 func (s State) GetMM() Lib.Set[AST.Meta] {
 	return s.mm.Copy()
+}
+func (s State) GetMetaSisters() Lib.Set[AST.Meta] {
+	return s.meta_sisters
+}
+func (st *State) SetMetaSisters(m Lib.Set[AST.Meta]) {
+	st.meta_sisters = m
 }
 func (s State) GetMC() Lib.Set[AST.Meta] {
 	return s.mc.Copy()
@@ -277,6 +288,7 @@ func MakeState(limit int, tp, tn Unif.DataStructure, f AST.Form) State {
 		[]Core.MetaGen{},
 		Lib.EmptySet[AST.Meta](),
 		Lib.EmptySet[AST.Meta](),
+		Lib.EmptySet[AST.Meta](),
 		Core.MakeEmptySubstAndForm(),
 		Core.MakeEmptySubstAndForm(),
 		[]Core.SubstAndForm{},
@@ -400,6 +412,7 @@ func (st State) Copy() State {
 	new_state.SetMM(newMetaMM)
 
 	new_state.SetMC(Lib.EmptySet[AST.Meta]())
+	new_state.SetMetaSisters(st.GetMetaSisters())
 
 	if Glob.IncrEq {
 		new_state.eqStruct = st.GetEqStruct()

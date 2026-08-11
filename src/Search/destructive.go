@@ -600,7 +600,15 @@ func (ds *destructiveSearch) waitFather(father_id uint64, st State, c Communicat
 						meta_sisters = meta_sisters.Add(m)
 					}
 				}
-				// Set to MM
+				// Remember the ones that were genuinely foreign: neither mm nor
+				// mc held them, so no formula of this branch mentions them.
+				sisters := st.GetMetaSisters()
+				for _, m := range Core.GetMetaFromSubst(subst).Elements().GetSlice() {
+					if !st.GetMC().Contains(m) && !st.GetMM().Contains(m) {
+						sisters = sisters.Add(m)
+					}
+				}
+				st.SetMetaSisters(sisters)
 				st.SetMM(meta_sisters)
 				debug(Lib.MkLazy(func() string {
 					return fmt.Sprintf(
